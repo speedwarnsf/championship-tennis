@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Centre Court - Championship Edition</title>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #28a745;
+            color: white;
+            overflow: hidden;
+        }
+        .screen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #main-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        h1, h2, h3 {
+            margin: 10px 0;
+            text-transform: uppercase;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #ffc107;
+        }
+        h2 {
+            font-size: 1.8em;
+        }
+        .stats, .attributes, .difficulty {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            width: 80%;
+        }
+        .stats p, .attributes p {
+            margin: 5px 0;
+            font-size: 1.2em;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px 0;
+            font-size: 1.2em;
+            border-radius: 5px;
+            cursor: pointer;
+            text-transform: uppercase;
+            width: 80%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #video-screen {
+            display: none;
+            background-color: black;
+        }
+        #player {
+            width: 100%;
+            height: 100%;
+        }
+        #match-screen {
+            background-image: url('court.jpg');
+            background-size: cover;
+            background-position: center;
+            color: black;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        #match-header {
+            display: flex;
+            justify-content: space-around;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+        }
+        #game-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #hit-button {
+            background-color: #dc3545;
+            font-size: 1.5em;
+            padding: 20px;
+            width: 90%;
+        }
+        #shop-screen, #howto-screen, #victory-screen {
+            background-color: #28a745;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .shop-categories button {
+            width: 30%;
+            margin: 5px;
+        }
+        #howto-screen p, #howto-screen ul {
+            font-size: 1.1em;
+            text-align: left;
+            width: 80%;
+        }
+        #howto-screen ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+        #victory-screen {
+            justify-content: center;
+        }
+        #victory-screen h1 {
+            color: #ffc107;
+            font-size: 3em;
+        }
+        .rewards p {
+            font-size: 1.2em;
+        }
+        .difficulty-buttons {
+            display: flex;
+            flex-direction: column;
+            width: 80%;
+        }
+        .difficulty-buttons button {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="main-screen" class="screen">
+        <h1>Centre Court</h1>
+        <h2>Championship Edition</h2>
+        <div class="stats">
+            <h3>Level 1</h3>
+            <p>💰 500</p>
+            <p>💎 20</p>
+        </div>
+        <div class="attributes">
+            <p>Power 10</p>
+            <p>Speed 10</p>
+            <p>Control 10</p>
+        </div>
+        <div class="difficulty">
+            <h3>Select Difficulty</h3>
+            <div class="difficulty-buttons">
+                <button>Rookie 1x Rewards</button>
+                <button>Pro 2x Rewards</button>
+                <button>Legend 3x Rewards</button>
+            </div>
+        </div>
+        <button onclick="startMatch()">Play Match</button>
+        <button onclick="showScreen('shop-screen')">Equipment Shop</button>
+        <button onclick="showScreen('howto-screen')">How to Play</button>
+    </div>
+
+    <div id="shop-screen" class="screen">
+        <h2>Equipment Shop</h2>
+        <button onclick="showScreen('main-screen')">Back</button>
+        <div class="shop-categories">
+            <button>Rackets</button>
+            <button>Shoes</button>
+            <button>Special</button>
+        </div>
+        <p>Shop items would be listed here.</p>
+    </div>
+
+    <div id="howto-screen" class="screen">
+        <h2>How to Play</h2>
+        <p>Watch for the GREEN GLOW!</p>
+        <p>When the ball enters your hit zone, it will glow bright green. That's your signal to strike!</p>
+        <p>Controls:</p>
+        <ul>
+            <li>SWIPE UP to hit with power</li>
+            <li>TAP for a quick return</li>
+            <li>Move finger left/right to position</li>
+        </ul>
+        <p>Equipment matters! Better gear gives you real advantages in speed, power, and control.</p>
+        <button onclick="showScreen('main-screen')">Got It!</button>
+    </div>
+
+    <div id="video-screen" class="screen">
+        <div id="player"></div>
+    </div>
+
+    <div id="match-screen" class="screen">
+        <div id="match-header">
+            <p>YOU 0</p>
+            <p>2:00 Rally: 0</p>
+            <p>CPU 0</p>
+        </div>
+        <div id="game-area">
+            <p>🎾 🎾</p>
+            <button id="hit-button" onclick="simulateHit()">Hit Now!</button>
+        </div>
+    </div>
+
+    <div id="victory-screen" class="screen">
+        <h1>Victory</h1>
+        <p>7 - 3</p>
+        <h3>Match Rewards</h3>
+        <div class="rewards">
+            <p>Coins +50</p>
+            <p>XP +100</p>
+            <p>Gems +0</p>
+        </div>
+        <button onclick="showScreen('main-screen')">Continue</button>
+    </div>
+
+    <script>
+        var player;
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: 'dy1tT2lsISs',
+                playerVars: {
+                    'autoplay': 1,
+                    'controls': 0,
+                    'disablekb': 1,
+                    'fs': 0,
+                    'modestbranding': 1,
+                    'rel': 0,
+                    'showinfo': 0
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {}
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                document.getElementById('video-screen').style.display = 'none';
+                document.getElementById('match-screen').style.display = 'flex';
+            }
+        }
+
+        function startMatch() {
+            showScreen('video-screen');
+            player.playVideo();
+        }
+
+        function showScreen(screenId) {
+            var screens = document.getElementsByClassName('screen');
+            for (var i = 0; i < screens.length; i++) {
+                screens[i].style.display = 'none';
+            }
+            var target = document.getElementById(screenId);
+            if (target) {
+                target.style.display = 'flex';
+            }
+        }
+
+        function simulateHit() {
+            showScreen('victory-screen');
+        }
+
+        showScreen('main-screen');
+    </script>
+
+</body>
+</html>
