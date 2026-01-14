@@ -22,8 +22,8 @@
         .loading-subtitle{color:rgba(255,255,255,0.5);font-size:13px;letter-spacing:5px;text-transform:uppercase;margin-bottom:50px}
         .play-button{padding:18px 70px;background:#fff;border:none;border-radius:35px;color:#1a1a2e;font-size:15px;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.3);transition:transform 0.2s,box-shadow 0.2s}
         .play-button:hover{transform:scale(1.05);box-shadow:0 15px 40px rgba(0,0,0,0.4)}
-        .main-menu{background:linear-gradient(135deg,#1a1a2e,#0f0f1e);justify-content:space-between;padding:15px;overflow-y:auto}
-        .game-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(36px,10vw,48px);background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center}
+        .main-menu{background:#000;justify-content:space-between;padding:15px;overflow-y:auto}
+        .game-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,12vw,72px);background:linear-gradient(135deg,#9b59b6,#bb86fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;letter-spacing:6px;text-shadow:0 0 30px rgba(187,134,252,0.3)}
         .tagline{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,215,0,0.6);text-align:center}
         .player-card{background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(255,237,78,0.05));border:2px solid rgba(255,215,0,0.2);border-radius:15px;padding:15px;margin:10px 0}
         .player-level{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
@@ -110,7 +110,7 @@
         .swipe-hint{position:absolute;bottom:45%;left:50%;transform:translateX(-50%);padding:8px 16px;background:rgba(76,255,80,0.6);border-radius:8px;color:#fff;font-size:12px;font-weight:700;text-transform:uppercase;opacity:0;pointer-events:none}
         .swipe-hint.active{opacity:1;animation:hintPulse 0.8s ease-in-out infinite}
         @keyframes hintPulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.1)}}
-        .match-results{background:linear-gradient(135deg,rgba(26,26,46,0.97),rgba(15,15,30,0.97));justify-content:center;align-items:center;padding:20px;z-index:2000}
+        .match-results{background:#000;justify-content:center;align-items:center;padding:20px;z-index:2000}
         .results-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,15vw,64px);margin-bottom:10px}
         .victory{background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         .defeat{background:linear-gradient(135deg,#f44336,#e91e63);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -124,7 +124,7 @@
         .continue-btn{padding:18px 50px;background:linear-gradient(135deg,#ffd700,#ffed4e);border:none;border-radius:25px;color:#1a1a2e;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
         .progress-toast{position:fixed;top:-80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ffd700,#ffed4e);padding:12px 25px;border-radius:25px;color:#1a1a2e;font-weight:700;z-index:3000;transition:top 0.4s ease}
         .progress-toast.show{top:40px}
-        .shop-screen{background:linear-gradient(135deg,#1a1a2e,#0f0f1e);padding:15px;overflow-y:auto;z-index:1100}
+        .shop-screen{background:#000;padding:15px;overflow-y:auto;z-index:1100}
         .shop-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
         .shop-title{font-family:'Bebas Neue',sans-serif;font-size:26px;background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         .back-btn{padding:10px 20px;background:rgba(255,255,255,0.1);border:2px solid rgba(255,215,0,0.3);border-radius:8px;color:#ffd700;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer}
@@ -147,7 +147,7 @@
         .equipped-badge{padding:7px 14px;background:linear-gradient(135deg,#ffd700,#ffed4e);border:none;border-radius:6px;color:#1a1a2e;font-size:9px;font-weight:700;text-transform:uppercase}
         .tutorial-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.92);display:none;justify-content:center;align-items:center;z-index:3000;padding:20px}
         .tutorial-overlay.active{display:flex}
-        .tutorial-content{background:linear-gradient(135deg,#1a1a2e,#0f0f1e);border:2px solid rgba(255,215,0,0.3);border-radius:20px;padding:25px;max-width:360px;text-align:center}
+        .tutorial-content{background:#000;border:2px solid rgba(187,134,252,0.4);border-radius:20px;padding:25px;max-width:360px;text-align:center}
         .tutorial-title{font-family:'Bebas Neue',sans-serif;font-size:32px;background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:15px}
         .tutorial-text{color:rgba(255,255,255,0.8);font-size:13px;line-height:1.5;margin-bottom:20px}
         .tutorial-btn{padding:14px 35px;background:linear-gradient(135deg,#4caf50,#8bc34a);border:none;border-radius:20px;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer}
