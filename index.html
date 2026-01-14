@@ -10,9 +10,9 @@
         body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#1a1a2e,#0f0f1e);height:100vh;overflow:hidden;touch-action:none;overscroll-behavior:none;position:fixed;width:100%}
         .screen{position:fixed;inset:0;display:none;flex-direction:column;z-index:100}
         .screen.active{display:flex}
-        .loading-screen{background:linear-gradient(135deg,#1a1a2e,#0a0a15);justify-content:center;align-items:center;z-index:10000;overflow:hidden}
-        .hero-image{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:90%;max-height:80vh;opacity:0;animation:slideInHero 1.2s ease-out forwards;image-rendering:pixelated}
-        @keyframes slideInHero{0%{opacity:0;transform:translate(-150%,-50%)}100%{opacity:1;transform:translate(-50%,-50%)}}
+        .loading-screen{background:#000;justify-content:center;align-items:center;z-index:10000;overflow:hidden}
+        .hero-image{position:relative;max-width:45%;max-height:40vh;opacity:0;animation:slideInHero 1.2s ease-out forwards;image-rendering:pixelated;margin-bottom:15px}
+        @keyframes slideInHero{0%{opacity:0;transform:translateX(-100vw)}100%{opacity:1;transform:translateX(0)}}
         .loading-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;animation:fadeInContent 1s ease-out 0.8s forwards;opacity:0}
         @keyframes fadeInContent{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
         .loading-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,12vw,72px);background:linear-gradient(135deg,#9b59b6,#bb86fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:6px;text-shadow:0 0 30px rgba(187,134,252,0.3)}
@@ -152,11 +152,13 @@
 </head>
 <body>
     <div class="screen loading-screen active" id="loadingScreen">
-        <img src="hero_player.jpg" alt="Tennis Player" class="hero-image">
-        <div class="loading-content">
-            <div class="loading-logo">CENTRE COURT</div>
-            <div class="loading-subtitle">Championship Edition</div>
-            <button class="play-button" onclick="startGame()">PLAY NOW</button>
+        <div style="display:flex;flex-direction:column;align-items:center;">
+            <img src="hero_player.jpg" alt="Tennis Player" class="hero-image">
+            <div class="loading-content">
+                <div class="loading-logo">CENTRE COURT</div>
+                <div class="loading-subtitle">Championship Edition</div>
+                <button class="play-button" onclick="startGame()">PLAY NOW</button>
+            </div>
         </div>
     </div>
     <div class="screen main-menu" id="mainMenu">
