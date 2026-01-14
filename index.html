@@ -114,7 +114,7 @@
         .shop-tabs{display:flex;gap:6px;margin-bottom:15px;background:rgba(0,0,0,0.3);padding:4px;border-radius:10px}
         .shop-tab{flex:1;padding:10px;background:transparent;border:none;border-radius:6px;color:rgba(255,255,255,0.6);font-size:10px;font-weight:700;text-transform:uppercase;cursor:pointer}
         .shop-tab.active{background:linear-gradient(135deg,#ffd700,#ffed4e);color:#1a1a2e}
-        .shop-items{display:grid;gap:10px;padding-bottom:20px}
+        .shop-items{display:grid;gap:10px;padding-bottom:20px;overflow-y:auto;max-height:calc(100vh - 180px)}
         .shop-item{background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(255,237,78,0.04));border:1px solid rgba(255,215,0,0.2);border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center}
         .shop-item.owned{border-color:#4caf50}
         .item-info{flex:1;max-width:55%}
@@ -179,9 +179,9 @@
     <div class="screen shop-screen" id="shopScreen">
         <div class="shop-header"><h2 class="shop-title">EQUIPMENT SHOP</h2><button class="back-btn" onclick="closeShop()">BACK</button></div>
         <div class="shop-tabs">
-            <button class="shop-tab active" onclick="switchTab('rackets',this)">Rackets</button>
+            <button class="shop-tab active" onclick="switchTab('training',this)">Training</button>
+            <button class="shop-tab" onclick="switchTab('rackets',this)">Rackets</button>
             <button class="shop-tab" onclick="switchTab('shoes',this)">Shoes</button>
-            <button class="shop-tab" onclick="switchTab('training',this)">Training</button>
             <button class="shop-tab" onclick="switchTab('special',this)">Special</button>
         </div>
         <div class="shop-items" id="shopItems"></div>
@@ -258,7 +258,7 @@ function getNTRP(){for(let i=NTRP_LEVELS.length-1;i>=0;i--){if(G.skillPoints>=NT
 function getNextNTRP(){const current=getNTRP();const idx=NTRP_LEVELS.findIndex(l=>l.rating===current);if(idx<NTRP_LEVELS.length-1)return NTRP_LEVELS[idx+1];return null}
 function updateUI(){const ntrp=getNTRP();const next=getNextNTRP();G.ntrp=ntrp;document.getElementById('playerNTRP').textContent=ntrp.toFixed(1);document.getElementById('coinAmount').textContent=G.coins;document.getElementById('gemAmount').textContent=G.gems;document.getElementById('skillPoints').textContent=G.skillPoints;if(next){document.getElementById('skillNeeded').textContent=next.points;const progress=(G.skillPoints/next.points)*100;document.getElementById('skillFill').style.width=progress+'%'}else{document.getElementById('skillNeeded').textContent='MAX';document.getElementById('skillFill').style.width='100%'}const s=getStats();document.getElementById('statPower').textContent=s.power;document.getElementById('statSpeed').textContent=s.speed;document.getElementById('statControl').textContent=s.control}
 function selectDifficulty(d){G.difficulty=d;document.querySelectorAll('.difficulty-btn').forEach(b=>b.classList.remove('selected'));document.querySelector('.diff-'+d).classList.add('selected')}
-function showShop(){document.getElementById('mainMenu').classList.remove('active');document.getElementById('shopScreen').classList.add('active');renderShop('rackets')}
+function showShop(){document.getElementById('mainMenu').classList.remove('active');document.getElementById('shopScreen').classList.add('active');renderShop('training')}
 function closeShop(){document.getElementById('shopScreen').classList.remove('active');document.getElementById('mainMenu').classList.add('active');updateUI()}
 function switchTab(cat,btn){document.querySelectorAll('.shop-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');renderShop(cat)}
 function renderShop(cat){const c=document.getElementById('shopItems');c.innerHTML='';SHOP[cat].forEach(item=>{const owned=G.owned.includes(item.id);const equipped=Object.values(G.equipment).includes(item.id);const canBuy=(item.currency==='gems'?G.gems:G.coins)>=item.price;const isTraining=cat==='training';let statsHTML='';if(item.stats.skillPoints)statsHTML+=`<span class="item-stat">+${item.stats.skillPoints} Skill Pts</span>`;if(item.stats.power)statsHTML+=`<span class="item-stat">+${item.stats.power} PWR</span>`;if(item.stats.speed)statsHTML+=`<span class="item-stat">+${item.stats.speed} SPD</span>`;if(item.stats.control)statsHTML+=`<span class="item-stat">+${item.stats.control} CTL</span>`;if(item.stats.bonus)statsHTML+=`<span class="item-stat">${item.stats.bonus}</span>`;const d=document.createElement('div');d.className='shop-item'+(owned&&!isTraining?' owned':'');d.innerHTML=`<div class="item-info"><div class="item-name">${item.name}</div><div class="item-desc">${item.desc}</div><div class="item-stats">${statsHTML}</div></div><div class="item-purchase">${isTraining?`<div class="price-tag">${item.currency==='gems'?'💎':'💰'}${item.price}</div><button class="buy-btn" ${canBuy?`onclick="buyItem('${cat}','${item.id}')"`:'disabled'}>${item.repeatable?'START':'BUY'}</button>`:!owned?`<div class="price-tag">${item.currency==='gems'?'💎':'💰'}${item.price}</div><button class="buy-btn" ${canBuy?`onclick="buyItem('${cat}','${item.id}')"`:'disabled'}>BUY</button>`:equipped?'<div class="equipped-badge">EQUIPPED</div>':`<button class="equip-btn" onclick="equipItem('${cat}','${item.id}')">EQUIP</button>`}</div>`;c.appendChild(d)})}
