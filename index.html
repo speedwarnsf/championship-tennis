@@ -12,11 +12,11 @@
         .screen.active{display:flex}
         .loading-screen{background:#000;justify-content:center;align-items:center;z-index:10000;overflow:hidden}
         .hero-image{position:relative;width:54vw;height:48vh;margin-bottom:15px;display:flex;justify-content:center;align-items:center}
-        .hero-player{position:absolute;width:100%;height:100%;opacity:0;animation:slideInPlayer 1.2s ease-out forwards;image-rendering:pixelated;clip-path:inset(0 20% 0 0);object-fit:contain}
-        .hero-ball{position:absolute;width:100%;height:100%;opacity:0;animation:slideInBall 1.2s ease-out forwards;image-rendering:pixelated;clip-path:inset(0 0 0 80%);object-fit:contain}
+        .hero-player{position:absolute;width:100%;height:100%;opacity:0;animation:slideInPlayer 0.6s ease-out 0.8s forwards;image-rendering:pixelated;clip-path:inset(0 20% 0 0);object-fit:contain}
+        .hero-ball{position:absolute;width:100%;height:100%;opacity:0;animation:slideInBall 1.4s ease-in-out forwards;image-rendering:pixelated;clip-path:inset(0 0 0 80%);object-fit:contain}
         @keyframes slideInPlayer{0%{opacity:0;transform:translateX(-100vw)}100%{opacity:1;transform:translateX(0)}}
         @keyframes slideInBall{0%{opacity:0;transform:translateX(100vw)}100%{opacity:1;transform:translateX(0)}}
-        .loading-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;animation:fadeInContent 1s ease-out 0.8s forwards;opacity:0}
+        .loading-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;animation:fadeInContent 0.8s ease-out 1.4s forwards;opacity:0}
         @keyframes fadeInContent{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
         .loading-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,12vw,72px);background:linear-gradient(135deg,#9b59b6,#bb86fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:6px;text-shadow:0 0 30px rgba(187,134,252,0.3)}
         .loading-subtitle{color:rgba(255,255,255,0.5);font-size:13px;letter-spacing:5px;text-transform:uppercase;margin-bottom:50px}
