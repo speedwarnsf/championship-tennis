@@ -54,6 +54,10 @@
         .menu-buttons{display:flex;flex-direction:column;gap:12px}
         .menu-btn{padding:15px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:12px;color:#fff;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer}
         .menu-btn.primary{background:linear-gradient(135deg,#ffd700,#ffed4e);color:#1a1a2e;font-size:15px;padding:18px}
+        .video-intro{position:fixed;inset:0;background:#000;display:none;z-index:5000;justify-content:center;align-items:center;opacity:1;transition:opacity 0.5s ease}
+        .video-intro.active{display:flex}
+        .video-intro.fade-out{opacity:0}
+        #videoPlayer{width:100vw;height:100vh}
         .game-hud{position:fixed;top:0;left:0;right:0;padding:15px;display:none;z-index:100;background:linear-gradient(to bottom,rgba(0,0,0,0.7),transparent)}
         .game-hud.active{display:block}
         .match-info{display:flex;justify-content:space-between;align-items:center}
@@ -64,9 +68,9 @@
         .match-center{display:flex;flex-direction:column;align-items:center;gap:5px}
         .match-timer{background:rgba(255,215,0,0.2);padding:8px 20px;border-radius:20px;color:#fff;font-size:14px;font-weight:700}
         .rally-counter{font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase}
-        .game-court{position:fixed;inset:0;display:none;background:linear-gradient(180deg,#1a5c3e,#228b52,#1a5c3e)}
+        .game-court{position:fixed;inset:0;display:none;background:url('court.jpg') center/cover no-repeat;background-color:#000}
         .game-court.active{display:block}
-        .court{position:absolute;top:12%;left:8%;right:8%;bottom:12%;background:linear-gradient(180deg,#1e6b47,#228b52,#1e6b47);border:4px solid #fff;overflow:hidden}
+        .court{position:absolute;top:12%;left:8%;right:8%;bottom:12%;background:transparent;border:none;overflow:hidden}
         .court-lines{position:absolute;inset:0}
         .line{position:absolute;background:#fff;opacity:0.95}
         .sideline-left{left:12%;top:0;bottom:0;width:3px}
@@ -154,6 +158,7 @@
         .tutorial-text{color:rgba(255,255,255,0.8);font-size:13px;line-height:1.5;margin-bottom:20px}
         .tutorial-btn{padding:14px 35px;background:linear-gradient(135deg,#4caf50,#8bc34a);border:none;border-radius:20px;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer}
     </style>
+    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
     <div class="screen loading-screen active" id="loadingScreen">
@@ -212,6 +217,9 @@
             <button class="shop-tab" onclick="switchTab('special',this)">Special</button>
         </div>
         <div class="shop-items" id="shopItems"></div>
+    </div>
+    <div class="video-intro" id="videoIntro">
+        <div id="videoPlayer"></div>
     </div>
     <div class="game-hud" id="gameHUD">
         <div class="match-info">
@@ -306,7 +314,12 @@ function equipItem(cat,id){G.equipment[cat.slice(0,-1)]=id;save();renderShop(cat
 function showTutorial(){document.getElementById('tutorialOverlay').classList.add('active')}
 function closeTutorial(){document.getElementById('tutorialOverlay').classList.remove('active')}
 function toast(msg){const t=document.getElementById('progressToast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
-function startMatch(){const s=DIFF[G.difficulty];M={active:true,pPoints:0,oPoints:0,pGames:0,oGames:0,time:s.time,rally:0,ballActive:false,ballPos:{x:50,y:10},ballVel:{x:0,y:0,z:0},ballH:100,ballBounces:0,canHit:false,combo:0,oppPos:50,playerPos:50,canRushNet:false,rushingNet:false,settings:s};setSpriteRow('opponentSprite',0);setSpriteRow('playerSprite',1);document.getElementById('mainMenu').classList.remove('active');document.getElementById('gameHUD').classList.add('active');document.getElementById('gameCourt').classList.add('active');updateMatchUI();startTimer();setTimeout(serve,1200)}
+let ytPlayer;
+function onYouTubeIframeAPIReady(){ytPlayer=new YT.Player('videoPlayer',{height:'100%',width:'100%',videoId:'dy1tT2lsISs',playerVars:{autoplay:0,controls:0,modestbranding:1,rel:0,showinfo:0,fs:0,playsinline:1},events:{onStateChange:onPlayerStateChange}})}
+function onPlayerStateChange(event){if(event.data===YT.PlayerState.ENDED){transitionToCourt()}}
+function transitionToCourt(){const videoIntro=document.getElementById('videoIntro');videoIntro.classList.add('fade-out');setTimeout(()=>{videoIntro.classList.remove('active','fade-out');actuallyStartMatch()},500)}
+function actuallyStartMatch(){const s=DIFF[G.difficulty];M={active:true,pPoints:0,oPoints:0,pGames:0,oGames:0,time:s.time,rally:0,ballActive:false,ballPos:{x:50,y:10},ballVel:{x:0,y:0,z:0},ballH:100,ballBounces:0,canHit:false,combo:0,oppPos:50,playerPos:50,canRushNet:false,rushingNet:false,settings:s};setSpriteRow('opponentSprite',0);setSpriteRow('playerSprite',1);document.getElementById('gameHUD').classList.add('active');document.getElementById('gameCourt').classList.add('active');updateMatchUI();startTimer();setTimeout(serve,1200)}
+function startMatch(){document.getElementById('mainMenu').classList.remove('active');document.getElementById('videoIntro').classList.add('active');if(ytPlayer&&ytPlayer.playVideo){ytPlayer.seekTo(0);ytPlayer.playVideo()}else{setTimeout(()=>{if(ytPlayer&&ytPlayer.playVideo){ytPlayer.seekTo(0);ytPlayer.playVideo()}},1000)}}
 function startTimer(){const int=setInterval(()=>{if(!M.active){clearInterval(int);return}M.time--;document.getElementById('matchTimer').textContent=Math.floor(M.time/60)+':'+(M.time%60).toString().padStart(2,'0');if(M.time<=0){clearInterval(int);endMatch()}},1000)}
 function getTennisScore(pPoints,oPoints){const scores=['0','15','30','40'];if(pPoints<4&&oPoints<4)return{p:scores[pPoints],o:scores[oPoints]};if(pPoints===oPoints)return{p:'40',o:'40',deuce:true};if(pPoints>oPoints)return{p:'AD',o:'40'};return{p:'40',o:'AD'}}
 function updateMatchUI(){const score=getTennisScore(M.pPoints,M.oPoints);document.getElementById('playerPoints').textContent=score.deuce?'DEUCE':score.p;document.getElementById('opponentPoints').textContent=score.deuce?'DEUCE':score.o;document.getElementById('playerGames').textContent=M.pGames;document.getElementById('opponentGames').textContent=M.oGames;document.getElementById('rallyCount').textContent=M.rally}
