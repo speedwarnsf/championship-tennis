@@ -1322,6 +1322,65 @@ function closeShop(){
     updateUI();
 }
 
+// Character system - must be before showCharSelect
+const V = '?v=8';
+
+const CHARACTERS = [
+    {id:'player1', name:'Alex', power:50, speed:50, control:50, unlocked:true},
+    {id:'player2', name:'Maria', power:45, speed:55, control:50, unlocked:true},
+    {id:'player3', name:'Jake', power:55, speed:45, control:50, unlocked:true},
+    {id:'player4', name:'Emma', power:45, speed:60, control:45, unlocked:true},
+    {id:'player5', name:'Marcus', power:65, speed:40, control:45, unlocked:false, cost:500},
+    {id:'player6', name:'Sofia', power:40, speed:55, control:55, unlocked:false, cost:500},
+    {id:'player7', name:'Tyler', power:45, speed:45, control:60, unlocked:false, cost:750},
+    {id:'player8', name:'Zara', power:50, speed:55, control:45, unlocked:false, cost:750},
+    {id:'player9', name:'Bruno', power:60, speed:35, control:55, unlocked:false, cost:1000},
+    {id:'player10', name:'Mia', power:45, speed:50, control:55, unlocked:false, cost:1000},
+    {id:'player11', name:'Chris', power:50, speed:60, control:40, unlocked:false, cost:1250},
+    {id:'player12', name:'Yuki', power:40, speed:55, control:55, unlocked:false, cost:1250},
+    {id:'punk', name:'Spike', power:70, speed:50, control:30, unlocked:false, cost:2000, special:true},
+    {id:'chubby', name:'Big Tony', power:75, speed:30, control:45, unlocked:false, cost:2000, special:true},
+    {id:'beach', name:'Sandy', power:40, speed:65, control:45, unlocked:false, cost:2000, special:true},
+    {id:'goth', name:'Raven', power:55, speed:45, control:50, unlocked:false, cost:2500, special:true},
+    {id:'grandpa', name:'Gramps', power:35, speed:35, control:80, unlocked:false, cost:2500, special:true},
+    {id:'indian', name:'Priya', power:50, speed:50, control:50, unlocked:false, cost:2500, special:true},
+    {id:'anime', name:'Kenji', power:55, speed:65, control:30, unlocked:false, cost:3000, special:true},
+    {id:'latino', name:'Rico', power:60, speed:55, control:35, unlocked:false, cost:3000, special:true},
+    {id:'redhead', name:'Fiona', power:50, speed:55, control:45, unlocked:false, cost:3000, special:true}
+];
+
+let selectedChar = CHARACTERS[0];
+
+function getCharSprites(char){
+    const useDefault = ['player1','player2','player3','player4'].includes(char.id);
+    if(useDefault){
+        return {
+            swing: 'player-retro-backswing.png' + V,
+            run: 'player-retro-run.png' + V,
+            idle: 'player-idle-v2.png' + V,
+            oppSwing: 'opponent-retro-frontswing.png' + V,
+            oppRun: 'opponent-retro-run.png' + V,
+            oppIdle: 'opponent-idle-v2.png' + V
+        };
+    }
+    const base = 'sprites-v2/characters/' + char.id + '-';
+    return {
+        swing: base + 'back-swing.png' + V,
+        run: base + 'back-run.png' + V,
+        idle: base + 'back-swing.png' + V,
+        oppSwing: base + 'front-swing.png' + V,
+        oppRun: base + 'front-run.png' + V,
+        oppIdle: base + 'front-swing.png' + V
+    };
+}
+
+const SPRITES = getCharSprites(selectedChar);
+
+function updateSprites(){
+    const s = getCharSprites(selectedChar);
+    Object.assign(SPRITES, s);
+}
+
 function showCharSelect(){
     document.getElementById('mainMenu').classList.remove('active');
     document.getElementById('charSelect').classList.add('active');
@@ -2471,65 +2530,7 @@ window.addEventListener('load', () => {
     initSprites();
 });
 
-// ========== CHARACTERS & SPRITES ==========
-
-const V = '?v=7';
-
-const CHARACTERS = [
-    {id:'player1', name:'Alex', power:50, speed:50, control:50, unlocked:true},
-    {id:'player2', name:'Maria', power:45, speed:55, control:50, unlocked:true},
-    {id:'player3', name:'Jake', power:55, speed:45, control:50, unlocked:true},
-    {id:'player4', name:'Emma', power:45, speed:60, control:45, unlocked:true},
-    {id:'player5', name:'Marcus', power:65, speed:40, control:45, unlocked:false, cost:500},
-    {id:'player6', name:'Sofia', power:40, speed:55, control:55, unlocked:false, cost:500},
-    {id:'player7', name:'Tyler', power:45, speed:45, control:60, unlocked:false, cost:750},
-    {id:'player8', name:'Zara', power:50, speed:55, control:45, unlocked:false, cost:750},
-    {id:'player9', name:'Bruno', power:60, speed:35, control:55, unlocked:false, cost:1000},
-    {id:'player10', name:'Mia', power:45, speed:50, control:55, unlocked:false, cost:1000},
-    {id:'player11', name:'Chris', power:50, speed:60, control:40, unlocked:false, cost:1250},
-    {id:'player12', name:'Yuki', power:40, speed:55, control:55, unlocked:false, cost:1250},
-    {id:'punk', name:'Spike', power:70, speed:50, control:30, unlocked:false, cost:2000, special:true},
-    {id:'chubby', name:'Big Tony', power:75, speed:30, control:45, unlocked:false, cost:2000, special:true},
-    {id:'beach', name:'Sandy', power:40, speed:65, control:45, unlocked:false, cost:2000, special:true},
-    {id:'goth', name:'Raven', power:55, speed:45, control:50, unlocked:false, cost:2500, special:true},
-    {id:'grandpa', name:'Gramps', power:35, speed:35, control:80, unlocked:false, cost:2500, special:true},
-    {id:'indian', name:'Priya', power:50, speed:50, control:50, unlocked:false, cost:2500, special:true},
-    {id:'anime', name:'Kenji', power:55, speed:65, control:30, unlocked:false, cost:3000, special:true},
-    {id:'latino', name:'Rico', power:60, speed:55, control:35, unlocked:false, cost:3000, special:true},
-    {id:'redhead', name:'Fiona', power:50, speed:55, control:45, unlocked:false, cost:3000, special:true}
-];
-
-let selectedChar = CHARACTERS[0];
-
-function getCharSprites(char){
-    const useDefault = ['player1','player2','player3','player4'].includes(char.id);
-    if(useDefault){
-        return {
-            swing: 'player-retro-backswing.png' + V,
-            run: 'player-retro-run.png' + V,
-            idle: 'player-idle-v2.png' + V,
-            oppSwing: 'opponent-retro-frontswing.png' + V,
-            oppRun: 'opponent-retro-run.png' + V,
-            oppIdle: 'opponent-idle-v2.png' + V
-        };
-    }
-    const base = 'sprites-v2/characters/' + char.id + '-';
-    return {
-        swing: base + 'back-swing.png' + V,
-        run: base + 'back-run.png' + V,
-        idle: base + 'back-swing.png' + V,
-        oppSwing: base + 'front-swing.png' + V,
-        oppRun: base + 'front-run.png' + V,
-        oppIdle: base + 'front-swing.png' + V
-    };
-}
-
-const SPRITES = getCharSprites(selectedChar);
-
-function updateSprites(){
-    const s = getCharSprites(selectedChar);
-    Object.assign(SPRITES, s);
-}
+// ========== SPRITE ANIMATION FUNCTIONS ==========
 
 function initSprites(){
     const opp = document.getElementById('opponentSprite');
