@@ -1382,10 +1382,18 @@ function updateSprites(){
 }
 
 function showCharSelect(){
-    document.getElementById('mainMenu').classList.remove('active');
-    document.getElementById('charSelect').classList.add('active');
-    renderCharGrid();
-    selectCharacter(selectedChar);
+    try {
+        document.getElementById('mainMenu').classList.remove('active');
+        document.getElementById('charSelect').classList.add('active');
+        console.log('About to call renderCharGrid, CHARACTERS exists:', !!CHARACTERS, 'length:', CHARACTERS?.length);
+        renderCharGrid();
+        console.log('renderCharGrid completed, calling selectCharacter');
+        selectCharacter(selectedChar);
+        console.log('showCharSelect completed successfully');
+    } catch(e) {
+        alert('showCharSelect error: ' + e.message + ' at ' + e.stack);
+        console.error('showCharSelect error:', e);
+    }
 }
 
 function closeCharSelect(){
