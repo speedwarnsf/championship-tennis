@@ -332,7 +332,8 @@
                 <div class="char-stat"><div class="char-stat-label">Control</div><div class="char-stat-value" id="charControl">50</div></div>
             </div>
         </div>
-        <div class="char-grid" id="charGrid"><div style="color:white;padding:20px;background:orange;">Loading characters... (v14) - if you see this, showCharSelect never ran</div></div>
+        <div class="char-grid" id="charGrid"><div id="charGridTest" style="color:white;padding:20px;background:orange;">JS LOADING... (v15)</div></div>
+<script>document.getElementById('charGridTest').style.background='purple';document.getElementById('charGridTest').textContent='JS WORKS (v15) - waiting for showCharSelect';</script>
         <button class="menu-btn primary char-select-btn" onclick="confirmCharacter()">SELECT</button>
     </div>
     <div class="video-intro" id="videoIntro">
