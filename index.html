@@ -72,6 +72,8 @@
         .rally-counter{font-size:9px;color:rgba(255,255,255,0.7);text-transform:uppercase}
         .serve-indicator{font-size:9px;color:#4caf50;font-weight:700;text-transform:uppercase;padding:3px 8px;background:rgba(76,175,80,0.2);border-radius:10px}
         .serve-indicator.fault{color:#f44336;background:rgba(244,67,54,0.2)}
+        .serve-speed{font-size:10px;color:#ffd700;font-weight:700;margin-top:2px}
+        .tiebreak-indicator{font-size:8px;color:#ff9800;text-transform:uppercase;margin-top:2px}
         .game-court{position:fixed;inset:0;display:none;background:url('court.jpg') center/cover no-repeat;background-color:#000}
         .game-court.active{display:block}
         .court{position:absolute;top:12%;left:8%;right:8%;bottom:12%;background:transparent;border:none;overflow:hidden}
@@ -91,6 +93,10 @@
         .service-box.ad{top:27%;bottom:50%;left:12%;right:50%}
         .service-box.active{opacity:1;border-color:rgba(76,255,80,0.5);background:rgba(76,255,80,0.1);animation:serviceBoxPulse 1s ease-in-out infinite}
         @keyframes serviceBoxPulse{0%,100%{border-color:rgba(76,255,80,0.3)}50%{border-color:rgba(76,255,80,0.7)}}
+        /* Net cord effect */
+        .net-cord{position:absolute;top:50%;left:-2%;right:-2%;height:6px;z-index:21;transform:translateY(-50%);pointer-events:none;opacity:0}
+        .net-cord.active{animation:netCordFlash 0.4s ease-out}
+        @keyframes netCordFlash{0%{opacity:1;box-shadow:0 0 20px rgba(255,215,0,0.8),0 0 40px rgba(255,215,0,0.5)}100%{opacity:0;box-shadow:none}}
         .ball{position:absolute;width:14px;height:14px;background:radial-gradient(circle at 30% 30%,#fcf836,#c9d11a);border-radius:50%;transform:translate(-50%,-50%);z-index:40;display:none;box-shadow:0 2px 4px rgba(0,0,0,0.4)}
         .ball.active{display:block}
         .ball.glowing{box-shadow:0 0 30px rgba(76,255,80,1),0 0 50px rgba(76,255,80,0.5);animation:ballGlow 0.4s ease-in-out infinite}
@@ -314,6 +320,8 @@
                 <div class="match-timer" id="matchTimer">2:00</div>
                 <div class="rally-counter">Rally: <span id="rallyCount">0</span></div>
                 <div class="serve-indicator" id="serveIndicator">1ST SERVE</div>
+                <div class="serve-speed" id="serveSpeed"></div>
+                <div class="tiebreak-indicator" id="tiebreakIndicator"></div>
             </div>
             <div class="player-info">
                 <div class="player-name">CPU</div>
@@ -330,6 +338,7 @@
                 <div class="line baseline-top"></div><div class="line baseline-bottom"></div>
                 <div class="line service-top"></div><div class="line service-bottom"></div>
                 <div class="line center-service"></div><div class="line net"></div>
+                <div class="net-cord" id="netCord"></div>
             </div>
             <!-- Service boxes -->
             <div class="service-box deuce" id="serviceBoxDeuce"></div>
@@ -376,6 +385,7 @@
             <div class="reward-item"><span class="reward-label">Skill Points</span><span class="reward-value" id="skillGained">+100</span></div>
             <div class="reward-item"><span class="reward-label">Gems</span><span class="reward-value" id="gemsEarned">+0</span></div>
             <div class="reward-item"><span class="reward-label">Aces</span><span class="reward-value" id="acesCount">0</span></div>
+            <div class="reward-item"><span class="reward-label">Winners</span><span class="reward-value" id="winnersCount">0</span></div>
         </div>
         <button class="continue-btn" onclick="returnToMenu()">CONTINUE</button>
     </div>
@@ -464,6 +474,8 @@ let M={
     pGames:0,oGames:0,    // Games in current set
     pSets:0,oSets:0,      // Sets (optional for longer matches)
     time:120,
+    isTiebreak:false,     // Special scoring in tiebreak
+    tiebreakServer:'player', // Who serves first in tiebreak
     // Serve state
     isServing:true,       // Is player serving this game?
     serveNum:1,           // 1 = first serve, 2 = second serve
@@ -475,6 +487,7 @@ let M={
     serveAimX:50,
     serveAimY:25,
     serveStartY:null,
+    lastServeSpeed:0,     // MPH for display
     // Ball state
     rally:0,
     ballActive:false,
@@ -497,6 +510,7 @@ let M={
     // Stats
     aces:0,
     doubleFaults:0,
+    winners:0,
     // Settings
     settings:null
 };
@@ -629,6 +643,24 @@ function getServeSide(){
     // In tennis: deuce court (right) on even points, ad court (left) on odd points
     const totalPoints = M.pPoints + M.oPoints;
     return totalPoints % 2 === 0 ? 'deuce' : 'ad';
+}
+
+function getTiebreakServer(){
+    // In tiebreak: first server serves 1 point, then alternate every 2 points
+    const totalPoints = M.pPoints + M.oPoints;
+    if(totalPoints === 0) return M.tiebreakServer;
+    // After first point, switch every 2 points
+    const adjustedPoints = totalPoints - 1;
+    const switches = Math.floor(adjustedPoints / 2) + 1;
+    return switches % 2 === 0 ? M.tiebreakServer : (M.tiebreakServer === 'player' ? 'opp' : 'player');
+}
+
+function showNetCordEffect(){
+    const netCord = document.getElementById('netCord');
+    netCord.classList.remove('active');
+    void netCord.offsetWidth;
+    netCord.classList.add('active');
+    setTimeout(() => netCord.classList.remove('active'), 400);
 }
 
 function updateServeIndicator(){
@@ -768,11 +800,17 @@ function executePlayerServe(power, aimX){
         const isNetFault = power < 0.2 || Math.random() < faultChance * 0.3;
         const isOutFault = targetX < boxLeft - 5 || targetX > boxRight + 5 || Math.random() < faultChance * 0.4;
         
+        // Calculate serve speed for display (80-140 MPH range based on power and serve stat)
+        const baseServeSpeed = 80 + power * 40 + st.serve * 0.2;
+        M.lastServeSpeed = Math.round(baseServeSpeed + (Math.random() - 0.5) * 10);
+        document.getElementById('serveSpeed').textContent = M.lastServeSpeed + ' MPH';
+        
         // Let serve (hits net but goes over - replay)
         const isLet = !isNetFault && Math.random() < 0.05;
         
         if(isLet){
             sounds.let();
+            showNetCordEffect();
             toast('LET! Serve again');
             M.servePhase = 'none';
             setTimeout(startPlayerServe, 1000);
@@ -993,6 +1031,11 @@ function opponentServe(){
         
         // Opponent serve speed
         const serveSpd = M.settings.speed * M.settings.oppServeSpeed * 0.65;
+        
+        // Display opponent serve speed (slightly faster than player typically)
+        const oppServeSpeed = Math.round(90 + M.settings.oppServeSpeed * 30 + Math.random() * 15);
+        M.lastServeSpeed = oppServeSpeed;
+        document.getElementById('serveSpeed').textContent = oppServeSpeed + ' MPH';
         
         M.ballVel = {
             x: (targetX - M.ballPos.x) / 100 * 1.1,
@@ -1352,6 +1395,8 @@ function actuallyStartMatch(){
         pGames: 0, oGames: 0,
         pSets: 0, oSets: 0,
         time: s.time,
+        isTiebreak: false,
+        tiebreakServer: 'player',
         servingPlayer: playerServesFirst ? 'player' : 'opp',
         serveNum: 1,
         serveSide: 'deuce',
@@ -1361,6 +1406,7 @@ function actuallyStartMatch(){
         serveAimX: 50,
         serveAimY: 25,
         serveStartY: null,
+        lastServeSpeed: 0,
         rally: 0,
         ballActive: false,
         ballPos: {x:50, y:10},
@@ -1379,6 +1425,7 @@ function actuallyStartMatch(){
         gemMultiplier: 1,
         aces: 0,
         doubleFaults: 0,
+        winners: 0,
         pendingAce: false,
         settings: s
     };
@@ -1404,6 +1451,14 @@ function startNextPoint(){
     M.serveSide = getServeSide();
     M.rally = 0;
     M.canHit = false;
+    
+    // Clear serve speed display
+    document.getElementById('serveSpeed').textContent = '';
+    
+    // In tiebreak, recalculate server each point
+    if(M.isTiebreak){
+        M.servingPlayer = getTiebreakServer();
+    }
     
     updateMatchUI();
     
@@ -1452,6 +1507,11 @@ function startTimer(){
 // ========== SCORING ==========
 
 function getTennisScore(pPoints, oPoints){
+    // Tiebreak uses simple numbers
+    if(M.isTiebreak){
+        return {p: String(pPoints), o: String(oPoints), tiebreak: true};
+    }
+    
     const scores = ['0','15','30','40'];
     
     // Both under 4 points - normal scoring
@@ -1486,6 +1546,14 @@ function updateMatchUI(){
         document.getElementById('opponentSets').textContent = `Sets: ${M.oSets}`;
     }
     
+    // Show tiebreak indicator
+    const tbInd = document.getElementById('tiebreakIndicator');
+    if(M.isTiebreak){
+        tbInd.textContent = 'TIEBREAK';
+    } else {
+        tbInd.textContent = '';
+    }
+    
     updateServeIndicator();
 }
 
@@ -1500,7 +1568,45 @@ function scorePoint(player){
     
     const diff = M.pPoints - M.oPoints;
     
-    // Check if game is won (need to be at 4+ and 2 ahead)
+    // Tiebreak scoring: first to 7, win by 2
+    if(M.isTiebreak){
+        if((M.pPoints >= 7 || M.oPoints >= 7) && Math.abs(diff) >= 2){
+            // Tiebreak won!
+            if(M.pPoints > M.oPoints){
+                M.pGames++;
+                M.pSets++;
+                toast('TIEBREAK WON! You take the set!');
+            } else {
+                M.oGames++;
+                M.oSets++;
+                toast('TIEBREAK LOST! Opponent takes the set');
+            }
+            
+            // Reset for new set
+            M.pPoints = 0;
+            M.oPoints = 0;
+            M.pGames = 0;
+            M.oGames = 0;
+            M.isTiebreak = false;
+            M.serveNum = 1;
+            
+            // Whoever received in tiebreak serves first next set
+            M.servingPlayer = M.tiebreakServer === 'player' ? 'opp' : 'player';
+            
+            sounds.point();
+            updateMatchUI();
+            if(checkEnd()) return true;
+            return false;
+        }
+        
+        // In tiebreak, server changes after first point, then every 2 points
+        M.servingPlayer = getTiebreakServer();
+        M.serveNum = 1;
+        updateMatchUI();
+        return false;
+    }
+    
+    // Regular game scoring: need to be at 4+ and 2 ahead
     if((M.pPoints >= 4 || M.oPoints >= 4) && Math.abs(diff) >= 2){
         if(M.pPoints > M.oPoints){
             M.pGames++;
@@ -1537,7 +1643,7 @@ function checkSetWin(){
     const diff = Math.abs(pGames - oGames);
     
     // Standard set win: 6 games with 2 game lead
-    if((pGames >= 6 || oGames >= 6) && diff >= 2){
+    if((pGames >= 6 || oGames >= 6) && diff >= 2 && !M.isTiebreak){
         if(pGames > oGames){
             M.pSets++;
             toast('SET! You won the set!');
@@ -1547,14 +1653,19 @@ function checkSetWin(){
         }
         M.pGames = 0;
         M.oGames = 0;
+        M.isTiebreak = false;
         return false; // Continue playing
     }
     
     // Tiebreak at 6-6
-    if(pGames === 6 && oGames === 6){
-        toast('TIEBREAK!');
-        // In a full implementation, tiebreak has special scoring
-        // For simplicity, we'll just continue with normal scoring
+    if(pGames === 6 && oGames === 6 && !M.isTiebreak){
+        M.isTiebreak = true;
+        M.tiebreakServer = M.servingPlayer;
+        M.pPoints = 0;
+        M.oPoints = 0;
+        toast('TIEBREAK! First to 7 (win by 2)');
+        sounds.point();
+        return false;
     }
     
     return false;
@@ -1833,6 +1944,12 @@ function animateReturn(){
         const hq = Math.max(0, 1 - dist * 0.025);
         const prob = reach ? (M.settings.oppAcc * hq - st.power * 0.002) : 0;
         
+        // Check for net cord as ball crosses net zone (43-57%)
+        if(M.ballPos.y > 43 && M.ballPos.y < 57 && Math.random() < 0.08){
+            showNetCordEffect();
+            sounds.let();
+        }
+        
         if(Math.random() < prob){
             // Opponent returns
             M.rally++;
@@ -1863,9 +1980,10 @@ function animateReturn(){
             
             animateBall();
         } else {
-            // Opponent missed - point for player!
+            // Opponent missed - point for player! (Winner!)
             resetBallUI();
             M.rally = 0;
+            M.winners++;
             
             let reward = 10 + M.combo * 5;
             if(G.equipment.special === 'x1') reward *= 2;
@@ -1875,7 +1993,13 @@ function animateReturn(){
             updateStreakDisplay();
             
             sounds.coin();
-            toast('+' + reward + ' coins!');
+            
+            // Show "Winner!" for clean winners
+            if(Math.random() < 0.3){
+                toast('WINNER! +' + reward + ' 💰');
+            } else {
+                toast('+' + reward + ' coins!');
+            }
             
             if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
         }
@@ -1954,6 +2078,7 @@ function endMatch(){
     document.getElementById('skillGained').textContent = '+' + skill;
     document.getElementById('gemsEarned').textContent = '+' + gems;
     document.getElementById('acesCount').textContent = M.aces;
+    document.getElementById('winnersCount').textContent = M.winners;
     
     document.getElementById('matchResults').classList.add('active');
     
