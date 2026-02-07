@@ -1394,17 +1394,27 @@ function closeCharSelect(){
 }
 
 function renderCharGrid(){
+    console.log('renderCharGrid called, CHARACTERS:', CHARACTERS?.length);
     const grid = document.getElementById('charGrid');
-    grid.innerHTML = CHARACTERS.map(c => {
-        const unlocked = c.unlocked || G.unlockedChars?.includes(c.id);
-        const sprites = getCharSprites(c);
-        return `<div class="char-card${selectedChar.id===c.id?' selected':''}${!unlocked?' locked':''}" 
-            onclick="${unlocked ? `selectCharacter(CHARACTERS.find(x=>x.id==='${c.id}'))` : `tryUnlock('${c.id}')`}">
-            <div class="char-preview" style="background-image:url(${sprites.swing})"></div>
-            ${unlocked ? `<div class="char-name">${c.name}</div><div class="char-stats">P${c.power} S${c.speed} C${c.control}</div>` 
-                      : `<div class="char-lock">🔒</div><div class="char-name">${c.cost}💰</div>`}
-        </div>`;
-    }).join('');
+    if(!grid) { alert('charGrid not found!'); return; }
+    if(!CHARACTERS || !CHARACTERS.length) { alert('CHARACTERS empty!'); return; }
+    console.log('Building grid with', CHARACTERS.length, 'characters');
+    try {
+        grid.innerHTML = CHARACTERS.map(c => {
+            const unlocked = c.unlocked || G.unlockedChars?.includes(c.id);
+            const sprites = getCharSprites(c);
+            return `<div class="char-card${selectedChar.id===c.id?' selected':''}${!unlocked?' locked':''}" 
+                onclick="${unlocked ? `selectCharacter(CHARACTERS.find(x=>x.id==='${c.id}'))` : `tryUnlock('${c.id}')`}">
+                <div class="char-preview" style="background-image:url(${sprites.swing})"></div>
+                ${unlocked ? `<div class="char-name">${c.name}</div><div class="char-stats">P${c.power} S${c.speed} C${c.control}</div>` 
+                          : `<div class="char-lock">🔒</div><div class="char-name">${c.cost}💰</div>`}
+            </div>`;
+        }).join('');
+        console.log('Grid HTML set, length:', grid.innerHTML.length);
+    } catch(e) {
+        alert('renderCharGrid error: ' + e.message);
+        console.error(e);
+    }
 }
 
 function selectCharacter(char){
