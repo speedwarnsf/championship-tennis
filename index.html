@@ -136,10 +136,13 @@
         .serve-power-fill{height:100%;width:0%;background:linear-gradient(90deg,#4caf50,#ffd700 50%,#f44336);transition:width 0.05s}
         .serve-power-zones{display:flex;justify-content:space-between;width:100%;font-size:8px;color:rgba(255,255,255,0.6);padding:0 2px}
         /* Serve aim indicator */
-        .serve-aim{position:absolute;width:40px;height:40px;border:3px solid #ffd700;border-radius:50%;transform:translate(-50%,-50%);z-index:45;display:none;pointer-events:none}
-        .serve-aim.active{display:block;animation:aimPulse 0.5s ease-in-out infinite}
-        .serve-aim-dot{position:absolute;top:50%;left:50%;width:8px;height:8px;background:#ffd700;border-radius:50%;transform:translate(-50%,-50%)}
-        @keyframes aimPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1}50%{transform:translate(-50%,-50%) scale(1.2);opacity:0.7}}
+        .serve-aim{position:absolute;width:30px;height:30px;border:3px solid #ffd700;border-radius:50%;transform:translate(-50%,-50%);z-index:45;display:none;pointer-events:none;box-shadow:0 0 15px rgba(255,215,0,0.5)}
+        .serve-aim.active{display:block;animation:aimPulse 0.8s ease-in-out infinite}
+        .serve-aim-dot{position:absolute;top:50%;left:50%;width:6px;height:6px;background:#ffd700;border-radius:50%;transform:translate(-50%,-50%)}
+        @keyframes aimPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1}50%{transform:translate(-50%,-50%) scale(1.3);opacity:0.8}}
+        /* Serve target line */
+        .serve-target-line{position:absolute;width:2px;background:linear-gradient(to top,rgba(255,215,0,0.6),transparent);z-index:44;display:none;pointer-events:none;transform-origin:bottom center}
+        .serve-target-line.active{display:block}
         .power-bar{position:absolute;bottom:2%;left:20%;right:20%;height:12px;background:rgba(0,0,0,0.5);border:2px solid rgba(255,215,0,0.5);border-radius:6px;overflow:hidden;display:none}
         .power-fill{height:100%;width:0%;background:linear-gradient(90deg,#4caf50,#ffd700,#f44336);transition:width 0.15s}
         .hit-effect{position:absolute;width:120px;height:120px;border:4px solid #ffd700;border-radius:50%;opacity:0;pointer-events:none;transform:translate(-50%,-50%) scale(0.5);z-index:200;display:none}
@@ -358,6 +361,7 @@
             <div class="ball" id="ball"></div>
             <!-- Serve aim indicator -->
             <div class="serve-aim" id="serveAim"><div class="serve-aim-dot"></div></div>
+            <div class="serve-target-line" id="serveTargetLine"></div>
             <div class="swipe-hint" id="swipeHint">SWIPE UP!</div>
             <!-- Serve power meter -->
             <div class="serve-power" id="servePower">
@@ -700,6 +704,8 @@ function startPlayerServe(){
     M.servePhase = 'ready';
     M.servePower = 0;
     M.serveStartY = null;
+    M.serveStartX = null;
+    M.serveAimX = M.serveSide === 'deuce' ? 68 : 32; // Default aim to box center
     
     // Position player at baseline center
     M.playerPos = 50;
@@ -725,13 +731,16 @@ function startPlayerServe(){
     document.getElementById('ballShadow').style.top = '92%';
 }
 
-function chargingServe(clientY){
+function chargingServe(clientY, clientX){
     if(M.servePhase !== 'ready' && M.servePhase !== 'charging') return;
     
     if(M.serveStartY === null){
         M.serveStartY = clientY;
+        M.serveStartX = clientX;
         M.servePhase = 'charging';
         document.getElementById('servePower').classList.add('active');
+        document.getElementById('serveAim').classList.add('active');
+        document.getElementById('serveTargetLine').classList.add('active');
     }
     
     // Calculate power based on pull-down distance
@@ -739,6 +748,38 @@ function chargingServe(clientY){
     M.servePower = Math.min(1, Math.max(0, pullDist / 150));
     
     document.getElementById('servePowerFill').style.width = (M.servePower * 100) + '%';
+    
+    // Update aim indicator position based on horizontal movement
+    const court = document.querySelector('.court');
+    if(court && clientX){
+        const rect = court.getBoundingClientRect();
+        const relX = ((clientX - rect.left) / rect.width) * 100;
+        
+        // Calculate target position in service box
+        const isDeuce = M.serveSide === 'deuce';
+        const boxLeft = isDeuce ? 52 : 15;
+        const boxRight = isDeuce ? 85 : 48;
+        const boxCenter = (boxLeft + boxRight) / 2;
+        
+        // Aim influenced by finger position
+        const aimOffset = (relX - 50) * 0.4;
+        const targetX = Math.max(boxLeft, Math.min(boxRight, boxCenter + aimOffset));
+        
+        M.serveAimX = targetX;
+        
+        // Position aim indicator
+        const aimEl = document.getElementById('serveAim');
+        aimEl.style.left = targetX + '%';
+        aimEl.style.top = '35%';
+        
+        // Position target line from player to aim
+        const lineEl = document.getElementById('serveTargetLine');
+        lineEl.style.left = '50%';
+        lineEl.style.bottom = '10%';
+        lineEl.style.height = '50%';
+        const angle = Math.atan2(targetX - 50, 50) * (180 / Math.PI);
+        lineEl.style.transform = `rotate(${angle}deg)`;
+    }
 }
 
 function releaseServe(endX, endY){
@@ -750,11 +791,11 @@ function releaseServe(endX, endY){
     document.getElementById('servePower').classList.remove('active');
     document.getElementById('swipeHint').classList.remove('active','serve');
     document.getElementById('playerPaddle').classList.remove('serving');
+    document.getElementById('serveAim').classList.remove('active');
+    document.getElementById('serveTargetLine').classList.remove('active');
     
-    // Calculate aim direction from swipe
-    const court = document.querySelector('.court');
-    const rect = court.getBoundingClientRect();
-    const aimX = ((endX - rect.left) / rect.width) * 100;
+    // Use the aim target position we've been tracking
+    const aimX = M.serveAimX || 50;
     
     // Execute serve with power and aim
     executePlayerServe(M.servePower, aimX);
@@ -784,12 +825,13 @@ function executePlayerServe(power, aimX){
         const boxRight = isDeuceCourt ? 88 : 50;
         
         // Calculate serve trajectory
-        // Aim influences where ball goes, but accuracy depends on serve stat
+        // Aim target is where player was aiming (tracked in M.serveAimX)
         const serveAccuracy = st.serve / 100;
-        const aimInfluence = (aimX - 50) * 0.3; // Aim affects direction
-        const randomSpread = (Math.random() - 0.5) * (40 - serveAccuracy * 30);
+        const aimTarget = aimX; // This is the aim position player targeted
+        const randomSpread = (Math.random() - 0.5) * (30 - serveAccuracy * 25);
         
-        let targetX = boxCenterX + aimInfluence + randomSpread;
+        // Higher serve stat = closer to intended target
+        let targetX = aimTarget + randomSpread * (1 - serveAccuracy * 0.5);
         
         // Power affects speed and fault chance
         const baseSpeed = 1.5 + power * 1.5;
@@ -1406,6 +1448,7 @@ function actuallyStartMatch(){
         serveAimX: 50,
         serveAimY: 25,
         serveStartY: null,
+        serveStartX: null,
         lastServeSpeed: 0,
         rally: 0,
         ballActive: false,
@@ -1799,6 +1842,8 @@ function resetBallUI(){
     document.getElementById('swipeHint').classList.remove('active', 'serve');
     document.getElementById('playerPaddle').classList.remove('can-hit', 'serving');
     document.getElementById('servePower').classList.remove('active');
+    document.getElementById('serveAim').classList.remove('active');
+    document.getElementById('serveTargetLine').classList.remove('active');
     clearServiceBoxHighlight();
 }
 
@@ -2106,7 +2151,7 @@ document.addEventListener('touchstart', e => {
     
     // Handle serve charging
     if(M.isPlayerServe && M.servePhase === 'ready'){
-        chargingServe(t.clientY);
+        chargingServe(t.clientY, t.clientX);
         return;
     }
     
@@ -2122,7 +2167,7 @@ document.addEventListener('touchmove', e => {
     
     // Continue charging serve
     if(M.servePhase === 'charging'){
-        chargingServe(t.clientY);
+        chargingServe(t.clientY, t.clientX);
         return;
     }
     
@@ -2168,7 +2213,7 @@ document.addEventListener('mousedown', e => {
     touchT = Date.now();
     
     if(M.isPlayerServe && M.servePhase === 'ready'){
-        chargingServe(e.clientY);
+        chargingServe(e.clientY, e.clientX);
         return;
     }
     
@@ -2180,7 +2225,7 @@ document.addEventListener('mousemove', e => {
     if(!M.active) return;
     
     if(M.servePhase === 'charging'){
-        chargingServe(e.clientY);
+        chargingServe(e.clientY, e.clientX);
         return;
     }
     
