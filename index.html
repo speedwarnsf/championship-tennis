@@ -452,6 +452,11 @@
     </div>
     <div class="progress-toast" id="progressToast"></div>
 <script>
+window.onerror = function(msg, url, line, col, error) {
+    console.error('Game Error:', msg, 'Line:', line);
+    alert('Error: ' + msg + ' (line ' + line + ')');
+    return false;
+};
 const G={coins:500,gems:20,level:1,xp:0,ntrp:2.5,skillPoints:0,stats:{power:10,speed:10,control:10,serve:10},equipment:{racket:null,shoes:null,special:null,serveGear:null},owned:[],difficulty:'rookie',matchType:'quick',trainingCompleted:[]};
 
 // Enhanced shop with serve equipment
