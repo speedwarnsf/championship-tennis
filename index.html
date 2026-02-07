@@ -138,6 +138,26 @@
         .progress-toast{position:fixed;top:-80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ffd700,#ffed4e);padding:12px 25px;border-radius:25px;color:#1a1a2e;font-weight:700;z-index:3000;transition:top 0.4s ease}
         .progress-toast.show{top:40px}
         .shop-screen{background:#000;padding:15px;overflow-y:auto;z-index:1100;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+        .char-select{background:#000;padding:15px;overflow-y:auto;z-index:1100;touch-action:pan-y}
+        .char-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+        .char-title{font-family:'Bebas Neue',sans-serif;font-size:26px;background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .char-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px}
+        .char-card{background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(255,237,78,0.04));border:2px solid rgba(255,215,0,0.2);border-radius:12px;padding:10px;text-align:center;cursor:pointer;transition:all 0.2s}
+        .char-card.selected{border-color:#ffd700;background:rgba(255,215,0,0.15);transform:scale(1.05)}
+        .char-card.locked{opacity:0.5;filter:grayscale(1)}
+        .char-preview{width:60px;height:72px;margin:0 auto 8px;background-size:80px 96px;background-repeat:no-repeat;background-position:0 0;image-rendering:pixelated}
+        .char-name{font-size:11px;color:#fff;font-weight:600;text-transform:uppercase}
+        .char-stats{font-size:9px;color:rgba(255,215,0,0.7);margin-top:4px}
+        .char-lock{font-size:18px;margin-bottom:5px}
+        .char-detail{background:rgba(0,0,0,0.5);border:1px solid rgba(255,215,0,0.3);border-radius:12px;padding:15px;margin-bottom:15px}
+        .char-detail-preview{width:80px;height:96px;margin:0 auto 10px;background-size:640px 96px;background-repeat:no-repeat;image-rendering:pixelated}
+        .char-detail-preview.animating{animation:charPreview 0.8s steps(7) infinite}
+        @keyframes charPreview{0%{background-position:0 0}100%{background-position:-560px 0}}
+        .char-detail-name{font-family:'Bebas Neue',sans-serif;font-size:24px;color:#ffd700;text-align:center}
+        .char-detail-stats{display:flex;justify-content:center;gap:20px;margin-top:10px}
+        .char-stat{text-align:center}
+        .char-stat-label{font-size:9px;color:rgba(255,255,255,0.6);text-transform:uppercase}
+        .char-stat-value{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#fff}
         .shop-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
         .shop-title{font-family:'Bebas Neue',sans-serif;font-size:26px;background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         .back-btn{padding:10px 20px;background:rgba(255,255,255,0.1);border:2px solid rgba(255,215,0,0.3);border-radius:8px;color:#ffd700;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer}
@@ -211,6 +231,7 @@
         </div>
         <div class="menu-buttons">
             <button class="menu-btn primary" onclick="startMatch()">PLAY MATCH</button>
+            <button class="menu-btn" onclick="showCharSelect()">SELECT PLAYER</button>
             <button class="menu-btn" onclick="showShop()">PRO SHOP</button>
             <button class="menu-btn" onclick="showTutorial()">HOW TO PLAY</button>
         </div>
@@ -224,6 +245,20 @@
             <button class="shop-tab" onclick="switchTab('special',this)">Special</button>
         </div>
         <div class="shop-items" id="shopItems"></div>
+    </div>
+    <div class="screen char-select" id="charSelect">
+        <div class="char-header"><h2 class="char-title">SELECT PLAYER</h2><button class="back-btn" onclick="closeCharSelect()">BACK</button></div>
+        <div class="char-detail" id="charDetail">
+            <div class="char-detail-preview animating" id="charDetailPreview"></div>
+            <div class="char-detail-name" id="charDetailName">PLAYER 1</div>
+            <div class="char-detail-stats">
+                <div class="char-stat"><div class="char-stat-label">Power</div><div class="char-stat-value" id="charPower">50</div></div>
+                <div class="char-stat"><div class="char-stat-label">Speed</div><div class="char-stat-value" id="charSpeed">50</div></div>
+                <div class="char-stat"><div class="char-stat-label">Control</div><div class="char-stat-value" id="charControl">50</div></div>
+            </div>
+        </div>
+        <div class="char-grid" id="charGrid"></div>
+        <button class="menu-btn primary" onclick="confirmCharacter()">SELECT</button>
     </div>
     <div class="video-intro" id="videoIntro">
         <div id="videoPlayer"></div>
@@ -314,6 +349,12 @@ function updateUI(){const ntrp=getNTRP();const next=getNextNTRP();G.ntrp=ntrp;do
 function selectDifficulty(d){G.difficulty=d;document.querySelectorAll('.difficulty-btn').forEach(b=>b.classList.remove('selected'));document.querySelector('.diff-'+d).classList.add('selected')}
 function showShop(){document.getElementById('mainMenu').classList.remove('active');document.getElementById('shopScreen').classList.add('active');renderShop('training')}
 function closeShop(){document.getElementById('shopScreen').classList.remove('active');document.getElementById('mainMenu').classList.add('active');updateUI()}
+function showCharSelect(){document.getElementById('mainMenu').classList.remove('active');document.getElementById('charSelect').classList.add('active');renderCharGrid();selectCharacter(selectedChar)}
+function closeCharSelect(){document.getElementById('charSelect').classList.remove('active');document.getElementById('mainMenu').classList.add('active')}
+function renderCharGrid(){const grid=document.getElementById('charGrid');grid.innerHTML=CHARACTERS.map(c=>{const unlocked=c.unlocked||G.unlockedChars?.includes(c.id);const sprites=getCharSprites(c);return`<div class="char-card${selectedChar.id===c.id?' selected':''}${!unlocked?' locked':''}" onclick="${unlocked?`selectCharacter(CHARACTERS.find(x=>x.id==='${c.id}'))`:`tryUnlock('${c.id}')`}"><div class="char-preview" style="background-image:url(${sprites.swing})"></div>${unlocked?`<div class="char-name">${c.name}</div><div class="char-stats">P${c.power} S${c.speed} C${c.control}</div>`:`<div class="char-lock">🔒</div><div class="char-name">${c.cost}💰</div>`}</div>`}).join('')}
+function selectCharacter(char){selectedChar=char;document.querySelectorAll('.char-card').forEach((el,i)=>el.classList.toggle('selected',CHARACTERS[i].id===char.id));const sprites=getCharSprites(char);document.getElementById('charDetailPreview').style.backgroundImage=`url(${sprites.swing})`;document.getElementById('charDetailName').textContent=char.name.toUpperCase();document.getElementById('charPower').textContent=char.power;document.getElementById('charSpeed').textContent=char.speed;document.getElementById('charControl').textContent=char.control}
+function confirmCharacter(){updateSprites();closeCharSelect();toast(`${selectedChar.name} selected!`)}
+function tryUnlock(id){const char=CHARACTERS.find(c=>c.id===id);if(G.coins>=char.cost){G.coins-=char.cost;G.unlockedChars=G.unlockedChars||[];G.unlockedChars.push(id);saveGame();renderCharGrid();selectCharacter(char);toast(`${char.name} unlocked!`)}else{toast('Not enough coins!')}}
 function switchTab(cat,btn){document.querySelectorAll('.shop-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');renderShop(cat)}
 function renderShop(cat){const c=document.getElementById('shopItems');c.innerHTML='';SHOP[cat].forEach(item=>{const owned=G.owned.includes(item.id);const equipped=Object.values(G.equipment).includes(item.id);const canBuy=(item.currency==='gems'?G.gems:G.coins)>=item.price;const isTraining=cat==='training';let statsHTML='';if(item.stats.skillPoints)statsHTML+=`<span class="item-stat">+${item.stats.skillPoints} Skill Pts</span>`;if(item.stats.power)statsHTML+=`<span class="item-stat">+${item.stats.power} PWR</span>`;if(item.stats.speed)statsHTML+=`<span class="item-stat">+${item.stats.speed} SPD</span>`;if(item.stats.control)statsHTML+=`<span class="item-stat">+${item.stats.control} CTL</span>`;if(item.stats.bonus)statsHTML+=`<span class="item-stat">${item.stats.bonus}</span>`;const d=document.createElement('div');d.className='shop-item'+(owned&&!isTraining?' owned':'');d.innerHTML=`<div class="item-info"><div class="item-name">${item.name}</div><div class="item-desc">${item.desc}</div><div class="item-stats">${statsHTML}</div></div><div class="item-purchase">${isTraining?`<div class="price-tag">${item.currency==='gems'?'💎':'💰'}${item.price}</div><button class="buy-btn" ${canBuy?`onclick="buyItem('${cat}','${item.id}')"`:'disabled'}>${item.repeatable?'START':'BUY'}</button>`:!owned?`<div class="price-tag">${item.currency==='gems'?'💎':'💰'}${item.price}</div><button class="buy-btn" ${canBuy?`onclick="buyItem('${cat}','${item.id}')"`:'disabled'}>BUY</button>`:equipped?'<div class="equipped-badge">EQUIPPED</div>':`<button class="equip-btn" onclick="equipItem('${cat}','${item.id}')">EQUIP</button>`}</div>`;c.appendChild(d)})}
 function buyItem(cat,id){const item=SHOP[cat].find(i=>i.id===id);if(!item)return;const curr=item.currency==='gems'?'gems':'coins';if(G[curr]<item.price)return;G[curr]-=item.price;if(cat==='training'){if(item.stats.skillPoints){const oldNTRP=getNTRP();G.skillPoints+=item.stats.skillPoints;const newNTRP=getNTRP();if(newNTRP>oldNTRP){toast(`NTRP UPGRADED to ${newNTRP.toFixed(1)}!`);sounds.point()}}if(item.stats.power)G.stats.power+=item.stats.power;if(item.stats.speed)G.stats.speed+=item.stats.speed;if(item.stats.control)G.stats.control+=item.stats.control;G.trainingCompleted.push(id);toast(item.name+' completed!')}else{G.owned.push(id);const key=cat.slice(0,-1);if(!G.equipment[key])G.equipment[key]=id;toast(item.name+' purchased!')}save();renderShop(cat);updateUI()}
@@ -359,7 +400,34 @@ function updatePlayerDirection(){if(!M.ballActive)return;const playerSprite=docu
 document.getElementById('gemDrop').addEventListener('click',collectGem);
 document.getElementById('gemDrop').addEventListener('touchstart',e=>{e.stopPropagation();collectGem()});
 window.addEventListener('load',()=>{document.body.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});initSprites()});
-const V='?v=4';const SPRITES={playerSwing:'player-retro-backswing.png'+V,playerRun:'player-retro-run.png'+V,playerIdle:'player-idle-v2.png'+V,oppSwing:'opponent-retro-frontswing.png'+V,oppRun:'opponent-retro-run.png'+V,oppIdle:'opponent-idle-v2.png'+V,victory:'victory-poses-sheet.png'+V};
+const V='?v=5';
+const CHARACTERS=[
+{id:'player1',name:'Alex',power:50,speed:50,control:50,unlocked:true},
+{id:'player2',name:'Maria',power:45,speed:55,control:50,unlocked:true},
+{id:'player3',name:'Jake',power:55,speed:45,control:50,unlocked:true},
+{id:'player4',name:'Emma',power:45,speed:60,control:45,unlocked:true},
+{id:'player5',name:'Marcus',power:65,speed:40,control:45,unlocked:false,cost:500},
+{id:'player6',name:'Sofia',power:40,speed:55,control:55,unlocked:false,cost:500},
+{id:'player7',name:'Tyler',power:45,speed:45,control:60,unlocked:false,cost:750},
+{id:'player8',name:'Zara',power:50,speed:55,control:45,unlocked:false,cost:750},
+{id:'player9',name:'Bruno',power:60,speed:35,control:55,unlocked:false,cost:1000},
+{id:'player10',name:'Mia',power:45,speed:50,control:55,unlocked:false,cost:1000},
+{id:'player11',name:'Chris',power:50,speed:60,control:40,unlocked:false,cost:1250},
+{id:'player12',name:'Yuki',power:40,speed:55,control:55,unlocked:false,cost:1250},
+{id:'punk',name:'Spike',power:70,speed:50,control:30,unlocked:false,cost:2000,special:true},
+{id:'chubby',name:'Big Tony',power:75,speed:30,control:45,unlocked:false,cost:2000,special:true},
+{id:'beach',name:'Sandy',power:40,speed:65,control:45,unlocked:false,cost:2000,special:true},
+{id:'goth',name:'Raven',power:55,speed:45,control:50,unlocked:false,cost:2500,special:true},
+{id:'grandpa',name:'Gramps',power:35,speed:35,control:80,unlocked:false,cost:2500,special:true},
+{id:'indian',name:'Priya',power:50,speed:50,control:50,unlocked:false,cost:2500,special:true},
+{id:'anime',name:'Kenji',power:55,speed:65,control:30,unlocked:false,cost:3000,special:true},
+{id:'latino',name:'Rico',power:60,speed:55,control:35,unlocked:false,cost:3000,special:true},
+{id:'redhead',name:'Fiona',power:50,speed:55,control:45,unlocked:false,cost:3000,special:true}
+];
+let selectedChar=CHARACTERS[0];
+function getCharSprites(char){const base=char.id==='player1'?'':'sprites-v2/characters/'+char.id+'-';return char.id==='player1'?{swing:'player-retro-backswing.png'+V,run:'player-retro-run.png'+V,idle:'player-idle-v2.png'+V,oppSwing:'opponent-retro-frontswing.png'+V,oppRun:'opponent-retro-run.png'+V,oppIdle:'opponent-idle-v2.png'+V}:{swing:base+'back-swing.png'+V,run:base+'back-run.png'+V,idle:base+'back-swing.png'+V,oppSwing:base+'front-swing.png'+V,oppRun:base+'front-run.png'+V,oppIdle:base+'front-swing.png'+V}}
+const SPRITES=getCharSprites(selectedChar);
+function updateSprites(){const s=getCharSprites(selectedChar);Object.assign(SPRITES,s)}
 function initSprites(){const opp=document.getElementById('opponentSprite'),player=document.getElementById('playerSprite');opp.style.backgroundImage=`url(${SPRITES.oppIdle})`;opp.style.backgroundSize='80px 96px';player.style.backgroundImage=`url(${SPRITES.playerIdle})`;player.style.backgroundSize='80px 96px';[SPRITES.playerRun,SPRITES.playerSwing,SPRITES.oppRun,SPRITES.oppSwing,SPRITES.victory].forEach(s=>new Image().src=s);}
 function setPlayerRunning(running){const sprite=document.getElementById('playerSprite');if(running){sprite.style.backgroundImage=`url(${SPRITES.playerRun})`;sprite.style.backgroundSize='640px 96px';sprite.classList.add('cycling')}else{sprite.classList.remove('cycling');sprite.style.backgroundImage=`url(${SPRITES.playerIdle})`;sprite.style.backgroundSize='80px 96px';sprite.style.backgroundPosition='0 0'}}
 function showVictory(){const sprite=document.getElementById('playerSprite');sprite.style.backgroundImage=`url(${SPRITES.victory})`;sprite.style.backgroundSize='320px 96px';sprite.classList.add('cycling')}

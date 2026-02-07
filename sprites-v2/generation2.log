@@ -1,0 +1,318 @@
+============================================================
+Championship Tennis Sprite Generator
+Characters: 20, Animations: 4
+Total sprite sheets to generate: 80
+============================================================
+
+[player2] - female tennis player, curly dark hair, white tenni...
+
+  [1/80] player2-back-swing
+    → Already exists, skipping
+
+  [2/80] player2-back-run
+    → Already exists, skipping
+
+  [3/80] player2-front-swing
+    → Already exists, skipping
+
+  [4/80] player2-front-run
+    → Already exists, skipping
+
+[player3] - male tennis player, wearing red headband, medium b...
+
+  [5/80] player3-back-swing
+    → Already exists, skipping
+
+  [6/80] player3-back-run
+    → Already exists, skipping
+
+  [7/80] player3-front-swing
+    → Already exists, skipping
+
+  [8/80] player3-front-run
+    → Already exists, skipping
+
+[player4] - female tennis player, blonde ponytail, athletic bu...
+
+  [9/80] player4-back-swing
+    → Already exists, skipping
+
+  [10/80] player4-back-run
+    → Already exists, skipping
+
+  [11/80] player4-front-swing
+    → Already exists, skipping
+
+  [12/80] player4-front-run
+    → Already exists, skipping
+
+[player5] - male tennis player, bald head, muscular build, blu...
+
+  [13/80] player5-back-swing
+    → Already exists, skipping
+
+  [14/80] player5-back-run
+    → Already exists, skipping
+
+  [15/80] player5-front-swing
+    → Already exists, skipping
+
+  [16/80] player5-front-run
+    → Already exists, skipping
+
+[player6] - female tennis player, short sporty haircut, white ...
+
+  [17/80] player6-back-swing
+    → Already exists, skipping
+
+  [18/80] player6-back-run
+    → Already exists, skipping
+
+  [19/80] player6-front-swing
+    → Already exists, skipping
+
+  [20/80] player6-front-run
+    → Already exists, skipping
+
+[player7] - male tennis player, wearing glasses, slim build, g...
+
+  [21/80] player7-back-swing
+    → Already exists, skipping
+
+  [22/80] player7-back-run
+    → Already exists, skipping
+
+  [23/80] player7-front-swing
+    → Already exists, skipping
+
+  [24/80] player7-front-run
+    → Already exists, skipping
+
+[player8] - female tennis player, long braids, tall build, yel...
+
+  [25/80] player8-back-swing
+    → Already exists, skipping
+
+  [26/80] player8-back-run
+    → Already exists, skipping
+
+  [27/80] player8-front-swing
+    → Already exists, skipping
+
+  [28/80] player8-front-run
+    → Already exists, skipping
+
+[player9] - male tennis player, full beard, stocky muscular bu...
+
+  [29/80] player9-back-swing
+    → Already exists, skipping
+
+  [30/80] player9-back-run
+    → Already exists, skipping
+
+  [31/80] player9-front-swing
+    → Already exists, skipping
+
+  [32/80] player9-front-run
+    → Already exists, skipping
+
+[player10] - female tennis player, wearing white visor, tanned ...
+
+  [33/80] player10-back-swing
+    → Already exists, skipping
+
+  [34/80] player10-back-run
+    → Already exists, skipping
+
+  [35/80] player10-front-swing
+    → Already exists, skipping
+
+  [36/80] player10-front-run
+    → Already exists, skipping
+
+[player11] - male tennis player, blonde hair, young teenage loo...
+
+  [37/80] player11-back-swing
+    → Already exists, skipping
+
+  [38/80] player11-back-run
+    → Already exists, skipping
+
+  [39/80] player11-front-swing
+    → Already exists, skipping
+
+  [40/80] player11-front-run
+    → Already exists, skipping
+
+[player12] - female tennis player, Asian features, petite build...
+
+  [41/80] player12-back-swing
+    → Already exists, skipping
+
+  [42/80] player12-back-run
+    → Already exists, skipping
+
+  [43/80] player12-front-swing
+    → Already exists, skipping
+
+  [44/80] player12-front-run
+    → Already exists, skipping
+
+[punk] - punk rock tennis player, bright green mohawk, tatt...
+
+  [45/80] punk-back-swing
+    → Already exists, skipping
+
+  [46/80] punk-back-run
+    → Already exists, skipping
+
+  [47/80] punk-front-swing
+    → Already exists, skipping
+
+  [48/80] punk-front-run
+    → Already exists, skipping
+
+[chubby] - heavyset jolly male tennis player, round belly, ch...
+
+  [49/80] chubby-back-swing
+    → Already exists, skipping
+
+  [50/80] chubby-back-run
+    → Already exists, skipping
+
+  [51/80] chubby-front-swing
+    → Already exists, skipping
+
+  [52/80] chubby-front-run
+    → Already exists, skipping
+
+[beach] - beach volleyball style female player, bikini top, ...
+
+  [53/80] beach-back-swing
+    → Already exists, skipping
+
+  [54/80] beach-back-run
+    → Already exists, skipping
+
+  [55/80] beach-front-swing
+    → Already exists, skipping
+
+  [56/80] beach-front-run
+    → Already exists, skipping
+
+[goth] - goth female tennis player, all black outfit, pale ...
+
+  [57/80] goth-back-swing
+    → Already exists, skipping
+
+  [58/80] goth-back-run
+    → Already exists, skipping
+
+  [59/80] goth-front-swing
+    → Already exists, skipping
+
+  [60/80] goth-front-run
+    → Already exists, skipping
+
+[grandpa] - elderly distinguished male tennis player, gray hai...
+
+  [61/80] grandpa-back-swing
+    → Already exists, skipping
+
+  [62/80] grandpa-back-run
+    → Already exists, skipping
+
+  [63/80] grandpa-front-swing
+    → Already exists, skipping
+
+  [64/80] grandpa-front-run
+    → Already exists, skipping
+
+[indian] - Indian woman tennis player, colorful traditional-i...
+
+  [65/80] indian-back-swing
+    → Already exists, skipping
+
+  [66/80] indian-back-run
+    → Already exists, skipping
+
+  [67/80] indian-front-swing
+    → Already exists, skipping
+
+  [68/80] indian-front-run
+    → Already exists, skipping
+
+[anime] - anime protagonist style tennis player, dramatic sp...
+
+  [69/80] anime-back-swing
+  Generating: anime-back-swing-raw.png
+    ✓ Generated successfully
+    ✓ Processed to sprite sheet
+
+  [70/80] anime-back-run
+  Generating: anime-back-run-raw.png
+    ✓ Generated successfully
+    ✓ Processed to sprite sheet
+
+  [71/80] anime-front-swing
+  Generating: anime-front-swing-raw.png
+    ✓ Generated successfully
+    ✓ Processed to sprite sheet
+
+  [72/80] anime-front-run
+  Generating: anime-front-run-raw.png
+    ✓ Generated successfully
+    ✓ Processed to sprite sheet
+
+[latino] - Latino male tennis player, gold chain necklace, fl...
+
+  [73/80] latino-back-swing
+  Generating: latino-back-swing-raw.png
+    ✓ Generated successfully
+    ✓ Processed to sprite sheet
+
+  [74/80] latino-back-run
+  Generating: latino-back-run-raw.png
+    ✓ Generated successfully
+    ✓ Processed to sprite sheet
+
+  [75/80] latino-front-swing
+  Generating: latino-front-swing-raw.png
+    ✓ Generated successfully
+    ✓ Processed to sprite sheet
+
+  [76/80] latino-front-run
+  Generating: latino-front-run-raw.png
+    ✓ Generated successfully
+    ✓ Processed to sprite sheet
+
+[redhead] - fiery redhead female tennis player, bright orange-...
+
+  [77/80] redhead-back-swing
+  Generating: redhead-back-swing-raw.png
+    ✓ Generated successfully
+    ✓ Processed to sprite sheet
+
+  [78/80] redhead-back-run
+  Generating: redhead-back-run-raw.png
+    ✓ Generated successfully
+    ✓ Processed to sprite sheet
+
+  [79/80] redhead-front-swing
+  Generating: redhead-front-swing-raw.png
+    ✓ Generated successfully
+    ✓ Processed to sprite sheet
+
+  [80/80] redhead-front-run
+  Generating: redhead-front-run-raw.png
+    ✓ Generated successfully
+    ✓ Processed to sprite sheet
+
+============================================================
+GENERATION COMPLETE
+============================================================
+Time elapsed: 5.1 minutes
+Successful: 80/80
+Failed: 0/80
+
+Report saved to: /Users/macster/championship-tennis/sprites-v2/characters/generation_report.txt
