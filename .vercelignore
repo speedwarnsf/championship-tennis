@@ -1,4 +1,15 @@
+# Exclude raw/source files
 sprites-v2/raw/
+sprites-v2/*.png
 *.log
 generate_all_sprites.py
 process_sprite.py
+Gemini_Generated_Image_7b9ifz7b9ifz7b9i.png
+hero_player_female.png
+tennis_sprites.png
+test_sprites.png
+player1_test_spritesheet.png
+player-athletic-backswing.png
+index-v1.html
+index_backup.html
+victory-poses-sheet.png
