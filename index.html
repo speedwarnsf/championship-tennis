@@ -1318,7 +1318,7 @@ function closeShop(){
 }
 
 // Character system - must be before showCharSelect
-const V = '?v=8';
+const V = '?v=9';
 
 window.CHARACTERS = [
     {id:'player1', name:'Alex', power:50, speed:50, control:50, unlocked:true},
@@ -1347,12 +1347,12 @@ window.CHARACTERS = [
 var selectedChar = window.CHARACTERS[0];
 
 function getCharSprites(char){
-    const useDefault = ['player1','player2','player3','player4'].includes(char.id);
+    const useDefault = char.id === 'player1';
     if(useDefault){
         return {
-            swing: 'player-retro-backswing.png' + V,
-            run: 'player-retro-run.png' + V,
-            idle: 'player-idle-v2.png' + V,
+            playerSwing: 'player-retro-backswing.png' + V,
+            playerRun: 'player-retro-run.png' + V,
+            playerIdle: 'player-idle-v2.png' + V,
             oppSwing: 'opponent-retro-frontswing.png' + V,
             oppRun: 'opponent-retro-run.png' + V,
             oppIdle: 'opponent-idle-v2.png' + V
@@ -1360,9 +1360,9 @@ function getCharSprites(char){
     }
     const base = 'sprites-v2/characters/' + char.id + '-';
     return {
-        swing: base + 'back-swing.png' + V,
-        run: base + 'back-run.png' + V,
-        idle: base + 'back-swing.png' + V,
+        playerSwing: base + 'back-swing.png' + V,
+        playerRun: base + 'back-run.png' + V,
+        playerIdle: base + 'back-swing.png' + V,
         oppSwing: base + 'front-swing.png' + V,
         oppRun: base + 'front-run.png' + V,
         oppIdle: base + 'front-swing.png' + V
@@ -1405,14 +1405,11 @@ function renderCharGrid(){
         return; 
     }
     var html = '';
-    var V = '?v=11';
+    var V = '?v=12';
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (G.unlockedChars && G.unlockedChars.indexOf(c.id) >= 0);
-        var spriteUrl = 'player-retro-backswing.png' + V;
-        if(c.id !== 'player1' && c.id !== 'player2' && c.id !== 'player3' && c.id !== 'player4'){
-            spriteUrl = 'sprites-v2/characters/' + c.id + '-back-swing.png' + V;
-        }
+        var spriteUrl = c.id === 'player1' ? 'player-retro-backswing.png' + V : 'sprites-v2/characters/' + c.id + '-back-swing.png' + V;
         var isSelected = selectedChar && selectedChar.id === c.id;
         html += '<div class="char-card' + (isSelected ? ' selected' : '') + (unlocked ? '' : ' locked') + '" ';
         html += 'onclick="' + (unlocked ? 'selectCharacter(window.CHARACTERS[' + i + '])' : 'tryUnlock(\'' + c.id + '\')') + '">';
