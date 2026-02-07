@@ -332,7 +332,7 @@
                 <div class="char-stat"><div class="char-stat-label">Control</div><div class="char-stat-value" id="charControl">50</div></div>
             </div>
         </div>
-        <div class="char-grid" id="charGrid"><div style="color:white;padding:20px;background:orange;">Loading characters... (v13)</div></div>
+        <div class="char-grid" id="charGrid"><div style="color:white;padding:20px;background:orange;">Loading characters... (v14) - if you see this, showCharSelect never ran</div></div>
         <button class="menu-btn primary char-select-btn" onclick="confirmCharacter()">SELECT</button>
     </div>
     <div class="video-intro" id="videoIntro">
@@ -1377,16 +1377,19 @@ function updateSprites(){
 }
 
 function showCharSelect(){
-    console.log('showCharSelect called');
+    console.log('showCharSelect called v14');
     document.getElementById('mainMenu').classList.remove('active');
     document.getElementById('charSelect').classList.add('active');
+    // Immediate test - this should always show if function runs
+    var testGrid = document.getElementById('charGrid');
+    if(testGrid) testGrid.innerHTML = '<div style="background:blue;color:white;padding:10px">showCharSelect ran (v14)</div>';
     try {
         console.log('calling renderCharGrid...');
         renderCharGrid();
-        console.log('renderCharGrid completed');
+        console.log('renderCharGrid completed successfully');
     } catch(e) {
         console.error('renderCharGrid error:', e);
-        document.getElementById('charGrid').innerHTML = '<div style="color:red;padding:20px">renderCharGrid error: ' + e.message + '</div>';
+        document.getElementById('charGrid').innerHTML = '<div style="color:white;background:red;padding:20px">renderCharGrid error: ' + e.message + '</div>';
     }
     try {
         if(selectedChar) selectCharacter(selectedChar);
@@ -1415,7 +1418,7 @@ function renderCharGrid(){
     var V = '?v=13';
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
-        var unlocked = c.unlocked || (G.unlockedChars && G.unlockedChars.indexOf(c.id) >= 0);
+        var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
         var useDefault = ['player1','player2','player3','player4'].indexOf(c.id) >= 0;
         var spriteUrl = useDefault ? 'player-retro-backswing.png' + V : 'sprites-v2/characters/' + c.id + '-back-swing.png' + V;
         var isSelected = selectedChar && selectedChar.id === c.id;
@@ -1431,8 +1434,9 @@ function renderCharGrid(){
         }
         html += '</div>';
     }
+    console.log('About to set innerHTML, html length:', html.length);
     grid.innerHTML = html;
-    console.log('renderCharGrid: added ' + chars.length + ' cards');
+    console.log('renderCharGrid complete: added ' + chars.length + ' cards, grid now has:', grid.innerHTML.substring(0,100));
 }
 
 function selectCharacter(char){
