@@ -96,14 +96,14 @@
         @keyframes paddleReady{0%,100%{transform:translateX(-50%) scale(1.05)}50%{transform:translateX(-50%) scale(1)}}
         .player-sprite{position:relative;width:80px;height:96px;overflow:hidden;image-rendering:pixelated;transform:scale(1);transition:transform 0.2s ease}
         .player-sprite.flipped{transform:scaleX(-1)}
-        .player-sprite.near{transform:scale(1.13)}
-        .player-sprite.near.flipped{transform:scale(1.13) scaleX(-1)}
+        .player-paddle .player-sprite.near{transform:scale(1.13)!important}
+        .player-paddle .player-sprite.near.flipped{transform:scale(-1.13,1.13)!important}
         .sprite-inner{width:80px;height:96px;background-size:640px 96px;background-repeat:no-repeat;background-position:0 0}
         .sprite-inner.playing-8{animation:playSprite8 0.5s steps(7) 1}
         .sprite-inner.playing-7{animation:playSprite7 0.5s steps(6) 1}
         .sprite-inner.playing-5{animation:playSprite5 0.5s steps(4) 1}
         .sprite-inner.playing-4{animation:playSprite4 0.4s steps(3) 1}
-        .sprite-inner.cycling{animation:playSprite8 0.5s steps(7) infinite}
+        .sprite-inner.cycling{animation:playSprite8 0.8s steps(7) infinite}
         @keyframes playSprite8{0%{background-position:0 0}100%{background-position:-560px 0}}
         @keyframes playSprite7{0%{background-position:0 0}100%{background-position:-360px 0}}
         @keyframes playSprite5{0%{background-position:0% var(--sprite-y)}100%{background-position:100% var(--sprite-y)}}
