@@ -58,6 +58,7 @@
         .video-intro{position:fixed;inset:0;background:#000;display:none;z-index:5000;justify-content:center;align-items:center;opacity:1;transition:opacity 0.5s ease}
         .video-intro.active{display:flex}
         .video-intro.fade-out{opacity:0}
+        .skip-btn{position:absolute;bottom:30px;right:20px;padding:12px 24px;background:rgba(255,215,0,0.9);border:none;border-radius:8px;color:#1a1a2e;font-weight:700;font-size:14px;cursor:pointer;z-index:5001}
         #videoPlayer{width:100vw;height:100vh;object-fit:cover}
         .game-hud{position:fixed;top:0;left:0;right:0;padding:10px 15px;display:none;z-index:100;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent)}
         .game-hud.active{display:block}
@@ -336,6 +337,7 @@
     </div>
     <div class="video-intro" id="videoIntro">
         <div id="videoPlayer"></div>
+        <button class="skip-btn" onclick="transitionToCourt()">SKIP ▶</button>
     </div>
     <div class="game-hud" id="gameHUD">
         <div class="match-info">
@@ -1519,6 +1521,8 @@ function onPlayerStateChange(event){
 }
 
 function transitionToCourt(){
+    if(videoTimeout) { clearTimeout(videoTimeout); videoTimeout = null; }
+    if(ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
     const videoIntro = document.getElementById('videoIntro');
     videoIntro.classList.add('fade-out');
     setTimeout(() => {
@@ -1622,11 +1626,20 @@ function startNextPoint(){
     }
 }
 
+let videoTimeout = null;
 function startMatch(){
     document.getElementById('mainMenu').classList.remove('active');
     document.getElementById('charSelect').classList.remove('active');
     document.getElementById('shopScreen').classList.remove('active');
     document.getElementById('videoIntro').classList.add('active');
+    
+    // Auto-skip after 8 seconds if video fails
+    if(videoTimeout) clearTimeout(videoTimeout);
+    videoTimeout = setTimeout(() => {
+        if(document.getElementById('videoIntro').classList.contains('active')) {
+            transitionToCourt();
+        }
+    }, 8000);
     
     if(ytPlayer && ytPlayer.playVideo){
         ytPlayer.seekTo(0);
