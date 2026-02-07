@@ -452,11 +452,6 @@
     </div>
     <div class="progress-toast" id="progressToast"></div>
 <script>
-window.onerror = function(msg, url, line, col, error) {
-    console.error('Game Error:', msg, 'Line:', line);
-    alert('Error: ' + msg + ' (line ' + line + ')');
-    return false;
-};
 const G={coins:500,gems:20,level:1,xp:0,ntrp:2.5,skillPoints:0,stats:{power:10,speed:10,control:10,serve:10},equipment:{racket:null,shoes:null,special:null,serveGear:null},owned:[],difficulty:'rookie',matchType:'quick',trainingCompleted:[]};
 
 // Enhanced shop with serve equipment
@@ -1382,18 +1377,10 @@ function updateSprites(){
 }
 
 function showCharSelect(){
-    try {
-        document.getElementById('mainMenu').classList.remove('active');
-        document.getElementById('charSelect').classList.add('active');
-        console.log('About to call renderCharGrid, CHARACTERS exists:', !!CHARACTERS, 'length:', CHARACTERS?.length);
-        renderCharGrid();
-        console.log('renderCharGrid completed, calling selectCharacter');
-        selectCharacter(selectedChar);
-        console.log('showCharSelect completed successfully');
-    } catch(e) {
-        alert('showCharSelect error: ' + e.message + ' at ' + e.stack);
-        console.error('showCharSelect error:', e);
-    }
+    document.getElementById('mainMenu').classList.remove('active');
+    document.getElementById('charSelect').classList.add('active');
+    renderCharGrid();
+    if(selectedChar) selectCharacter(selectedChar);
 }
 
 function closeCharSelect(){
@@ -1402,27 +1389,27 @@ function closeCharSelect(){
 }
 
 function renderCharGrid(){
-    console.log('renderCharGrid called, CHARACTERS:', CHARACTERS?.length);
     const grid = document.getElementById('charGrid');
-    if(!grid) { alert('charGrid not found!'); return; }
-    if(!CHARACTERS || !CHARACTERS.length) { alert('CHARACTERS empty!'); return; }
-    console.log('Building grid with', CHARACTERS.length, 'characters');
-    try {
-        grid.innerHTML = CHARACTERS.map(c => {
-            const unlocked = c.unlocked || G.unlockedChars?.includes(c.id);
-            const sprites = getCharSprites(c);
-            return `<div class="char-card${selectedChar.id===c.id?' selected':''}${!unlocked?' locked':''}" 
-                onclick="${unlocked ? `selectCharacter(CHARACTERS.find(x=>x.id==='${c.id}'))` : `tryUnlock('${c.id}')`}">
-                <div class="char-preview" style="background-image:url(${sprites.swing})"></div>
-                ${unlocked ? `<div class="char-name">${c.name}</div><div class="char-stats">P${c.power} S${c.speed} C${c.control}</div>` 
-                          : `<div class="char-lock">🔒</div><div class="char-name">${c.cost}💰</div>`}
-            </div>`;
-        }).join('');
-        console.log('Grid HTML set, length:', grid.innerHTML.length);
-    } catch(e) {
-        alert('renderCharGrid error: ' + e.message);
-        console.error(e);
+    if(!grid) return;
+    let html = '';
+    for(let i = 0; i < CHARACTERS.length; i++){
+        const c = CHARACTERS[i];
+        const unlocked = c.unlocked || (G.unlockedChars && G.unlockedChars.indexOf(c.id) >= 0);
+        const sprites = getCharSprites(c);
+        const isSelected = selectedChar && selectedChar.id === c.id;
+        html += '<div class="char-card' + (isSelected ? ' selected' : '') + (unlocked ? '' : ' locked') + '" ';
+        html += 'onclick="' + (unlocked ? "selectCharacter(CHARACTERS[" + i + "])" : "tryUnlock('" + c.id + "')") + '">';
+        html += '<div class="char-preview" style="background-image:url(' + sprites.swing + ')"></div>';
+        if(unlocked){
+            html += '<div class="char-name">' + c.name + '</div>';
+            html += '<div class="char-stats">P' + c.power + ' S' + c.speed + ' C' + c.control + '</div>';
+        } else {
+            html += '<div class="char-lock">🔒</div>';
+            html += '<div class="char-name">' + c.cost + '💰</div>';
+        }
+        html += '</div>';
     }
+    grid.innerHTML = html;
 }
 
 function selectCharacter(char){
