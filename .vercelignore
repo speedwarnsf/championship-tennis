@@ -1,0 +1,4 @@
+sprites-v2/raw/
+*.log
+generate_all_sprites.py
+process_sprite.py
