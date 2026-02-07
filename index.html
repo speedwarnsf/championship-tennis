@@ -23,7 +23,7 @@
         .loading-subtitle{color:rgba(255,255,255,0.5);font-size:13px;letter-spacing:5px;text-transform:uppercase;margin-bottom:50px}
         .play-button{padding:18px 70px;background:#fff;border:none;border-radius:35px;color:#1a1a2e;font-size:15px;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.3);transition:transform 0.2s,box-shadow 0.2s}
         .play-button:hover{transform:scale(1.05);box-shadow:0 15px 40px rgba(0,0,0,0.4)}
-        .main-menu{background:#000;justify-content:space-between;padding:15px;overflow-y:auto}
+        .main-menu{background:#000;justify-content:space-between;padding:15px;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch}
         .game-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,12vw,72px);background:linear-gradient(135deg,#9b59b6,#bb86fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;letter-spacing:6px;text-shadow:0 0 30px rgba(187,134,252,0.3)}
         .tagline{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,215,0,0.6);text-align:center}
         .player-card{background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(255,237,78,0.05));border:2px solid rgba(255,215,0,0.2);border-radius:15px;padding:15px;margin:10px 0}
@@ -137,14 +137,14 @@
         .continue-btn{padding:18px 50px;background:linear-gradient(135deg,#ffd700,#ffed4e);border:none;border-radius:25px;color:#1a1a2e;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
         .progress-toast{position:fixed;top:-80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ffd700,#ffed4e);padding:12px 25px;border-radius:25px;color:#1a1a2e;font-weight:700;z-index:3000;transition:top 0.4s ease}
         .progress-toast.show{top:40px}
-        .shop-screen{background:#000;padding:15px;overflow-y:auto;z-index:1100}
+        .shop-screen{background:#000;padding:15px;overflow-y:auto;z-index:1100;touch-action:pan-y;-webkit-overflow-scrolling:touch}
         .shop-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
         .shop-title{font-family:'Bebas Neue',sans-serif;font-size:26px;background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         .back-btn{padding:10px 20px;background:rgba(255,255,255,0.1);border:2px solid rgba(255,215,0,0.3);border-radius:8px;color:#ffd700;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer}
         .shop-tabs{display:flex;gap:6px;margin-bottom:15px;background:rgba(0,0,0,0.3);padding:4px;border-radius:10px}
         .shop-tab{flex:1;padding:10px;background:transparent;border:none;border-radius:6px;color:rgba(255,255,255,0.6);font-size:10px;font-weight:700;text-transform:uppercase;cursor:pointer}
         .shop-tab.active{background:linear-gradient(135deg,#ffd700,#ffed4e);color:#1a1a2e}
-        .shop-items{display:grid;gap:10px;padding-bottom:20px;overflow-y:auto;max-height:calc(100vh - 180px)}
+        .shop-items{display:grid;gap:10px;padding-bottom:20px;overflow-y:auto;max-height:calc(100vh - 180px);touch-action:pan-y;-webkit-overflow-scrolling:touch}
         .shop-item{background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(255,237,78,0.04));border:1px solid rgba(255,215,0,0.2);border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center}
         .shop-item.owned{border-color:#4caf50}
         .item-info{flex:1;max-width:55%}
