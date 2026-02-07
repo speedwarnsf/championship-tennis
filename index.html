@@ -305,7 +305,7 @@
         </div>
         <div class="menu-buttons">
             <button class="menu-btn primary" onclick="startMatch()">PLAY MATCH</button>
-            <button class="menu-btn" onclick="showCharSelect()">SELECT PLAYER</button>
+            <button class="menu-btn" onclick="try{showCharSelect()}catch(e){alert('showCharSelect error: '+e.message)}">SELECT PLAYER</button>
             <button class="menu-btn" onclick="showShop()">PRO SHOP</button>
             <button class="menu-btn" onclick="showTutorial()">HOW TO PLAY</button>
         </div>
@@ -333,7 +333,14 @@
             </div>
         </div>
         <div class="char-grid" id="charGrid"><div id="charGridTest" style="color:white;padding:20px;background:orange;">JS LOADING... (v15)</div></div>
-<script>document.getElementById('charGridTest').style.background='purple';document.getElementById('charGridTest').textContent='JS WORKS (v15) - waiting for showCharSelect';</script>
+<script>
+document.getElementById('charGridTest').style.background='purple';
+document.getElementById('charGridTest').textContent='JS init (v16)';
+window.addEventListener('load',function(){
+    var t=document.getElementById('charGridTest');
+    if(t)t.textContent='v16 ready. showCharSelect='+(typeof window.showCharSelect);
+});
+</script>
         <button class="menu-btn primary char-select-btn" onclick="confirmCharacter()">SELECT</button>
     </div>
     <div class="video-intro" id="videoIntro">
