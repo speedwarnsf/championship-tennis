@@ -292,6 +292,14 @@
                 <button class="difficulty-btn diff-legend" onclick="selectDifficulty('legend')">Legend<span class="difficulty-reward">3x Rewards</span></button>
             </div>
         </div>
+        <div class="difficulty-section">
+            <div class="difficulty-title">Match Length</div>
+            <div class="difficulty-buttons">
+                <button class="difficulty-btn selected" onclick="selectMatchType('quick')" id="matchQuick">Quick<span class="difficulty-reward">First to 3</span></button>
+                <button class="difficulty-btn" onclick="selectMatchType('standard')" id="matchStandard">Standard<span class="difficulty-reward">First to 6</span></button>
+                <button class="difficulty-btn" onclick="selectMatchType('timed')" id="matchTimed">Timed<span class="difficulty-reward">Best of Time</span></button>
+            </div>
+        </div>
         <div class="menu-buttons">
             <button class="menu-btn primary" onclick="startMatch()">PLAY MATCH</button>
             <button class="menu-btn" onclick="showCharSelect()">SELECT PLAYER</button>
@@ -410,8 +418,13 @@
             <div class="reward-item"><span class="reward-label">Coins</span><span class="reward-value" id="coinsEarned">+50</span></div>
             <div class="reward-item"><span class="reward-label">Skill Points</span><span class="reward-value" id="skillGained">+100</span></div>
             <div class="reward-item"><span class="reward-label">Gems</span><span class="reward-value" id="gemsEarned">+0</span></div>
+        </div>
+        <div class="rewards-container" style="margin-top:-10px">
+            <div class="rewards-title">Match Statistics</div>
             <div class="reward-item"><span class="reward-label">Aces</span><span class="reward-value" id="acesCount">0</span></div>
             <div class="reward-item"><span class="reward-label">Winners</span><span class="reward-value" id="winnersCount">0</span></div>
+            <div class="reward-item"><span class="reward-label">Longest Rally</span><span class="reward-value" id="longestRally">0</span></div>
+            <div class="reward-item"><span class="reward-label">Avg Rally</span><span class="reward-value" id="avgRally">0</span></div>
         </div>
         <button class="continue-btn" onclick="returnToMenu()">CONTINUE</button>
     </div>
@@ -435,7 +448,7 @@
     </div>
     <div class="progress-toast" id="progressToast"></div>
 <script>
-const G={coins:500,gems:20,level:1,xp:0,ntrp:2.5,skillPoints:0,stats:{power:10,speed:10,control:10,serve:10},equipment:{racket:null,shoes:null,special:null,serveGear:null},owned:[],difficulty:'rookie',trainingCompleted:[]};
+const G={coins:500,gems:20,level:1,xp:0,ntrp:2.5,skillPoints:0,stats:{power:10,speed:10,control:10,serve:10},equipment:{racket:null,shoes:null,special:null,serveGear:null},owned:[],difficulty:'rookie',matchType:'quick',trainingCompleted:[]};
 
 // Enhanced shop with serve equipment
 const SHOP={
@@ -537,6 +550,9 @@ let M={
     aces:0,
     doubleFaults:0,
     winners:0,
+    longestRally:0,
+    totalRallies:0,
+    pointsPlayed:0,
     // Settings
     settings:null
 };
@@ -1273,8 +1289,16 @@ function updateUI(){
 
 function selectDifficulty(d){
     G.difficulty = d;
-    document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.diff-rookie,.diff-pro,.diff-legend').forEach(b => b.classList.remove('selected'));
     document.querySelector('.diff-' + d).classList.add('selected');
+}
+
+function selectMatchType(type){
+    G.matchType = type;
+    document.getElementById('matchQuick').classList.remove('selected');
+    document.getElementById('matchStandard').classList.remove('selected');
+    document.getElementById('matchTimed').classList.remove('selected');
+    document.getElementById('match' + type.charAt(0).toUpperCase() + type.slice(1)).classList.add('selected');
 }
 
 function showShop(){
@@ -1504,6 +1528,11 @@ function transitionToCourt(){
 function actuallyStartMatch(){
     const s = DIFF[G.difficulty];
     
+    // Adjust time based on match type
+    let matchTime = s.time;
+    if(G.matchType === 'quick') matchTime = 90;  // Shorter for quick match
+    else if(G.matchType === 'timed') matchTime = 180; // 3 minutes for timed
+    
     // Randomly decide who serves first
     const playerServesFirst = Math.random() < 0.5;
     
@@ -1512,7 +1541,7 @@ function actuallyStartMatch(){
         pPoints: 0, oPoints: 0,
         pGames: 0, oGames: 0,
         pSets: 0, oSets: 0,
-        time: s.time,
+        time: matchTime,
         isTiebreak: false,
         tiebreakServer: 'player',
         servingPlayer: playerServesFirst ? 'player' : 'opp',
@@ -1545,6 +1574,9 @@ function actuallyStartMatch(){
         aces: 0,
         doubleFaults: 0,
         winners: 0,
+        longestRally: 0,
+        totalRallies: 0,
+        pointsPlayed: 0,
         pendingAce: false,
         settings: s
     };
@@ -1677,6 +1709,11 @@ function updateMatchUI(){
 }
 
 function scorePoint(player){
+    // Track statistics
+    M.pointsPlayed++;
+    M.totalRallies += M.rally;
+    if(M.rally > M.longestRally) M.longestRally = M.rally;
+    
     if(player === 'p'){
         M.pPoints++;
     } else {
@@ -2146,13 +2183,33 @@ function animateReturn(){
 function checkEnd(){
     const gameDiff = Math.abs(M.pGames - M.oGames);
     
-    // Win by having 6+ games with 2 game lead
-    if((M.pGames >= 6 || M.oGames >= 6) && gameDiff >= 2){
-        endMatch();
-        return true;
+    // Different win conditions based on match type
+    const winGames = G.matchType === 'quick' ? 3 : 6;
+    
+    if(G.matchType === 'timed'){
+        // Timed mode: play until time runs out
+        if(M.time <= 0){
+            endMatch();
+            return true;
+        }
+    } else {
+        // Quick or Standard: win by games
+        if((M.pGames >= winGames || M.oGames >= winGames) && gameDiff >= 2){
+            endMatch();
+            return true;
+        }
+        // Tiebreak at winGames-winGames
+        if(M.pGames === winGames && M.oGames === winGames && !M.isTiebreak){
+            M.isTiebreak = true;
+            M.tiebreakServer = M.servingPlayer;
+            M.pPoints = 0;
+            M.oPoints = 0;
+            toast('TIEBREAK!');
+            sounds.point();
+        }
     }
     
-    // Time's up
+    // Time's up (for all modes as backup)
     if(M.time <= 0){
         endMatch();
         return true;
@@ -2211,6 +2268,9 @@ function endMatch(){
     document.getElementById('gemsEarned').textContent = '+' + gems;
     document.getElementById('acesCount').textContent = M.aces;
     document.getElementById('winnersCount').textContent = M.winners;
+    document.getElementById('longestRally').textContent = M.longestRally;
+    document.getElementById('avgRally').textContent = M.pointsPlayed > 0 ? 
+        (M.totalRallies / M.pointsPlayed).toFixed(1) : '0';
     
     document.getElementById('matchResults').classList.add('active');
     
