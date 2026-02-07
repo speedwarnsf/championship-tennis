@@ -168,6 +168,17 @@
         .swipe-hint.active{opacity:1;animation:hintPulse 0.8s ease-in-out infinite}
         .swipe-hint.serve{background:rgba(255,215,0,0.8);color:#1a1a2e}
         @keyframes hintPulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.1)}}
+        /* Court change overlay */
+        .court-change{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;justify-content:center;align-items:center;z-index:500;flex-direction:column;gap:15px}
+        .court-change.active{display:flex;animation:fadeInChange 0.5s ease}
+        @keyframes fadeInChange{from{opacity:0}to{opacity:1}}
+        .court-change-text{font-family:'Bebas Neue',sans-serif;font-size:48px;color:#ffd700;text-align:center}
+        .court-change-sub{font-size:14px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:3px}
+        /* Out/Fault callout */
+        .call-overlay{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);font-family:'Bebas Neue',sans-serif;font-size:64px;color:#f44336;text-shadow:0 4px 20px rgba(0,0,0,0.8);opacity:0;pointer-events:none;z-index:200}
+        .call-overlay.active{animation:callPop 0.8s ease-out forwards}
+        .call-overlay.in{color:#4caf50}
+        @keyframes callPop{0%{opacity:0;transform:translate(-50%,-50%) scale(0.5)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
         .match-results{background:#000;justify-content:center;align-items:center;padding:20px;z-index:2000}
         .results-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,15vw,64px);margin-bottom:10px}
         .victory{background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -372,7 +383,13 @@
             <div class="power-bar"><div class="power-fill" id="powerFill"></div></div>
             <div class="hit-effect" id="hitEffect"></div>
             <div class="gem-drop" id="gemDrop">💎<div class="gem-timer" id="gemTimer"></div><div class="gem-multiplier" id="gemMultiplier">x1</div></div>
+            <div class="call-overlay" id="callOverlay">OUT</div>
         </div>
+    </div>
+    <!-- Court change overlay -->
+    <div class="court-change" id="courtChange">
+        <div class="court-change-text" id="courtChangeText">CHANGEOVER</div>
+        <div class="court-change-sub" id="courtChangeSub">Switching sides</div>
     </div>
     <!-- Streak display -->
     <div class="streak-display" id="streakDisplay">
@@ -667,6 +684,35 @@ function showNetCordEffect(){
     setTimeout(() => netCord.classList.remove('active'), 400);
 }
 
+function showCallOverlay(text, isGood){
+    const overlay = document.getElementById('callOverlay');
+    overlay.textContent = text;
+    overlay.classList.remove('active', 'in');
+    void overlay.offsetWidth;
+    if(isGood) overlay.classList.add('in');
+    overlay.classList.add('active');
+    setTimeout(() => overlay.classList.remove('active', 'in'), 800);
+}
+
+function showCourtChange(message, sub){
+    return new Promise(resolve => {
+        const overlay = document.getElementById('courtChange');
+        document.getElementById('courtChangeText').textContent = message;
+        document.getElementById('courtChangeSub').textContent = sub || '';
+        overlay.classList.add('active');
+        setTimeout(() => {
+            overlay.classList.remove('active');
+            resolve();
+        }, 2000);
+    });
+}
+
+function shouldChangeover(){
+    // In tennis, players change sides after every odd game (1, 3, 5, etc.)
+    const totalGames = M.pGames + M.oGames;
+    return totalGames > 0 && totalGames % 2 === 1;
+}
+
 function updateServeIndicator(){
     const ind = document.getElementById('serveIndicator');
     if(M.serveNum === 1){
@@ -949,10 +995,10 @@ function animateServeBall(result){
             resetBallUI();
             M.aces++;
             sounds.ace();
-            toast('ACE! 🎾');
+            showCallOverlay('ACE!', true);
             M.streak++;
             updateStreakDisplay();
-            if(!scorePoint('p')) setTimeout(startNextPoint, 1500);
+            if(!scorePoint('p')) setTimeout(startNextPoint, 2000);
             return;
         }
         
@@ -991,16 +1037,16 @@ function handleServeFault(type){
     if(M.serveNum === 1){
         // First serve fault - get second serve
         M.serveNum = 2;
-        toast(type === 'net' ? 'FAULT! Net' : 'FAULT! Out');
-        setTimeout(startPlayerServe, 1200);
+        showCallOverlay('FAULT', false);
+        setTimeout(startPlayerServe, 1500);
     } else {
         // Double fault - lose point
         M.serveNum = 1;
         M.doubleFaults++;
-        toast('DOUBLE FAULT!');
+        showCallOverlay('DOUBLE FAULT', false);
         M.streak = 0;
         updateStreakDisplay();
-        if(!scorePoint('o')) setTimeout(startNextPoint, 1500);
+        if(!scorePoint('o')) setTimeout(startNextPoint, 2000);
     }
 }
 
@@ -1672,6 +1718,16 @@ function scorePoint(player){
         if(checkSetWin()){
             return true;
         }
+        
+        // Changeover after odd games
+        if(shouldChangeover()){
+            setTimeout(async () => {
+                await showCourtChange('CHANGEOVER', `${M.pGames}-${M.oGames}`);
+                startNextPoint();
+            }, 500);
+            updateMatchUI();
+            return true; // Prevent normal startNextPoint
+        }
     }
     
     updateMatchUI();
@@ -1811,12 +1867,12 @@ function ballOut(reason){
     M.combo = 0;
     M.rally = 0;
     sounds.miss();
-    toast('OUT!');
+    showCallOverlay('OUT!', false);
     
     M.streak = 0;
     updateStreakDisplay();
     
-    if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
+    if(!scorePoint('o')) setTimeout(startNextPoint, 1500);
 }
 
 function ballMissed(){
@@ -2039,14 +2095,14 @@ function animateReturn(){
             
             sounds.coin();
             
-            // Show "Winner!" for clean winners
-            if(Math.random() < 0.3){
-                toast('WINNER! +' + reward + ' 💰');
-            } else {
-                toast('+' + reward + ' coins!');
+            // Show winner call for clean winners
+            if(M.combo >= 2 || Math.random() < 0.25){
+                showCallOverlay('WINNER!', true);
             }
             
-            if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
+            toast('+' + reward + ' 💰');
+            
+            if(!scorePoint('p')) setTimeout(startNextPoint, 1500);
         }
         return;
     }
