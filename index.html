@@ -305,7 +305,7 @@
         </div>
         <div class="menu-buttons">
             <button class="menu-btn primary" onclick="startMatch()">PLAY MATCH</button>
-            <button class="menu-btn" onclick="try{showCharSelect()}catch(e){alert('showCharSelect error: '+e.message)}">SELECT PLAYER</button>
+            <button class="menu-btn" onclick="showCharSelect()">SELECT PLAYER</button>
             <button class="menu-btn" onclick="showShop()">PRO SHOP</button>
             <button class="menu-btn" onclick="showTutorial()">HOW TO PLAY</button>
         </div>
@@ -325,22 +325,14 @@
         <div class="char-header"><h2 class="char-title">SELECT PLAYER</h2><button class="back-btn" onclick="closeCharSelect()">BACK</button></div>
         <div class="char-detail" id="charDetail">
             <div class="char-detail-preview animating" id="charDetailPreview"></div>
-            <div class="char-detail-name" id="charDetailName">PLAYER 1</div>
+            <div class="char-detail-name" id="charDetailName">ROGER FEDORA</div>
             <div class="char-detail-stats">
                 <div class="char-stat"><div class="char-stat-label">Power</div><div class="char-stat-value" id="charPower">50</div></div>
                 <div class="char-stat"><div class="char-stat-label">Speed</div><div class="char-stat-value" id="charSpeed">50</div></div>
                 <div class="char-stat"><div class="char-stat-label">Control</div><div class="char-stat-value" id="charControl">50</div></div>
             </div>
         </div>
-        <div class="char-grid" id="charGrid"><div id="charGridTest" style="color:white;padding:20px;background:orange;">JS LOADING... (v15)</div></div>
-<script>
-document.getElementById('charGridTest').style.background='purple';
-document.getElementById('charGridTest').textContent='JS init (v16)';
-window.addEventListener('load',function(){
-    var t=document.getElementById('charGridTest');
-    if(t)t.textContent='v16 ready. showCharSelect='+(typeof window.showCharSelect);
-});
-</script>
+        <div class="char-grid" id="charGrid"></div>
         <button class="menu-btn primary char-select-btn" onclick="confirmCharacter()">SELECT</button>
     </div>
     <div class="video-intro" id="videoIntro">
@@ -1329,27 +1321,27 @@ function closeShop(){
 const V = '?v=9';
 
 window.CHARACTERS = [
-    {id:'player1', name:'Alex', power:50, speed:50, control:50, unlocked:true},
-    {id:'player2', name:'Maria', power:45, speed:55, control:50, unlocked:true},
-    {id:'player3', name:'Jake', power:55, speed:45, control:50, unlocked:true},
-    {id:'player4', name:'Emma', power:45, speed:60, control:45, unlocked:true},
-    {id:'player5', name:'Marcus', power:65, speed:40, control:45, unlocked:false, cost:500},
-    {id:'player6', name:'Sofia', power:40, speed:55, control:55, unlocked:false, cost:500},
-    {id:'player7', name:'Tyler', power:45, speed:45, control:60, unlocked:false, cost:750},
-    {id:'player8', name:'Zara', power:50, speed:55, control:45, unlocked:false, cost:750},
-    {id:'player9', name:'Bruno', power:60, speed:35, control:55, unlocked:false, cost:1000},
-    {id:'player10', name:'Mia', power:45, speed:50, control:55, unlocked:false, cost:1000},
-    {id:'player11', name:'Chris', power:50, speed:60, control:40, unlocked:false, cost:1250},
-    {id:'player12', name:'Yuki', power:40, speed:55, control:55, unlocked:false, cost:1250},
-    {id:'punk', name:'Spike', power:70, speed:50, control:30, unlocked:false, cost:2000, special:true},
-    {id:'chubby', name:'Big Tony', power:75, speed:30, control:45, unlocked:false, cost:2000, special:true},
-    {id:'beach', name:'Sandy', power:40, speed:65, control:45, unlocked:false, cost:2000, special:true},
-    {id:'goth', name:'Raven', power:55, speed:45, control:50, unlocked:false, cost:2500, special:true},
-    {id:'grandpa', name:'Gramps', power:35, speed:35, control:80, unlocked:false, cost:2500, special:true},
-    {id:'indian', name:'Priya', power:50, speed:50, control:50, unlocked:false, cost:2500, special:true},
-    {id:'anime', name:'Kenji', power:55, speed:65, control:30, unlocked:false, cost:3000, special:true},
-    {id:'latino', name:'Rico', power:60, speed:55, control:35, unlocked:false, cost:3000, special:true},
-    {id:'redhead', name:'Fiona', power:50, speed:55, control:45, unlocked:false, cost:3000, special:true}
+    {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
+    {id:'player2', name:'Serena Will-yams', power:45, speed:55, control:50, unlocked:true},
+    {id:'player3', name:'Pete Shampoo', power:55, speed:45, control:50, unlocked:true},
+    {id:'player4', name:'Steffi Gaffe', power:45, speed:60, control:45, unlocked:true},
+    {id:'player5', name:'Rafa Noddle', power:65, speed:40, control:45, unlocked:false, cost:500},
+    {id:'player6', name:'Martina N.T.O.', power:40, speed:55, control:55, unlocked:false, cost:500},
+    {id:'player7', name:'Bjorn Bored', power:45, speed:45, control:60, unlocked:false, cost:750},
+    {id:'player8', name:'Venus Will-yams', power:50, speed:55, control:45, unlocked:false, cost:750},
+    {id:'player9', name:'Boris Bonkers', power:60, speed:35, control:55, unlocked:false, cost:1000},
+    {id:'player10', name:'Chris Ev-hurt', power:45, speed:50, control:55, unlocked:false, cost:1000},
+    {id:'player11', name:'Andre A-gassy', power:50, speed:60, control:40, unlocked:false, cost:1250},
+    {id:'player12', name:'Naomi Oh-saka', power:40, speed:55, control:55, unlocked:false, cost:1250},
+    {id:'punk', name:'John Mac-n-Throw', power:70, speed:50, control:30, unlocked:false, cost:2000, special:true},
+    {id:'chubby', name:'Jimmy Con-ers', power:75, speed:30, control:45, unlocked:false, cost:2000, special:true},
+    {id:'beach', name:'Maria Shara-Pova', power:40, speed:65, control:45, unlocked:false, cost:2000, special:true},
+    {id:'goth', name:'Monica Slay-less', power:55, speed:45, control:50, unlocked:false, cost:2500, special:true},
+    {id:'grandpa', name:'Rod Layer', power:35, speed:35, control:80, unlocked:false, cost:2500, special:true},
+    {id:'indian', name:'Sania Mirr-za', power:50, speed:50, control:50, unlocked:false, cost:2500, special:true},
+    {id:'anime', name:'Nick Curious', power:55, speed:65, control:30, unlocked:false, cost:3000, special:true},
+    {id:'latino', name:'Carlos All-Crazz', power:60, speed:55, control:35, unlocked:false, cost:3000, special:true},
+    {id:'redhead', name:'Billie Jean Queen', power:50, speed:55, control:45, unlocked:false, cost:3000, special:true}
 ];
 
 var selectedChar = window.CHARACTERS[0];
@@ -1385,25 +1377,10 @@ function updateSprites(){
 }
 
 function showCharSelect(){
-    console.log('showCharSelect called v14');
     document.getElementById('mainMenu').classList.remove('active');
     document.getElementById('charSelect').classList.add('active');
-    // Immediate test - this should always show if function runs
-    var testGrid = document.getElementById('charGrid');
-    if(testGrid) testGrid.innerHTML = '<div style="background:blue;color:white;padding:10px">showCharSelect ran (v14)</div>';
-    try {
-        console.log('calling renderCharGrid...');
-        renderCharGrid();
-        console.log('renderCharGrid completed successfully');
-    } catch(e) {
-        console.error('renderCharGrid error:', e);
-        document.getElementById('charGrid').innerHTML = '<div style="color:white;background:red;padding:20px">renderCharGrid error: ' + e.message + '</div>';
-    }
-    try {
-        if(selectedChar) selectCharacter(selectedChar);
-    } catch(e) {
-        console.error('selectCharacter error:', e);
-    }
+    renderCharGrid();
+    if(selectedChar) selectCharacter(selectedChar);
 }
 
 function closeCharSelect(){
@@ -1412,18 +1389,12 @@ function closeCharSelect(){
 }
 
 function renderCharGrid(){
-    console.log('renderCharGrid starting');
     var grid = document.getElementById('charGrid');
-    if(!grid) { console.error('charGrid not found'); alert('charGrid not found'); return; }
-    console.log('charGrid found:', grid);
+    if(!grid) return;
     var chars = window.CHARACTERS;
-    console.log('CHARACTERS:', chars ? chars.length + ' items' : 'undefined');
-    if(!chars || !chars.length) { 
-        grid.innerHTML = '<div style="color:orange;padding:20px">CHARACTERS not found: ' + (typeof window.CHARACTERS) + '</div>';
-        return; 
-    }
+    if(!chars || !chars.length) return;
     var html = '';
-    var V = '?v=13';
+    var V = '?v=17';
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
@@ -1442,9 +1413,7 @@ function renderCharGrid(){
         }
         html += '</div>';
     }
-    console.log('About to set innerHTML, html length:', html.length);
     grid.innerHTML = html;
-    console.log('renderCharGrid complete: added ' + chars.length + ' cards, grid now has:', grid.innerHTML.substring(0,100));
 }
 
 function selectCharacter(char){
