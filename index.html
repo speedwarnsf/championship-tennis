@@ -1347,7 +1347,7 @@ window.CHARACTERS = [
 var selectedChar = window.CHARACTERS[0];
 
 function getCharSprites(char){
-    const useDefault = char.id === 'player1';
+    const useDefault = ['player1','player2','player3','player4'].includes(char.id);
     if(useDefault){
         return {
             playerSwing: 'player-retro-backswing.png' + V,
@@ -1409,7 +1409,8 @@ function renderCharGrid(){
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (G.unlockedChars && G.unlockedChars.indexOf(c.id) >= 0);
-        var spriteUrl = c.id === 'player1' ? 'player-retro-backswing.png' + V : 'sprites-v2/characters/' + c.id + '-back-swing.png' + V;
+        var useDefault = ['player1','player2','player3','player4'].indexOf(c.id) >= 0;
+        var spriteUrl = useDefault ? 'player-retro-backswing.png' + V : 'sprites-v2/characters/' + c.id + '-back-swing.png' + V;
         var isSelected = selectedChar && selectedChar.id === c.id;
         html += '<div class="char-card' + (isSelected ? ' selected' : '') + (unlocked ? '' : ' locked') + '" ';
         html += 'onclick="' + (unlocked ? 'selectCharacter(window.CHARACTERS[' + i + '])' : 'tryUnlock(\'' + c.id + '\')') + '">';
@@ -1432,7 +1433,7 @@ function selectCharacter(char){
     document.querySelectorAll('.char-card').forEach((el,i) => 
         el.classList.toggle('selected', window.CHARACTERS[i].id === char.id));
     const sprites = getCharSprites(char);
-    document.getElementById('charDetailPreview').style.backgroundImage = `url(${sprites.swing})`;
+    document.getElementById('charDetailPreview').style.backgroundImage = `url(${sprites.playerSwing})`;
     document.getElementById('charDetailName').textContent = char.name.toUpperCase();
     document.getElementById('charPower').textContent = char.power;
     document.getElementById('charSpeed').textContent = char.speed;
