@@ -76,6 +76,8 @@
         .tiebreak-indicator{font-size:8px;color:#ff9800;text-transform:uppercase;margin-top:2px}
         .game-court{position:fixed;inset:0;display:none;background:url('court.jpg') center/cover no-repeat;background-color:#000}
         .game-court.active{display:block}
+        .game-court.shake{animation:screenShake 0.15s ease-in-out}
+        @keyframes screenShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}50%{transform:translateX(3px)}75%{transform:translateX(-2px)}}
         .court{position:absolute;top:12%;left:8%;right:8%;bottom:12%;background:transparent;border:none;overflow:hidden}
         .court-lines{position:absolute;inset:0;display:none}
         .line{position:absolute;background:#fff;opacity:0.95}
@@ -1992,7 +1994,7 @@ function hitBall(power, angle){
     const acc = Math.max(0, 1 - dist/50);
     const qual = power * acc * (1 + st.control/100);
     
-    showHitEffect();
+    showHitEffect(power);
     
     // Player swing animation
     document.getElementById('playerSprite').style.backgroundImage = `url(${SPRITES.playerSwing})`;
@@ -2011,13 +2013,22 @@ function hitBall(power, angle){
     returnBall(qual, angle);
 }
 
-function showHitEffect(){
+function showHitEffect(power){
     const e = document.getElementById('hitEffect');
     const b = document.getElementById('ball');
     e.style.left = b.style.left;
     e.style.top = b.style.top;
     e.classList.add('active');
     setTimeout(() => e.classList.remove('active'), 600);
+    
+    // Screen shake on powerful hits
+    if(power > 0.7){
+        const court = document.getElementById('gameCourt');
+        court.classList.remove('shake');
+        void court.offsetWidth;
+        court.classList.add('shake');
+        setTimeout(() => court.classList.remove('shake'), 150);
+    }
 }
 
 function showCombo(){
@@ -2580,4 +2591,5 @@ function setOppSwinging(){
 }
 </script>
 </body>
-</html
+</html>
+<!-- v7 Refinement: Serving, Tennis Rules, Gems, Polish - Sat Feb 7 2026 -->
