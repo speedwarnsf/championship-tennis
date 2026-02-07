@@ -1320,7 +1320,7 @@ function closeShop(){
 // Character system - must be before showCharSelect
 const V = '?v=8';
 
-const CHARACTERS = [
+window.CHARACTERS = [
     {id:'player1', name:'Alex', power:50, speed:50, control:50, unlocked:true},
     {id:'player2', name:'Maria', power:45, speed:55, control:50, unlocked:true},
     {id:'player3', name:'Jake', power:55, speed:45, control:50, unlocked:true},
@@ -1344,7 +1344,7 @@ const CHARACTERS = [
     {id:'redhead', name:'Fiona', power:50, speed:55, control:45, unlocked:false, cost:3000, special:true}
 ];
 
-let selectedChar = CHARACTERS[0];
+var selectedChar = window.CHARACTERS[0];
 
 function getCharSprites(char){
     const useDefault = ['player1','player2','player3','player4'].includes(char.id);
@@ -1399,18 +1399,15 @@ function closeCharSelect(){
 function renderCharGrid(){
     var grid = document.getElementById('charGrid');
     if(!grid) { alert('charGrid not found'); return; }
-    if(typeof CHARACTERS === 'undefined' || !CHARACTERS) { 
-        grid.innerHTML = '<div style="color:orange;padding:20px">CHARACTERS is undefined</div>';
+    var chars = window.CHARACTERS;
+    if(!chars || !chars.length) { 
+        grid.innerHTML = '<div style="color:orange;padding:20px">CHARACTERS not found: ' + (typeof window.CHARACTERS) + '</div>';
         return; 
     }
-    if(!CHARACTERS.length) {
-        grid.innerHTML = '<div style="color:orange;padding:20px">CHARACTERS is empty</div>';
-        return;
-    }
     var html = '';
-    var V = '?v=10';
-    for(var i = 0; i < CHARACTERS.length; i++){
-        var c = CHARACTERS[i];
+    var V = '?v=11';
+    for(var i = 0; i < chars.length; i++){
+        var c = chars[i];
         var unlocked = c.unlocked || (G.unlockedChars && G.unlockedChars.indexOf(c.id) >= 0);
         var spriteUrl = 'player-retro-backswing.png' + V;
         if(c.id !== 'player1' && c.id !== 'player2' && c.id !== 'player3' && c.id !== 'player4'){
@@ -1418,7 +1415,7 @@ function renderCharGrid(){
         }
         var isSelected = selectedChar && selectedChar.id === c.id;
         html += '<div class="char-card' + (isSelected ? ' selected' : '') + (unlocked ? '' : ' locked') + '" ';
-        html += 'onclick="' + (unlocked ? 'selectCharacter(CHARACTERS[' + i + '])' : 'tryUnlock(\'' + c.id + '\')') + '">';
+        html += 'onclick="' + (unlocked ? 'selectCharacter(window.CHARACTERS[' + i + '])' : 'tryUnlock(\'' + c.id + '\')') + '">';
         html += '<div class="char-preview" style="background-image:url(' + spriteUrl + ')"></div>';
         if(unlocked){
             html += '<div class="char-name">' + c.name + '</div>';
@@ -1430,13 +1427,13 @@ function renderCharGrid(){
         html += '</div>';
     }
     grid.innerHTML = html;
-    console.log('renderCharGrid: added ' + CHARACTERS.length + ' cards');
+    console.log('renderCharGrid: added ' + chars.length + ' cards');
 }
 
 function selectCharacter(char){
     selectedChar = char;
     document.querySelectorAll('.char-card').forEach((el,i) => 
-        el.classList.toggle('selected', CHARACTERS[i].id === char.id));
+        el.classList.toggle('selected', window.CHARACTERS[i].id === char.id));
     const sprites = getCharSprites(char);
     document.getElementById('charDetailPreview').style.backgroundImage = `url(${sprites.swing})`;
     document.getElementById('charDetailName').textContent = char.name.toUpperCase();
@@ -1452,7 +1449,7 @@ function confirmCharacter(){
 }
 
 function tryUnlock(id){
-    const char = CHARACTERS.find(c => c.id === id);
+    var char = window.CHARACTERS.find(function(c) { return c.id === id; });
     if(G.coins >= char.cost){
         G.coins -= char.cost;
         G.unlockedChars = G.unlockedChars || [];
