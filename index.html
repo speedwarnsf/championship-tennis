@@ -138,8 +138,9 @@
         .progress-toast{position:fixed;top:-80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ffd700,#ffed4e);padding:12px 25px;border-radius:25px;color:#1a1a2e;font-weight:700;z-index:3000;transition:top 0.4s ease}
         .progress-toast.show{top:40px}
         .shop-screen{background:#000;padding:15px;overflow-y:auto;z-index:1100;touch-action:pan-y;-webkit-overflow-scrolling:touch}
-        .char-select{background:#000;padding:15px;overflow-y:auto;z-index:1100;touch-action:pan-y;-webkit-overflow-scrolling:touch}
-        .char-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px;touch-action:pan-y}
+        .char-select{background:#000;padding:15px 15px 80px;overflow:hidden;z-index:1100;display:flex;flex-direction:column}
+        .char-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;flex:1;padding-bottom:10px}
+        .char-select-btn{position:fixed;bottom:15px;left:15px;right:15px;z-index:1101}
         .char-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
         .char-title{font-family:'Bebas Neue',sans-serif;font-size:26px;background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         .char-card{background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(255,237,78,0.04));border:2px solid rgba(255,215,0,0.2);border-radius:12px;padding:10px;text-align:center;cursor:pointer;transition:all 0.2s}
@@ -258,7 +259,7 @@
             </div>
         </div>
         <div class="char-grid" id="charGrid"></div>
-        <button class="menu-btn primary" onclick="confirmCharacter()">SELECT</button>
+        <button class="menu-btn primary char-select-btn" onclick="confirmCharacter()">SELECT</button>
     </div>
     <div class="video-intro" id="videoIntro">
         <div id="videoPlayer"></div>
