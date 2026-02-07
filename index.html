@@ -1379,8 +1379,16 @@ function updateSprites(){
 function showCharSelect(){
     document.getElementById('mainMenu').classList.remove('active');
     document.getElementById('charSelect').classList.add('active');
-    renderCharGrid();
-    if(selectedChar) selectCharacter(selectedChar);
+    try {
+        renderCharGrid();
+    } catch(e) {
+        document.getElementById('charGrid').innerHTML = '<div style="color:red;padding:20px">renderCharGrid error: ' + e.message + '</div>';
+    }
+    try {
+        if(selectedChar) selectCharacter(selectedChar);
+    } catch(e) {
+        console.error('selectCharacter error:', e);
+    }
 }
 
 function closeCharSelect(){
@@ -1390,10 +1398,17 @@ function closeCharSelect(){
 
 function renderCharGrid(){
     var grid = document.getElementById('charGrid');
-    if(!grid) { console.log('charGrid not found'); return; }
-    if(!CHARACTERS) { console.log('CHARACTERS not found'); return; }
+    if(!grid) { alert('charGrid not found'); return; }
+    if(typeof CHARACTERS === 'undefined' || !CHARACTERS) { 
+        grid.innerHTML = '<div style="color:orange;padding:20px">CHARACTERS is undefined</div>';
+        return; 
+    }
+    if(!CHARACTERS.length) {
+        grid.innerHTML = '<div style="color:orange;padding:20px">CHARACTERS is empty</div>';
+        return;
+    }
     var html = '';
-    var V = '?v=9';
+    var V = '?v=10';
     for(var i = 0; i < CHARACTERS.length; i++){
         var c = CHARACTERS[i];
         var unlocked = c.unlocked || (G.unlockedChars && G.unlockedChars.indexOf(c.id) >= 0);
