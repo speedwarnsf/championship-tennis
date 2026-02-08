@@ -118,7 +118,7 @@
         .ball-trail{position:absolute;width:10px;height:10px;background:rgba(252,248,54,0.4);border-radius:50%;transform:translate(-50%,-50%);z-index:38;pointer-events:none;opacity:0;transition:opacity 0.1s}
         .ball-trail.active{opacity:1;animation:trailFade 0.3s ease-out forwards}
         @keyframes trailFade{0%{opacity:0.8;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(0.3)}}
-        
+
         /* Swipe trail visualization */
         .swipe-trail{position:absolute;pointer-events:none;z-index:45;opacity:0}
         .swipe-trail.active{opacity:1;animation:swipeTrailFade 0.5s ease-out forwards}
@@ -215,7 +215,7 @@
         .reward-label{font-size:13px;color:rgba(255,255,255,0.8);text-transform:uppercase}
         .reward-value{font-family:'Bebas Neue',sans-serif;font-size:28px;background:linear-gradient(135deg,#4caf50,#8bc34a);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         .continue-btn{padding:18px 50px;background:linear-gradient(135deg,#ffd700,#ffed4e);border:none;border-radius:25px;color:#1a1a2e;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
-        
+
         /* Daily Challenge System */
         .challenge-banner{background:linear-gradient(135deg,#9b59b6,#8e44ad);border:2px solid rgba(155,89,182,0.5);border-radius:12px;margin:10px 0;padding:12px;color:#fff}
         .challenge-title{font-family:'Bebas Neue',sans-serif;font-size:18px;color:#e8d5ff;margin-bottom:5px}
@@ -286,7 +286,30 @@
         .tutorial-title{font-family:'Bebas Neue',sans-serif;font-size:32px;background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:15px}
         .tutorial-text{color:rgba(255,255,255,0.8);font-size:13px;line-height:1.5;margin-bottom:20px}
         .tutorial-btn{padding:14px 35px;background:linear-gradient(135deg,#4caf50,#8bc34a);border:none;border-radius:20px;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer}
-    </style>
+
+/* Performance optimizations */
+.performance-mode .particle-effect,
+.performance-mode .ball-trail {
+    display: none !important;
+}
+
+.performance-mode .court-animation,
+.performance-mode .screen-shake {
+    animation: none !important;
+    transform: none !important;
+}
+
+.low-performance .complex-gradient {
+    background: #1a1a2e !important;
+}
+
+.low-performance .text-shadow,
+.low-performance .box-shadow {
+    text-shadow: none !important;
+    box-shadow: none !important;
+}
+
+</style>
     <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
@@ -296,7 +319,7 @@
                 <img src="hero_player.jpg" alt="Tennis Player" class="hero-player">
                 <img src="hero_player.jpg" alt="Tennis Ball" class="hero-ball">
             </div>
-            <div class="loading-content">
+            <div class="loading-content" id="loadingContent">
                 <div class="loading-logo">CENTRE COURT</div>
                 <div class="loading-subtitle">Championship Edition</div>
                 <button class="play-button" onclick="startGame()">PLAY NOW</button>
@@ -349,7 +372,7 @@
                 <div class="challenge-reward" id="challengeReward">+100💰 +2💎</div>
             </div>
         </div>
-        
+
         <div class="menu-buttons">
             <button class="menu-btn primary" onclick="startMatch()">PLAY MATCH</button>
             <button class="menu-btn" onclick="showCharSelect()">SELECT PLAYER</button>
@@ -506,6 +529,305 @@
     </div>
     <div class="progress-toast" id="progressToast"></div>
 <script>
+
+// Enhanced loading state management
+const LoadingManager = {
+    states: {
+        INITIALIZING: 'initializing',
+        LOADING_SPRITES: 'loading-sprites',
+        LOADING_AUDIO: 'loading-audio',
+        READY: 'ready',
+        ERROR: 'error'
+    },
+    currentState: 'initializing',
+
+    setState(newState) {
+        this.currentState = newState;
+        this.updateUI();
+    },
+
+    updateUI() {
+        const loader = safeGetElement('loadingContent');
+        if (!loader) return;
+
+        const messages = {
+            'initializing': 'Preparing court...',
+            'loading-sprites': 'Loading players...',
+            'loading-audio': 'Tuning audio...',
+            'ready': 'Ready to serve!',
+            'error': 'Game error - please refresh'
+        };
+
+        const subtitle = loader.querySelector('.loading-subtitle');
+        if (subtitle) {
+            subtitle.textContent = messages[this.currentState] || 'Loading...';
+        }
+    }
+};
+
+
+
+// Progressive audio enhancement
+const AudioManager = {
+    supported: false,
+    context: null,
+
+    init() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.context = new AudioContext();
+            this.supported = true;
+            console.log('✅ Audio context initialized');
+        } catch (error) {
+            console.warn('⚠️ Audio not supported or blocked:', error);
+            this.supported = false;
+        }
+    },
+
+    playEnhanced(frequency, duration, volume) {
+        if (!this.supported || !this.context) {
+            return; // Graceful fallback to silence
+        }
+
+        try {
+            playTone(frequency, duration, volume);
+        } catch (error) {
+            console.warn('Audio playback failed:', error);
+        }
+    }
+};
+
+// Error recovery system
+const ErrorRecovery = {
+    retryCount: 0,
+    maxRetries: 3,
+
+    handleCriticalError(error, context) {
+        console.error(`❌ Critical error in ${context}:`, error);
+
+        if (this.retryCount < this.maxRetries) {
+            this.retryCount++;
+            console.log(`🔄 Attempting recovery (${this.retryCount}/${this.maxRetries})...`);
+
+            setTimeout(() => {
+                try {
+                    this.resetGameState();
+                    this.retryInitialization();
+                } catch (recoveryError) {
+                    console.error('❌ Recovery failed:', recoveryError);
+                    this.showErrorScreen();
+                }
+            }, 1000);
+        } else {
+            this.showErrorScreen();
+        }
+    },
+
+    resetGameState() {
+        for (let i = 1; i < 99999; i++) {
+            clearTimeout(i);
+            clearInterval(i);
+        }
+
+        if (window.domCache) {
+            domCache.clear();
+        }
+    },
+
+    retryInitialization() {
+        if (typeof initSprites === 'function') {
+            initSprites();
+        }
+    },
+
+    showErrorScreen() {
+        const body = document.body;
+        body.innerHTML = `
+            <div style="
+                position: fixed; inset: 0;
+                background: linear-gradient(135deg, #1a1a2e, #0f0f1e);
+                display: flex; flex-direction: column;
+                justify-content: center; align-items: center;
+                color: white; text-align: center; padding: 20px;
+            ">
+                <h1 style="font-size: 2em; margin-bottom: 20px;">🎾</h1>
+                <h2 style="margin-bottom: 20px;">Game Error</h2>
+                <p style="margin-bottom: 30px; opacity: 0.8;">
+                    Something went wrong. Please refresh the page to continue playing.
+                </p>
+                <button onclick="location.reload()" style="
+                    padding: 15px 30px; background: #ffd700; border: none;
+                    border-radius: 25px; color: #1a1a2e; font-weight: bold;
+                    font-size: 16px; cursor: pointer;
+                ">Refresh Game</button>
+            </div>
+        `;
+    }
+};
+
+// Performance optimizations
+const PerformanceOptimizer = {
+    frameSkipping: false,
+
+    init() {
+        this.monitorPerformance();
+    },
+
+    monitorPerformance() {
+        let frameCount = 0;
+        let lastCheck = performance.now();
+
+        const checkPerformance = () => {
+            frameCount++;
+            const now = performance.now();
+
+            if (now - lastCheck >= 1000) {
+                const fps = frameCount * 1000 / (now - lastCheck);
+
+                if (fps < 25) {
+                    this.enableFrameSkipping();
+                } else if (fps > 50 && this.frameSkipping) {
+                    this.disableFrameSkipping();
+                }
+
+                frameCount = 0;
+                lastCheck = now;
+            }
+
+            requestAnimationFrame(checkPerformance);
+        };
+
+        requestAnimationFrame(checkPerformance);
+    },
+
+    enableFrameSkipping() {
+        if (!this.frameSkipping) {
+            console.log('🚀 Enabling performance optimizations');
+            this.frameSkipping = true;
+            document.body.classList.add('performance-mode');
+        }
+    },
+
+    disableFrameSkipping() {
+        if (this.frameSkipping) {
+            console.log('✨ Disabling performance optimizations');
+            this.frameSkipping = false;
+            document.body.classList.remove('performance-mode');
+        }
+    }
+};
+
+
+// Production Hardening Utilities
+const domCache = new Map();
+
+function safeGetElement(id) {
+    if (!domCache.has(id)) {
+        const element = document.getElementById(id);
+        if (!element) {
+            console.warn(`⚠️ Element not found: ${id}`);
+            return null;
+        }
+        domCache.set(id, element);
+    }
+    return domCache.get(id);
+}
+
+let cachedCourt = null;
+function getCourtElement() {
+    if(!cachedCourt){
+        cachedCourt = document.querySelector('.court');
+    }
+    return cachedCourt;
+}
+
+function isPerformanceMode(){
+    return document.body.classList.contains('performance-mode') || document.body.classList.contains('low-performance');
+}
+
+function safeRandomIndex(array) {
+    if (!array || array.length === 0) return 0;
+    return Math.floor(Math.random() * array.length);
+}
+
+function withErrorHandling(fn, context = 'Unknown') {
+    return function(...args) {
+        try {
+            return fn.apply(this, args);
+        } catch (error) {
+            console.error(`❌ Error in ${context}:`, error);
+            return null;
+        }
+    };
+}
+
+
+// Enhanced mobile experience
+const MobileEnhancer = {
+    init() {
+        // Better touch handling
+        this.preventZoom();
+        this.optimizeForMobile();
+        this.addHapticFeedback();
+    },
+
+    preventZoom() {
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+    },
+
+    optimizeForMobile() {
+        // Reduce animations on lower-end devices
+        if (navigator.hardwareConcurrency <= 4) {
+            document.body.classList.add('low-performance');
+        }
+    },
+
+    addHapticFeedback() {
+        if ('vibrate' in navigator) {
+            window.mobileVibrate = (pattern) => navigator.vibrate(pattern);
+        } else {
+            window.mobileVibrate = () => {}; // No-op for non-supporting devices
+        }
+    }
+};
+
+
+// Enhanced sprite loading with retry mechanism
+async function loadSpriteWithRetry(src, maxRetries = 2) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            await new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = src;
+            });
+            return true;
+        } catch (error) {
+            if (attempt === maxRetries) {
+                console.error(`❌ Failed to load sprite after ${maxRetries} attempts: ${src}`);
+                return false;
+            }
+            console.warn(`⚠️ Sprite load attempt ${attempt} failed, retrying: ${src}`);
+            await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+        }
+    }
+    return false;
+}
+
 const G={coins:500,gems:20,level:1,xp:0,ntrp:2.5,skillPoints:0,stats:{power:10,speed:10,control:10,serve:10},equipment:{racket:null,shoes:null,special:null,serveGear:null},owned:[],difficulty:'rookie',matchType:'quick',trainingCompleted:[],dailyChallenge:null};
 
 // Daily Challenge System
@@ -520,7 +842,7 @@ const DAILY_CHALLENGES = [
 
 function initDailyChallenge() {
     const today = new Date().toDateString();
-    
+
     // Check if challenge is from today
     if(!G.dailyChallenge || G.dailyChallenge.date !== today) {
         // Generate new challenge
@@ -532,25 +854,25 @@ function initDailyChallenge() {
             completed: false
         };
     }
-    
+
     updateChallengeDisplay();
 }
 
 function updateChallengeDisplay() {
     const challenge = G.dailyChallenge;
     if(!challenge) return;
-    
-    document.getElementById('challengeTitle').textContent = `Daily Challenge: ${challenge.name}`;
-    document.getElementById('challengeDesc').textContent = challenge.desc;
-    
+
+    safeGetElement('challengeTitle')?.textContent = `Daily Challenge: ${challenge.name}`;
+    safeGetElement('challengeDesc')?.textContent = challenge.desc;
+
     const progress = Math.min(100, (challenge.progress / challenge.target) * 100);
-    document.getElementById('challengeFill').style.width = progress + '%';
-    
+    safeGetElement('challengeFill')?.style.width = progress + '%';
+
     const reward = `+${challenge.reward.coins}💰 +${challenge.reward.gems}💎`;
-    document.getElementById('challengeReward').textContent = challenge.completed ? 'COMPLETED!' : reward;
-    
+    safeGetElement('challengeReward')?.textContent = challenge.completed ? 'COMPLETED!' : reward;
+
     // Change banner color if completed
-    const banner = document.getElementById('dailyChallenge');
+    const banner = safeGetElement('dailyChallenge');
     if(challenge.completed) {
         banner.style.background = 'linear-gradient(135deg,#4caf50,#45a049)';
     }
@@ -559,7 +881,7 @@ function updateChallengeDisplay() {
 function checkChallengeProgress(type, value) {
     const challenge = G.dailyChallenge;
     if(!challenge || challenge.completed || challenge.type !== type) return;
-    
+
     if(type === 'doubleFaults' || type === 'matchTime') {
         // For inverted challenges (less is better)
         if(value <= challenge.target) {
@@ -569,7 +891,7 @@ function checkChallengeProgress(type, value) {
         // For normal challenges (more is better)
         challenge.progress = Math.max(challenge.progress, value);
     }
-    
+
     // Check if completed
     if(challenge.progress >= challenge.target) {
         challenge.completed = true;
@@ -578,7 +900,7 @@ function checkChallengeProgress(type, value) {
         toast(`🏆 Daily Challenge Complete! +${challenge.reward.coins}💰 +${challenge.reward.gems}💎`);
         sounds.winner();
     }
-    
+
     updateChallengeDisplay();
 }
 
@@ -693,7 +1015,7 @@ let audio,sounds={};
 
 function initAudio(){
     audio=new(window.AudioContext||window.webkitAudioContext)();
-    
+
     // Enhanced layered hit sounds for more impact
     sounds.hit=()=>{
         playTone(80,0.08,0.45);
@@ -701,7 +1023,7 @@ function initAudio(){
         setTimeout(()=>playTone(600,0.03,0.2),30);
         setTimeout(()=>playTone(140,0.02,0.15),5); // Extra thump
     };
-    
+
     sounds.powerHit=()=>{
         playTone(60,0.12,0.55);
         setTimeout(()=>playTone(280,0.05,0.4),20);
@@ -709,7 +1031,7 @@ function initAudio(){
         setTimeout(()=>playTone(45,0.08,0.3),10); // Deep power rumble
         setTimeout(()=>playTone(1500,0.02,0.2),50); // Sharp crack
     };
-    
+
     // Enhanced bounce sounds with variety
     sounds.bounce=()=>playTone(120,0.03,0.35);
     sounds.powerBounce=()=>{
@@ -717,44 +1039,44 @@ function initAudio(){
         setTimeout(()=>playTone(180,0.03,0.3),20);
     };
     sounds.softBounce=()=>playTone(140,0.025,0.25);
-    
+
     // Crowd reactions for atmosphere
     sounds.crowdCheer=()=>{
         for(let i=0;i<5;i++){
-            setTimeout(()=>playTone(800+Math.random()*400,0.1,0.1),i*50);
+            setTimeout(()=>playTone(800+Math.floor(Math.random() * 400),0.1,0.1),i*50);
         }
     };
     sounds.crowdOoh=()=>{
         playTone(200,0.2,0.08);
         setTimeout(()=>playTone(180,0.15,0.06),100);
     };
-    
+
     // Point celebration sounds
     sounds.pointWon=()=>{
         playTone(440,0.1,0.5);
         setTimeout(()=>playTone(550,0.08,0.4),80);
         setTimeout(()=>playTone(660,0.06,0.3),150);
     };
-    
+
     sounds.pointLost=()=>{
         playTone(220,0.08,0.4);
         setTimeout(()=>playTone(160,0.06,0.3),60);
     };
-    
+
     // Rally tension system - crowd gets louder with rally length
     sounds.rallyTension=(rallyLength)=>{
         if(rallyLength < 3) return; // No crowd noise for short rallies
-        
+
         const volume = Math.min(0.15 + (rallyLength - 3) * 0.03, 0.4);
         const intensity = Math.min(rallyLength - 2, 8);
-        
+
         for(let i = 0; i < intensity; i++){
             setTimeout(() => {
-                playTone(400 + Math.random() * 600, 0.05 + Math.random() * 0.05, volume);
-            }, i * 30 + Math.random() * 50);
+                playTone(400 + Math.floor(Math.random() * 600), 0.05 + Math.floor(Math.random() * 0).05, volume);
+            }, i * 30 + Math.floor(Math.random() * 50));
         }
     };
-    
+
     // Enhanced point celebrations
     sounds.point=()=>{
         playTone(440,0.1,0.35);
@@ -762,15 +1084,15 @@ function initAudio(){
         setTimeout(()=>playTone(880,0.15,0.35),160);
         setTimeout(()=>sounds.crowdCheer(),200);
     };
-    
+
     sounds.miss=()=>{
         playTone(80,0.2,0.2);
         setTimeout(()=>sounds.crowdOoh(),100);
     };
-    
+
     sounds.coin=()=>{playTone(1200,0.05,0.25);setTimeout(()=>playTone(1600,0.05,0.25),40)};
     sounds.gem=()=>{playTone(1800,0.08,0.3);setTimeout(()=>playTone(2200,0.08,0.3),50)};
-    
+
     // Enhanced serve sounds
     sounds.serve=()=>{
         playTone(100,0.06,0.5);
@@ -778,26 +1100,26 @@ function initAudio(){
         setTimeout(()=>playTone(500,0.04,0.35),50);
         setTimeout(()=>playTone(80,0.03,0.2),10); // Woosh
     };
-    
+
     sounds.fault=()=>{playTone(150,0.15,0.3);setTimeout(()=>playTone(100,0.2,0.25),100)};
-    
+
     sounds.ace=()=>{
         playTone(600,0.1,0.4);
         setTimeout(()=>playTone(900,0.1,0.4),80);
         setTimeout(()=>playTone(1200,0.15,0.4),160);
         setTimeout(()=>sounds.crowdCheer(),250);
     };
-    
+
     sounds.let=()=>{playTone(300,0.1,0.3);setTimeout(()=>playTone(300,0.1,0.3),150)};
     sounds.changeover=()=>{playTone(400,0.15,0.25);setTimeout(()=>playTone(500,0.15,0.25),100);setTimeout(()=>playTone(600,0.2,0.25),200)};
-    
+
     sounds.winner=()=>{
         playTone(800,0.1,0.35);
         setTimeout(()=>playTone(1000,0.1,0.35),80);
         setTimeout(()=>playTone(1200,0.15,0.35),160);
         setTimeout(()=>sounds.crowdCheer(),200);
     };
-    
+
     // Victory sounds
     sounds.victory=()=>{
         playTone(523,0.15,0.4); // C
@@ -806,7 +1128,7 @@ function initAudio(){
         setTimeout(()=>playTone(1047,0.3,0.5),450); // C octave
         setTimeout(()=>sounds.crowdCheer(),600);
     };
-    
+
     sounds.defeat=()=>{
         playTone(220,0.2,0.3); // A
         setTimeout(()=>playTone(196,0.2,0.3),200); // G
@@ -831,41 +1153,41 @@ function playTone(f,d,v){
 
 function spawnGem(){
     if(!M.active||M.gemActive)return;
-    
+
     // Calculate multiplier based on streak
     const streakBonus = G.owned.includes('x8') ? 2 : 1;
     M.gemMultiplier = Math.min(5, 1 + Math.floor(M.streak / 2) * streakBonus);
-    
+
     M.gemActive=true;
-    M.gemPos={x:20+Math.random()*60,y:55+Math.random()*30};
-    
+    M.gemPos={x:20+Math.floor(Math.random() * 60),y:55+Math.floor(Math.random() * 30)};
+
     // Gem duration - base 8 seconds, +50% with Gem Magnet
     const baseDuration = 8;
     M.gemTimer = G.owned.includes('x7') ? Math.floor(baseDuration * 1.5) : baseDuration;
-    
-    const gem=document.getElementById('gemDrop');
-    const timerEl=document.getElementById('gemTimer');
-    const multEl=document.getElementById('gemMultiplier');
-    
+
+    const gem=safeGetElement('gemDrop');
+    const timerEl=safeGetElement('gemTimer');
+    const multEl=safeGetElement('gemMultiplier');
+
     gem.classList.add('active');
     gem.classList.remove('urgent');
     gem.style.left=M.gemPos.x+'%';
     gem.style.top=M.gemPos.y+'%';
-    
+
     multEl.textContent = 'x' + M.gemMultiplier;
     multEl.style.display = M.gemMultiplier > 1 ? 'block' : 'none';
-    
+
     updateGemTimer();
-    
+
     const interval=setInterval(()=>{
         M.gemTimer--;
         updateGemTimer();
-        
+
         // Urgent animation when < 3 seconds
         if(M.gemTimer <= 3 && M.gemTimer > 0){
             gem.classList.add('urgent');
         }
-        
+
         if(M.gemTimer<=0||!M.active){
             clearInterval(interval);
             hideGem();
@@ -874,65 +1196,74 @@ function spawnGem(){
 }
 
 function updateGemTimer(){
-    const timerEl=document.getElementById('gemTimer');
+    const timerEl=safeGetElement('gemTimer');
     timerEl.textContent = M.gemTimer + 's';
 }
 
 function hideGem(){
     M.gemActive=false;
-    const gem=document.getElementById('gemDrop');
+    const gem=safeGetElement('gemDrop');
     gem.classList.remove('active','urgent');
 }
 
 function collectGem(){
     if(!M.gemActive)return;
-    
-    const baseGems = Math.floor(Math.random()*3)+1;
+
+    const baseGems = Math.floor(Math.floor(Math.random() * 3))+1;
     const totalGems = baseGems * M.gemMultiplier;
-    
+
     G.gems+=totalGems;
-    
+
     // Create burst particles
-    const gem = document.getElementById('gemDrop');
-    const rect = gem.getBoundingClientRect();
-    const court = document.querySelector('.court');
-    const courtRect = court.getBoundingClientRect();
-    
-    for(let i = 0; i < 8; i++){
-        const particle = document.createElement('div');
-        particle.className = 'gem-particle';
-        const angle = (i / 8) * Math.PI * 2;
-        const dist = 40 + Math.random() * 30;
-        particle.style.cssText = `
-            left: ${((rect.left + rect.width/2 - courtRect.left) / courtRect.width) * 100}%;
-            top: ${((rect.top + rect.height/2 - courtRect.top) / courtRect.height) * 100}%;
-            --tx: ${Math.cos(angle) * dist}px;
-            --ty: ${Math.sin(angle) * dist}px;
-            animation: gemBurst 0.5s ease-out forwards;
-        `;
-        court.appendChild(particle);
-        setTimeout(() => particle.remove(), 500);
+    const gem = safeGetElement('gemDrop');
+    if(!gem) return;
+    if(!isPerformanceMode()){
+        const rect = gem.getBoundingClientRect();
+        const court = getCourtElement();
+        if(court){
+            const courtRect = court.getBoundingClientRect();
+
+            for(let i = 0; i < 8; i++){
+                const particle = document.createElement('div');
+                particle.className = 'gem-particle';
+                const angle = (i / 8) * Math.PI * 2;
+                const dist = 40 + Math.floor(Math.random() * 30);
+                particle.style.cssText = `
+                    left: ${((rect.left + rect.width/2 - courtRect.left) / courtRect.width) * 100}%;
+                    top: ${((rect.top + rect.height/2 - courtRect.top) / courtRect.height) * 100}%;
+                    --tx: ${Math.cos(angle) * dist}px;
+                    --ty: ${Math.sin(angle) * dist}px;
+                    animation: gemBurst 0.5s ease-out forwards;
+                `;
+                court.appendChild(particle);
+                setTimeout(() => particle.remove(), 500);
+            }
+        }
     }
-    
+
     M.gemActive=false;
     gem.classList.remove('active','urgent');
     sounds.gem();
-    
+
     if(M.gemMultiplier > 1){
         toast(`+${totalGems} 💎 (x${M.gemMultiplier})`);
     } else {
         toast(`+${totalGems} 💎`);
     }
-    
+
     save();
     updateUI();
 }
 
 function updateStreakDisplay(){
-    const display = document.getElementById('streakDisplay');
-    const valueEl = document.getElementById('streakValue');
-    const bonusEl = document.getElementById('streakBonus');
-    
+    const display = safeGetElement('streakDisplay');
+    const valueEl = safeGetElement('streakValue');
+    const bonusEl = safeGetElement('streakBonus');
+
+    if(M.streak > M.bestStreak){
+        M.bestStreak = M.streak;
+    }
+
     if(M.streak >= 2){
         display.classList.add('active');
         valueEl.textContent = M.streak;
@@ -962,7 +1293,7 @@ function getTiebreakServer(){
 }
 
 function showNetCordEffect(){
-    const netCord = document.getElementById('netCord');
+    const netCord = safeGetElement('netCord');
     netCord.classList.remove('active');
     void netCord.offsetWidth;
     netCord.classList.add('active');
@@ -970,7 +1301,7 @@ function showNetCordEffect(){
 }
 
 function showCallOverlay(text, isGood){
-    const overlay = document.getElementById('callOverlay');
+    const overlay = safeGetElement('callOverlay');
     overlay.textContent = text;
     overlay.classList.remove('active', 'in');
     void overlay.offsetWidth;
@@ -981,9 +1312,9 @@ function showCallOverlay(text, isGood){
 
 function showCourtChange(message, sub){
     return new Promise(resolve => {
-        const overlay = document.getElementById('courtChange');
-        document.getElementById('courtChangeText').textContent = message;
-        document.getElementById('courtChangeSub').textContent = sub || '';
+        const overlay = safeGetElement('courtChange');
+        safeGetElement('courtChangeText')?.textContent = message;
+        safeGetElement('courtChangeSub')?.textContent = sub || '';
         overlay.classList.add('active');
         sounds.changeover();
         setTimeout(() => {
@@ -1000,7 +1331,7 @@ function shouldChangeover(){
 }
 
 function updateServeIndicator(){
-    const ind = document.getElementById('serveIndicator');
+    const ind = safeGetElement('serveIndicator');
     if(M.serveNum === 1){
         ind.textContent = '1ST SERVE';
         ind.classList.remove('fault');
@@ -1011,14 +1342,14 @@ function updateServeIndicator(){
 }
 
 function highlightServiceBox(){
-    const deuce = document.getElementById('serviceBoxDeuce');
-    const ad = document.getElementById('serviceBoxAd');
-    
+    const deuce = safeGetElement('serviceBoxDeuce');
+    const ad = safeGetElement('serviceBoxAd');
+
     deuce.classList.remove('active');
     ad.classList.remove('active');
-    
+
     M.serveSide = getServeSide();
-    
+
     if(M.serveSide === 'deuce'){
         deuce.classList.add('active');
     } else {
@@ -1027,8 +1358,8 @@ function highlightServiceBox(){
 }
 
 function clearServiceBoxHighlight(){
-    document.getElementById('serviceBoxDeuce').classList.remove('active');
-    document.getElementById('serviceBoxAd').classList.remove('active');
+    safeGetElement('serviceBoxDeuce')?.classList.remove('active');
+    safeGetElement('serviceBoxAd')?.classList.remove('active');
 }
 
 function startPlayerServe(){
@@ -1038,74 +1369,74 @@ function startPlayerServe(){
     M.serveStartY = null;
     M.serveStartX = null;
     M.serveAimX = M.serveSide === 'deuce' ? 68 : 32; // Default aim to box center
-    
+
     // Position player at baseline center
     M.playerPos = 50;
-    document.getElementById('playerPaddle').style.left = '50%';
-    document.getElementById('playerPaddle').classList.add('serving');
-    
+    safeGetElement('playerPaddle')?.style.left = '50%';
+    safeGetElement('playerPaddle')?.classList.add('serving');
+
     // Show serve UI
     highlightServiceBox();
     updateServeIndicator();
-    
-    const hint = document.getElementById('swipeHint');
+
+    const hint = safeGetElement('swipeHint');
     hint.textContent = 'PULL DOWN TO SERVE';
     hint.classList.add('active','serve');
-    
+
     // Position ball with player
-    const ball = document.getElementById('ball');
+    const ball = safeGetElement('ball');
     ball.classList.add('active');
     ball.style.left = '50%';
     ball.style.top = '88%';
-    
-    document.getElementById('ballShadow').classList.add('active');
-    document.getElementById('ballShadow').style.left = '50%';
-    document.getElementById('ballShadow').style.top = '92%';
+
+    safeGetElement('ballShadow')?.classList.add('active');
+    safeGetElement('ballShadow')?.style.left = '50%';
+    safeGetElement('ballShadow')?.style.top = '92%';
 }
 
 function chargingServe(clientY, clientX){
     if(M.servePhase !== 'ready' && M.servePhase !== 'charging') return;
-    
+
     if(M.serveStartY === null){
         M.serveStartY = clientY;
         M.serveStartX = clientX;
         M.servePhase = 'charging';
-        document.getElementById('servePower').classList.add('active');
-        document.getElementById('serveAim').classList.add('active');
-        document.getElementById('serveTargetLine').classList.add('active');
+        safeGetElement('servePower')?.classList.add('active');
+        safeGetElement('serveAim')?.classList.add('active');
+        safeGetElement('serveTargetLine')?.classList.add('active');
     }
-    
+
     // Calculate power based on pull-down distance
     const pullDist = clientY - M.serveStartY;
     M.servePower = Math.min(1, Math.max(0, pullDist / 150));
-    
-    document.getElementById('servePowerFill').style.width = (M.servePower * 100) + '%';
-    
+
+    safeGetElement('servePowerFill')?.style.width = (M.servePower * 100) + '%';
+
     // Update aim indicator position based on horizontal movement
-    const court = document.querySelector('.court');
+    const court = getCourtElement();
     if(court && clientX){
         const rect = court.getBoundingClientRect();
         const relX = ((clientX - rect.left) / rect.width) * 100;
-        
+
         // Calculate target position in service box
         const isDeuce = M.serveSide === 'deuce';
         const boxLeft = isDeuce ? 52 : 15;
         const boxRight = isDeuce ? 85 : 48;
         const boxCenter = (boxLeft + boxRight) / 2;
-        
+
         // Aim influenced by finger position
         const aimOffset = (relX - 50) * 0.4;
         const targetX = Math.max(boxLeft, Math.min(boxRight, boxCenter + aimOffset));
-        
+
         M.serveAimX = targetX;
-        
+
         // Position aim indicator
-        const aimEl = document.getElementById('serveAim');
+        const aimEl = safeGetElement('serveAim');
         aimEl.style.left = targetX + '%';
         aimEl.style.top = '35%';
-        
+
         // Position target line from player to aim
-        const lineEl = document.getElementById('serveTargetLine');
+        const lineEl = safeGetElement('serveTargetLine');
         lineEl.style.left = '50%';
         lineEl.style.bottom = '10%';
         lineEl.style.height = '50%';
@@ -1116,19 +1447,19 @@ function chargingServe(clientY, clientX){
 
 function releaseServe(endX, endY){
     if(M.servePhase !== 'charging') return;
-    
+
     M.servePhase = 'swing';
-    
+
     // Hide charging UI
-    document.getElementById('servePower').classList.remove('active');
-    document.getElementById('swipeHint').classList.remove('active','serve');
-    document.getElementById('playerPaddle').classList.remove('serving');
-    document.getElementById('serveAim').classList.remove('active');
-    document.getElementById('serveTargetLine').classList.remove('active');
-    
+    safeGetElement('servePower')?.classList.remove('active');
+    safeGetElement('swipeHint')?.classList.remove('active','serve');
+    safeGetElement('playerPaddle')?.classList.remove('serving');
+    safeGetElement('serveAim')?.classList.remove('active');
+    safeGetElement('serveTargetLine')?.classList.remove('active');
+
     // Use the aim target position we've been tracking
     const aimX = M.serveAimX || 50;
-    
+
     // Execute serve with power and aim
     executePlayerServe(M.servePower, aimX);
 }
@@ -1136,55 +1467,55 @@ function releaseServe(endX, endY){
 function executePlayerServe(power, aimX){
     const st = getStats();
     M.lastHitBy = 'player'; // Track who hit last
-    
+
     // Ball toss animation
-    const ball = document.getElementById('ball');
+    const ball = safeGetElement('ball');
     ball.classList.add('toss');
-    
+
     sounds.serve();
-    
+
     // Play serve animation with new system
     setPlayerSwinging();
-    
+
     setTimeout(() => {
         ball.classList.remove('toss');
-        
+
         // Determine target service box
         const isDeuceCourt = M.serveSide === 'deuce';
         const boxCenterX = isDeuceCourt ? 65 : 35;
         const boxLeft = isDeuceCourt ? 50 : 12;
         const boxRight = isDeuceCourt ? 88 : 50;
-        
+
         // Calculate serve trajectory
         // Aim target is where player was aiming (tracked in M.serveAimX)
         const serveAccuracy = st.serve / 100;
         const aimTarget = aimX; // This is the aim position player targeted
-        
+
         // Minimal random spread - ball should mostly follow aim line
         // At low serve stat, max ±2% deviation; at high stat, max ±0.5%
         const maxSpread = 2 - serveAccuracy * 1.5;
         const randomSpread = (Math.random() - 0.5) * maxSpread * 2;
-        
+
         // Ball goes very close to where player aimed
         let targetX = aimTarget + randomSpread;
-        
+
         // Power affects speed and fault chance
         const baseSpeed = 1.5 + power * 1.5;
         const serveSpeed = baseSpeed * (1 + st.serve * 0.005) * M.settings.speed * 0.7;
-        
+
         // Fault detection
         const faultChance = M.settings.serveFaultChance * (1 - serveAccuracy * 0.5) * (power > 0.8 ? 1.3 : 1);
         const isNetFault = power < 0.2 || Math.random() < faultChance * 0.3;
         const isOutFault = targetX < boxLeft - 5 || targetX > boxRight + 5 || Math.random() < faultChance * 0.4;
-        
+
         // Calculate serve speed for display (80-140 MPH range based on power and serve stat)
         const baseServeSpeed = 80 + power * 40 + st.serve * 0.2;
         M.lastServeSpeed = Math.round(baseServeSpeed + (Math.random() - 0.5) * 10);
-        document.getElementById('serveSpeed').textContent = M.lastServeSpeed + ' MPH';
-        
+        safeGetElement('serveSpeed')?.textContent = M.lastServeSpeed + ' MPH';
+
         // Let serve (hits net but goes over - replay)
         const isLet = !isNetFault && Math.random() < 0.05;
-        
+
         if(isLet){
             sounds.let();
             showNetCordEffect();
@@ -1193,12 +1524,12 @@ function executePlayerServe(power, aimX){
             setTimeout(startPlayerServe, 1000);
             return;
         }
-        
+
         if(isNetFault){
             handleServeFault('net');
             return;
         }
-        
+
         if(isOutFault){
             // Commit to serve but it goes out
             M.ballActive = true;
@@ -1214,7 +1545,7 @@ function executePlayerServe(power, aimX){
             animateServeBall('out');
             return;
         }
-        
+
         // Good serve!
         M.ballActive = true;
         M.ballPos = {x: 50, y: 88};
@@ -1222,43 +1553,43 @@ function executePlayerServe(power, aimX){
         M.ballBounces = 0;
         M.isPlayerServe = false;
         M.servePhase = 'flight';
-        
+
         clearServiceBoxHighlight();
-        
+
         M.ballVel = {
             x: (targetX - M.ballPos.x) / 70,
             y: -serveSpeed,
             z: 2.2
         };
-        
+
         // Check if it's an ace (opponent can't reach)
         const aceChance = power * serveAccuracy * 0.15;
         M.pendingAce = Math.random() < aceChance;
-        
+
         animateServeBall('good');
-        
+
     }, 400); // Delay for toss animation
 }
 
 function animateServeBall(result){
     if(!M.ballActive) return;
-    
+
     M.ballPos.x += M.ballVel.x;
     M.ballPos.y += M.ballVel.y;
     M.ballH += M.ballVel.z;
     M.ballVel.z -= 0.14;
-    
+
     // Ground bounce
     if(M.ballH <= 0 && M.ballVel.z < 0){
         M.ballH = 0;
         M.ballVel.z = -M.ballVel.z * 0.72;
         sounds.bounce();
         M.ballBounces++;
-        
+
         // BULLETPROOF service box detection
         if(M.ballBounces === 1){
             const isDeuce = M.serveSide === 'deuce';
-            
+
             // PRECISE service box coordinates (matching court lines exactly)
             // Court dimensions: sidelines at 12%-88%, service lines at 27%-73%, net at 50%
             // Service boxes are 27%-50% depth (from net to service line)
@@ -1267,14 +1598,14 @@ function animateServeBall(result){
             const boxRight = isDeuce ? 88 : 49.5;
             const boxTop = 27;                      // Service line
             const boxBottom = 50;                   // Net line
-            
+
             // Minimal tolerance for pixel-perfect detection
             const tolerance = 0.3;
-            const inBox = M.ballPos.x >= (boxLeft - tolerance) && 
-                         M.ballPos.x <= (boxRight + tolerance) && 
-                         M.ballPos.y >= (boxTop - tolerance) && 
+            const inBox = M.ballPos.x >= (boxLeft - tolerance) &&
+                         M.ballPos.x <= (boxRight + tolerance) &&
+                         M.ballPos.y >= (boxTop - tolerance) &&
                          M.ballPos.y <= (boxBottom + tolerance);
-            
+
             // Debug logging for precision tuning
             if(!inBox) {
                 console.log(`❌ FAULT: Ball at (${M.ballPos.x.toFixed(2)}, ${M.ballPos.y.toFixed(2)}) missed ${M.serveSide} box (${boxLeft}-${boxRight}, ${boxTop}-${boxBottom})`);
@@ -1282,24 +1613,24 @@ function animateServeBall(result){
                 console.log(`✅ GOOD: Ball at (${M.ballPos.x.toFixed(2)}, ${M.ballPos.y.toFixed(2)}) landed in ${M.serveSide} service box`);
                 showCallOverlay('GOOD SERVE', true);
             }
-            
+
             if(!inBox){
                 handleServeFault('out');
                 return;
             }
-            
+
             // Ball in play after valid bounce in service box
             M.servePhase = 'none';
         }
     }
-    
-    const ball = document.getElementById('ball');
-    const shadow = document.getElementById('ballShadow');
+
+    const ball = safeGetElement('ball');
+    const shadow = safeGetElement('ballShadow');
     ball.style.left = M.ballPos.x + '%';
     ball.style.top = (M.ballPos.y - M.ballH/10) + '%';
     shadow.style.left = M.ballPos.x + '%';
     shadow.style.top = M.ballPos.y + '%';
-    
+
     // Ball crossed net - opponent's turn
     if(M.ballPos.y < 45 && M.servePhase === 'flight'){
         // Opponent tries to return
@@ -1315,13 +1646,13 @@ function animateServeBall(result){
             if(!scorePoint('p')) setTimeout(startNextPoint, 2000);
             return;
         }
-        
+
         // Opponent returns - transition to normal rally
         M.servePhase = 'none';
         opponentReturn();
         return;
     }
-    
+
     // Ball out of bounds
     if(M.ballPos.y < 5 || M.ballPos.x < 5 || M.ballPos.x > 95){
         if(result === 'out'){
@@ -1337,7 +1668,7 @@ function animateServeBall(result){
         }
         return;
     }
-    
+
     updateOpp();
     requestAnimationFrame(() => animateServeBall(result));
 }
@@ -1347,7 +1678,7 @@ function handleServeFault(type){
     resetBallUI();
     clearServiceBoxHighlight();
     sounds.fault();
-    
+
     if(M.serveNum === 1){
         // First serve fault - get second serve
         M.serveNum = 2;
@@ -1369,15 +1700,15 @@ function opponentReturn(){
     M.lastHitBy = 'opp'; // Track who hit last
     const st = getStats();
     M.rally++;
-    
+
     // Rally tension - crowd gets louder as rally continues
     sounds.rallyTension(M.rally);
-    
+
     updateMatchUI();
-    
+
     const oppDist = Math.abs(M.ballPos.x - M.oppPos);
     const canReach = oppDist < 35;
-    
+
     if(!canReach){
         // Opponent can't reach - point for player (might be from ace-like serve)
         M.ballActive = false;
@@ -1388,25 +1719,25 @@ function opponentReturn(){
         if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
         return;
     }
-    
+
     // Opponent hits back
     M.oppPos = M.ballPos.x;
-    document.getElementById('opponent').style.left = M.oppPos + '%';
-    document.getElementById('opponent').classList.add('hitting');
+    safeGetElement('opponent')?.style.left = M.oppPos + '%';
+    safeGetElement('opponent')?.classList.add('hitting');
     setOppSwinging();
-    setTimeout(() => document.getElementById('opponent').classList.remove('hitting'), 250);
+    setTimeout(() => safeGetElement('opponent')?.classList.remove('hitting'), 250);
     sounds.hit();
-    
+
     M.ballBounces = 0;
     M.ballH = 50;
-    
+
     const targetX = M.playerPos + (Math.random() - 0.5) * 40;
     M.ballVel = {
         x: (targetX - M.ballPos.x) / 90,
         y: M.settings.speed * 0.55,
         z: 1.8
     };
-    
+
     // Now normal rally begins
     animateBall();
 }
@@ -1414,21 +1745,23 @@ function opponentReturn(){
 // ========== OPPONENT SERVE ==========
 
 function opponentServe(){
+    if (!validateCriticalState()) { console.error("❌ Invalid state for opponentServe"); return; }
+    try {
     if(!M.active) return;
-    
+
     highlightServiceBox();
     updateServeIndicator();
-    
+
     // Opponent prepares to serve
     const oppServeDelay = 800;
-    
+
     setTimeout(() => {
         if(!M.active) return;
-        
+
         // Opponent can fault too! (slightly better than player)
         const faultChance = M.settings.serveFaultChance * 0.5;
         const isFault = Math.random() < faultChance;
-        
+
         if(isFault){
             if(M.serveNum === 1){
                 M.serveNum = 2;
@@ -1448,43 +1781,43 @@ function opponentServe(){
                 return;
             }
         }
-        
+
         clearServiceBoxHighlight();
-        
+
         M.ballActive = true;
         M.lastHitBy = 'opp'; // Track who hit last
         M.ballPos = {x: M.oppPos, y: 10};
         M.ballH = 80;
         M.ballBounces = 0;
-        
+
         const st = getStats();
         const isDeuceCourt = M.serveSide === 'deuce';
-        const targetX = isDeuceCourt ? 55 + Math.random() * 20 : 25 + Math.random() * 20;
-        
+        const targetX = isDeuceCourt ? 55 + Math.floor(Math.random() * 20) : 25 + Math.floor(Math.random() * 20);
+
         // Opponent serve speed
         const serveSpd = M.settings.speed * M.settings.oppServeSpeed * 0.65;
-        
+
         // Display opponent serve speed (slightly faster than player typically)
-        const oppServeSpeed = Math.round(90 + M.settings.oppServeSpeed * 30 + Math.random() * 15);
+        const oppServeSpeed = Math.round(90 + M.settings.oppServeSpeed * 30 + Math.floor(Math.random() * 15));
         M.lastServeSpeed = oppServeSpeed;
-        document.getElementById('serveSpeed').textContent = oppServeSpeed + ' MPH';
-        
+        safeGetElement('serveSpeed')?.textContent = oppServeSpeed + ' MPH';
+
         M.ballVel = {
             x: (targetX - M.ballPos.x) / 100 * 1.1,
             y: serveSpd,
             z: 1.2
         };
-        
-        const ball = document.getElementById('ball');
-        const shadow = document.getElementById('ballShadow');
+
+        const ball = safeGetElement('ball');
+        const shadow = safeGetElement('ballShadow');
         ball.classList.add('active');
         shadow.classList.add('active');
-        
-        document.getElementById('opponent').classList.add('hitting');
+
+        safeGetElement('opponent')?.classList.add('hitting');
         setOppSwinging();
-        setTimeout(() => document.getElementById('opponent').classList.remove('hitting'), 250);
+        setTimeout(() => safeGetElement('opponent')?.classList.remove('hitting'), 250);
         sounds.serve();
-        
+
         animateBall();
     }, oppServeDelay);
 }
@@ -1493,8 +1826,8 @@ function opponentServe(){
 
 function startGame(){
     if(!audio) initAudio();
-    document.getElementById('loadingScreen').classList.remove('active');
-    document.getElementById('mainMenu').classList.add('active');
+    safeGetElement('loadingScreen')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
     load();
     updateUI();
 }
@@ -1508,7 +1841,7 @@ function load(){
         if(!G.stats.serve) G.stats.serve = 10;
         if(!G.equipment.serveGear) G.equipment.serveGear = null;
     }
-    
+
     // Initialize daily challenges
     initDailyChallenge();
 }
@@ -1566,26 +1899,26 @@ function updateUI(){
     const ntrp = getNTRP();
     const next = getNextNTRP();
     G.ntrp = ntrp;
-    
-    document.getElementById('playerNTRP').textContent = ntrp.toFixed(1);
-    document.getElementById('coinAmount').textContent = G.coins;
-    document.getElementById('gemAmount').textContent = G.gems;
-    document.getElementById('skillPoints').textContent = G.skillPoints;
-    
+
+    safeGetElement('playerNTRP')?.textContent = ntrp.toFixed(1);
+    safeGetElement('coinAmount')?.textContent = G.coins;
+    safeGetElement('gemAmount')?.textContent = G.gems;
+    safeGetElement('skillPoints')?.textContent = G.skillPoints;
+
     if(next){
-        document.getElementById('skillNeeded').textContent = next.points;
+        safeGetElement('skillNeeded')?.textContent = next.points;
         const progress = (G.skillPoints / next.points) * 100;
-        document.getElementById('skillFill').style.width = progress + '%';
+        safeGetElement('skillFill')?.style.width = progress + '%';
     } else {
-        document.getElementById('skillNeeded').textContent = 'MAX';
-        document.getElementById('skillFill').style.width = '100%';
+        safeGetElement('skillNeeded')?.textContent = 'MAX';
+        safeGetElement('skillFill')?.style.width = '100%';
     }
-    
+
     const s = getStats();
-    document.getElementById('statPower').textContent = s.power;
-    document.getElementById('statSpeed').textContent = s.speed;
-    document.getElementById('statControl').textContent = s.control;
-    document.getElementById('statServe').textContent = s.serve;
+    safeGetElement('statPower')?.textContent = s.power;
+    safeGetElement('statSpeed')?.textContent = s.speed;
+    safeGetElement('statControl')?.textContent = s.control;
+    safeGetElement('statServe')?.textContent = s.serve;
 }
 
 function selectDifficulty(d){
@@ -1596,21 +1929,21 @@ function selectDifficulty(d){
 
 function selectMatchType(type){
     G.matchType = type;
-    document.getElementById('matchQuick').classList.remove('selected');
-    document.getElementById('matchStandard').classList.remove('selected');
-    document.getElementById('matchTimed').classList.remove('selected');
-    document.getElementById('match' + type.charAt(0).toUpperCase() + type.slice(1)).classList.add('selected');
+    safeGetElement('matchQuick')?.classList.remove('selected');
+    safeGetElement('matchStandard')?.classList.remove('selected');
+    safeGetElement('matchTimed')?.classList.remove('selected');
+    safeGetElement('match' + type.charAt(0).toUpperCase() + type.slice(1))?.classList.add('selected');
 }
 
 function showShop(){
-    document.getElementById('mainMenu').classList.remove('active');
-    document.getElementById('shopScreen').classList.add('active');
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('shopScreen')?.classList.add('active');
     renderShop('training');
 }
 
 function closeShop(){
-    document.getElementById('shopScreen').classList.remove('active');
-    document.getElementById('mainMenu').classList.add('active');
+    safeGetElement('shopScreen')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
     updateUI();
 }
 
@@ -1643,7 +1976,7 @@ var opponentChar = null; // Selected randomly, different from player
 function selectRandomOpponent(){
     // BULLETPROOF: Opponent must ALWAYS be different from player
     let available = window.CHARACTERS.filter(c => c.unlocked && c.id !== selectedChar.id);
-    
+
     // If no unlocked characters different from player, unlock all characters temporarily for opponent selection
     if(available.length === 0){
         available = window.CHARACTERS.filter(c => c.id !== selectedChar.id);
@@ -1652,7 +1985,7 @@ function selectRandomOpponent(){
             available = window.CHARACTERS.slice(0, 2).filter(c => c.id !== selectedChar.id);
         }
     }
-    
+
     // Guarantee opponent is different
     if(available.length > 0){
         opponentChar = available[Math.floor(Math.random() * available.length)];
@@ -1660,13 +1993,13 @@ function selectRandomOpponent(){
         // Ultimate fallback - pick first character that's not player
         opponentChar = window.CHARACTERS.find(c => c.id !== selectedChar.id) || window.CHARACTERS[0];
     }
-    
+
     // Double-check: If somehow opponent equals player, force different
     if(!opponentChar || opponentChar.id === selectedChar.id){
         const allChars = window.CHARACTERS;
         opponentChar = allChars[selectedChar === allChars[0] ? 1 : 0];
     }
-    
+
     console.log(`🎾 Player: ${selectedChar.name} vs Opponent: ${opponentChar.name}`);
     return opponentChar;
 }
@@ -1733,19 +2066,19 @@ function updateSprites(){
 }
 
 function showCharSelect(){
-    document.getElementById('mainMenu').classList.remove('active');
-    document.getElementById('charSelect').classList.add('active');
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('charSelect')?.classList.add('active');
     renderCharGrid();
     if(selectedChar) selectCharacter(selectedChar);
 }
 
 function closeCharSelect(){
-    document.getElementById('charSelect').classList.remove('active');
-    document.getElementById('mainMenu').classList.add('active');
+    safeGetElement('charSelect')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
 }
 
 function renderCharGrid(){
-    var grid = document.getElementById('charGrid');
+    var grid = safeGetElement('charGrid');
     if(!grid) return;
     var chars = window.CHARACTERS;
     if(!chars || !chars.length) return;
@@ -1777,14 +2110,14 @@ function renderCharGrid(){
 
 function selectCharacter(char){
     selectedChar = char;
-    document.querySelectorAll('.char-card').forEach((el,i) => 
+    document.querySelectorAll('.char-card').forEach((el,i) =>
         el.classList.toggle('selected', window.CHARACTERS[i].id === char.id));
     const sprites = getCharSprites(char);
-    document.getElementById('charDetailPreview').style.backgroundImage = `url(${sprites.playerSwing})`;
-    document.getElementById('charDetailName').textContent = char.name.toUpperCase();
-    document.getElementById('charPower').textContent = char.power;
-    document.getElementById('charSpeed').textContent = char.speed;
-    document.getElementById('charControl').textContent = char.control;
+    safeGetElement('charDetailPreview')?.style.backgroundImage = `url(${sprites.playerSwing})`;
+    safeGetElement('charDetailName')?.textContent = char.name.toUpperCase();
+    safeGetElement('charPower')?.textContent = char.power;
+    safeGetElement('charSpeed')?.textContent = char.speed;
+    safeGetElement('charControl')?.textContent = char.control;
 }
 
 function confirmCharacter(){
@@ -1815,18 +2148,18 @@ function switchTab(cat, btn){
 }
 
 function renderShop(cat){
-    const c = document.getElementById('shopItems');
+    const c = safeGetElement('shopItems');
     c.innerHTML = '';
-    
+
     const items = SHOP[cat] || [];
-    
+
     items.forEach(item => {
         const owned = G.owned.includes(item.id);
         const equipped = Object.values(G.equipment).includes(item.id);
         const canBuy = (item.currency === 'gems' ? G.gems : G.coins) >= item.price;
         const isTraining = cat === 'training' || (cat === 'serve' && item.repeatable);
         const isServeEquip = cat === 'serve' && !item.repeatable;
-        
+
         let statsHTML = '';
         if(item.stats.skillPoints) statsHTML += `<span class="item-stat">+${item.stats.skillPoints} Skill</span>`;
         if(item.stats.power) statsHTML += `<span class="item-stat">+${item.stats.power} PWR</span>`;
@@ -1834,10 +2167,10 @@ function renderShop(cat){
         if(item.stats.control) statsHTML += `<span class="item-stat">+${item.stats.control} CTL</span>`;
         if(item.stats.serve) statsHTML += `<span class="item-stat">+${item.stats.serve} SRV</span>`;
         if(item.stats.bonus) statsHTML += `<span class="item-stat">${item.stats.bonus}</span>`;
-        
+
         const d = document.createElement('div');
         d.className = 'shop-item' + (owned && !isTraining ? ' owned' : '');
-        
+
         let purchaseHTML;
         if(isTraining){
             purchaseHTML = `
@@ -1854,7 +2187,7 @@ function renderShop(cat){
         } else {
             purchaseHTML = `<button class="equip-btn" onclick="equipItem('${cat}','${item.id}')">EQUIP</button>`;
         }
-        
+
         d.innerHTML = `
             <div class="item-info">
                 <div class="item-name">${item.name}</div>
@@ -1869,12 +2202,12 @@ function renderShop(cat){
 function buyItem(cat, id){
     const item = SHOP[cat]?.find(i => i.id === id);
     if(!item) return;
-    
+
     const curr = item.currency === 'gems' ? 'gems' : 'coins';
     if(G[curr] < item.price) return;
-    
+
     G[curr] -= item.price;
-    
+
     if(item.repeatable){
         // Training-style items
         if(item.stats.skillPoints){
@@ -1895,16 +2228,16 @@ function buyItem(cat, id){
     } else {
         // Equipment items
         G.owned.push(id);
-        
+
         // Auto-equip if slot is empty
         let slot = cat.slice(0, -1); // 'rackets' -> 'racket'
         if(cat === 'serve') slot = 'serveGear';
         if(cat === 'special') slot = 'special';
-        
+
         if(!G.equipment[slot]) G.equipment[slot] = id;
         toast(item.name + ' purchased!');
     }
-    
+
     save();
     renderShop(cat);
     updateUI();
@@ -1920,15 +2253,15 @@ function equipItem(cat, id){
 }
 
 function showTutorial(){
-    document.getElementById('tutorialOverlay').classList.add('active');
+    safeGetElement('tutorialOverlay')?.classList.add('active');
 }
 
 function closeTutorial(){
-    document.getElementById('tutorialOverlay').classList.remove('active');
+    safeGetElement('tutorialOverlay')?.classList.remove('active');
 }
 
 function toast(msg){
-    const t = document.getElementById('progressToast');
+    const t = safeGetElement('progressToast');
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2500);
@@ -1955,7 +2288,7 @@ function onPlayerStateChange(event){
 function transitionToCourt(){
     if(videoTimeout) { clearTimeout(videoTimeout); videoTimeout = null; }
     if(ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
-    const videoIntro = document.getElementById('videoIntro');
+    const videoIntro = safeGetElement('videoIntro');
     videoIntro.classList.add('fade-out');
     setTimeout(() => {
         videoIntro.classList.remove('active', 'fade-out');
@@ -1965,19 +2298,19 @@ function transitionToCourt(){
 
 function actuallyStartMatch(){
     const s = DIFF[G.difficulty];
-    
+
     // Select random opponent (different from player)
     selectRandomOpponent();
     updateSprites();
-    
+
     // Adjust time based on match type
     let matchTime = s.time;
     if(G.matchType === 'quick') matchTime = 180;  // 3 minutes for quick match
     else if(G.matchType === 'timed') matchTime = 300; // 5 minutes for timed
-    
+
     // Randomly decide who serves first
     const playerServesFirst = Math.random() < 0.5;
-    
+
     M = {
         active: true,
         startTime: Date.now(), // Track match start for duration calculation
@@ -1985,6 +2318,8 @@ function actuallyStartMatch(){
         pGames: 0, oGames: 0,
         pSets: 0, oSets: 0,
         time: matchTime,
+        matchLimit: G.matchType === 'timed' ? matchTime : null,
+        timeExpired: false,
         isTiebreak: false,
         tiebreakServer: 'player',
         servingPlayer: playerServesFirst ? 'player' : 'opp',
@@ -2010,6 +2345,7 @@ function actuallyStartMatch(){
         combo: 0,
         pendingCombo: false,  // Don't show combo until shot is confirmed successful
         streak: 0,
+        bestStreak: 0,
         oppPos: 50,
         playerPos: 70,
         gemActive: false,
@@ -2025,39 +2361,39 @@ function actuallyStartMatch(){
         pendingAce: false,
         settings: s
     };
-    
+
     initSprites();
-    
-    document.getElementById('gameHUD').classList.add('active');
-    document.getElementById('gameCourt').classList.add('active');
-    document.getElementById('playerPaddle').style.left = '70%';
-    document.getElementById('streakDisplay').classList.remove('active');
-    
+
+    safeGetElement('gameHUD')?.classList.add('active');
+    safeGetElement('gameCourt')?.classList.add('active');
+    safeGetElement('playerPaddle')?.style.left = '70%';
+    safeGetElement('streakDisplay')?.classList.remove('active');
+
     updateMatchUI();
     startTimer();
-    
+
     // Start first point
     setTimeout(startNextPoint, 1200);
 }
 
 function startNextPoint(){
     if(!M.active) return;
-    
+
     M.serveNum = 1;
     M.serveSide = getServeSide();
     M.rally = 0;
     M.canHit = false;
-    
+
     // Clear serve speed display
-    document.getElementById('serveSpeed').textContent = '';
-    
+    safeGetElement('serveSpeed')?.textContent = '';
+
     // In tiebreak, recalculate server each point
     if(M.isTiebreak){
         M.servingPlayer = getTiebreakServer();
     }
-    
+
     updateMatchUI();
-    
+
     if(M.servingPlayer === 'player'){
         startPlayerServe();
     } else {
@@ -2066,20 +2402,40 @@ function startNextPoint(){
 }
 
 let videoTimeout = null;
+
+function validateCriticalState() {
+    const issues = [];
+
+    if (!M) issues.push('Match object missing');
+    if (!G) issues.push('Game state missing');
+    if (!SPRITES) issues.push('Sprites missing');
+    if (!selectedChar) issues.push('Selected character missing');
+
+    if (issues.length > 0) {
+        console.error('❌ Critical state validation failed:', issues);
+        return false;
+    }
+
+    return true;
+}
+
+
 function startMatch(){
-    document.getElementById('mainMenu').classList.remove('active');
-    document.getElementById('charSelect').classList.remove('active');
-    document.getElementById('shopScreen').classList.remove('active');
-    document.getElementById('videoIntro').classList.add('active');
-    
+    if (!validateCriticalState()) { console.error("❌ Invalid state for startMatch"); return; }
+    try {
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('charSelect')?.classList.remove('active');
+    safeGetElement('shopScreen')?.classList.remove('active');
+    safeGetElement('videoIntro')?.classList.add('active');
+
     // Auto-skip after 8 seconds if video fails
     if(videoTimeout) clearTimeout(videoTimeout);
     videoTimeout = setTimeout(() => {
-        if(document.getElementById('videoIntro').classList.contains('active')) {
+        if(safeGetElement('videoIntro')?.classList.contains('active')) {
             transitionToCourt();
         }
     }, 8000);
-    
+
     if(ytPlayer && ytPlayer.playVideo){
         ytPlayer.seekTo(0);
         ytPlayer.playVideo();
@@ -2091,22 +2447,61 @@ function startMatch(){
             }
         }, 1000);
     }
+    } catch (error) {
+        ErrorRecovery.handleCriticalError(error, 'startMatch');
+    }
 }
 
 function startTimer(){
-    // Timer now counts UP (elapsed time) for stats, doesn't end match
+    // Timer counts up, but timed matches use a limit
     M.time = 0;
-    const timerEl = document.getElementById('matchTimer');
-    timerEl.textContent = '0:00';
-    
+    const timerEl = safeGetElement('matchTimer');
+    if(!timerEl) return;
+    const isTimed = G.matchType === 'timed' && M.matchLimit;
+    const renderTime = (seconds) => {
+        const safeSeconds = Math.max(0, seconds);
+        timerEl.textContent = Math.floor(safeSeconds / 60) + ':' + (safeSeconds % 60).toString().padStart(2, '0');
+    };
+    renderTime(isTimed ? M.matchLimit : 0);
+
     const int = setInterval(() => {
         if(!M.active){
             clearInterval(int);
             return;
         }
         M.time++;
-        timerEl.textContent = Math.floor(M.time/60) + ':' + (M.time%60).toString().padStart(2,'0');
+        renderTime(isTimed ? (M.matchLimit - M.time) : M.time);
+
+        if(isTimed && M.time >= M.matchLimit){
+            clearInterval(int);
+            handleTimeExpired();
+        }
     }, 1000);
+}
+
+function handleTimeExpired(){
+    if(!M.active || G.matchType !== 'timed') return;
+    const gameDiff = M.pGames - M.oGames;
+    const pointDiff = M.pPoints - M.oPoints;
+
+    if(gameDiff !== 0 || pointDiff !== 0){
+        endTimedMatch();
+        return;
+    }
+
+    M.timeExpired = true;
+    toast('TIME! NEXT POINT WINS');
+}
+
+function endTimedMatch(){
+    if(!M.active) return;
+    const gameDiff = M.pGames - M.oGames;
+    const pointDiff = M.pPoints - M.oPoints;
+    const playerWins = gameDiff > 0 || (gameDiff === 0 && pointDiff > 0);
+
+    M.pSets = playerWins ? 1 : 0;
+    M.oSets = playerWins ? 0 : 1;
+    endMatch();
 }
 
 // ========== SCORING ==========
@@ -2116,19 +2511,19 @@ function getTennisScore(pPoints, oPoints){
     if(M.isTiebreak){
         return {p: String(pPoints), o: String(oPoints), tiebreak: true};
     }
-    
+
     const scores = ['0','15','30','40'];
-    
+
     // Both under 4 points - normal scoring
     if(pPoints < 4 && oPoints < 4){
         return {p: scores[pPoints], o: scores[oPoints]};
     }
-    
+
     // Deuce situation
     if(pPoints === oPoints){
         return {p:'40', o:'40', deuce:true};
     }
-    
+
     // Advantage
     if(pPoints > oPoints){
         return {p:'AD', o:'40'};
@@ -2137,28 +2532,30 @@ function getTennisScore(pPoints, oPoints){
 }
 
 function updateMatchUI(){
+    if (!validateCriticalState()) { console.error("❌ Invalid state for updateMatchUI"); return; }
+    try {
     const score = getTennisScore(M.pPoints, M.oPoints);
-    
-    document.getElementById('playerPoints').textContent = score.deuce ? 'DEUCE' : score.p;
-    document.getElementById('opponentPoints').textContent = score.deuce ? 'DEUCE' : score.o;
-    document.getElementById('playerGames').textContent = M.pGames;
-    document.getElementById('opponentGames').textContent = M.oGames;
-    document.getElementById('rallyCount').textContent = M.rally;
-    
+
+    safeGetElement('playerPoints')?.textContent = score.deuce ? 'DEUCE' : score.p;
+    safeGetElement('opponentPoints')?.textContent = score.deuce ? 'DEUCE' : score.o;
+    safeGetElement('playerGames')?.textContent = M.pGames;
+    safeGetElement('opponentGames')?.textContent = M.oGames;
+    safeGetElement('rallyCount')?.textContent = M.rally;
+
     // Show sets if any
     if(M.pSets > 0 || M.oSets > 0){
-        document.getElementById('playerSets').textContent = `Sets: ${M.pSets}`;
-        document.getElementById('opponentSets').textContent = `Sets: ${M.oSets}`;
+        safeGetElement('playerSets')?.textContent = `Sets: ${M.pSets}`;
+        safeGetElement('opponentSets')?.textContent = `Sets: ${M.oSets}`;
     }
-    
+
     // Show tiebreak indicator
-    const tbInd = document.getElementById('tiebreakIndicator');
+    const tbInd = safeGetElement('tiebreakIndicator');
     if(M.isTiebreak){
         tbInd.textContent = 'TIEBREAK';
     } else {
         tbInd.textContent = '';
     }
-    
+
     updateServeIndicator();
 }
 
@@ -2193,12 +2590,12 @@ function scorePoint(player){
         // Gentle haptic feedback
         if(navigator.vibrate) navigator.vibrate(60);
     }
-    
+
     // Track statistics
     M.pointsPlayed++;
     M.totalRallies += M.rally;
     if(M.rally > M.longestRally) M.longestRally = M.rally;
-    
+
     if(player === 'p'){
         M.pPoints++;
         celebratePoint(false);
@@ -2207,9 +2604,9 @@ function scorePoint(player){
         M.streak = 0;
         updateStreakDisplay();
     }
-    
+
     const diff = M.pPoints - M.oPoints;
-    
+
     // Tiebreak scoring: first to 7, win by 2
     if(M.isTiebreak){
         if((M.pPoints >= 7 || M.oPoints >= 7) && Math.abs(diff) >= 2){
@@ -2223,7 +2620,7 @@ function scorePoint(player){
                 M.oSets++;
                 toast('TIEBREAK LOST! Opponent takes the set');
             }
-            
+
             // Reset for new set
             M.pPoints = 0;
             M.oPoints = 0;
@@ -2231,23 +2628,23 @@ function scorePoint(player){
             M.oGames = 0;
             M.isTiebreak = false;
             M.serveNum = 1;
-            
+
             // Whoever received in tiebreak serves first next set
             M.servingPlayer = M.tiebreakServer === 'player' ? 'opp' : 'player';
-            
+
             sounds.point();
             updateMatchUI();
             if(checkEnd()) return true;
             return false;
         }
-        
+
         // In tiebreak, server changes after first point, then every 2 points
         M.servingPlayer = getTiebreakServer();
         M.serveNum = 1;
         updateMatchUI();
         return false;
     }
-    
+
     // Regular game scoring: need to be at 4+ and 2 ahead
     if((M.pPoints >= 4 || M.oPoints >= 4) && Math.abs(diff) >= 2){
         if(M.pPoints > M.oPoints){
@@ -2257,21 +2654,21 @@ function scorePoint(player){
             M.oGames++;
             toast('GAME! Opponent won');
         }
-        
+
         M.pPoints = 0;
         M.oPoints = 0;
-        
+
         // Switch server after each game
         M.servingPlayer = M.servingPlayer === 'player' ? 'opp' : 'player';
         M.serveNum = 1;
-        
+
         sounds.point();
-        
+
         // Check for set/match win
         if(checkSetWin()){
             return true;
         }
-        
+
         // Changeover after odd games
         if(shouldChangeover()){
             setTimeout(async () => {
@@ -2282,9 +2679,14 @@ function scorePoint(player){
             return true; // Prevent normal startNextPoint
         }
     }
-    
+
     updateMatchUI();
-    
+
+    if(G.matchType === 'timed' && M.timeExpired){
+        endTimedMatch();
+        return true;
+    }
+
     if(checkEnd()) return true;
     return false;
 }
@@ -2293,10 +2695,10 @@ function checkSetWin(){
     const pGames = M.pGames;
     const oGames = M.oGames;
     const diff = Math.abs(pGames - oGames);
-    
+
     // Game target depends on match type (quick=6, standard/pro=6)
     const winGames = G.matchType === 'quick' ? 6 : 6;
-    
+
     // Set win: reach target games with 2 game lead
     if((pGames >= winGames || oGames >= winGames) && diff >= 2 && !M.isTiebreak){
         if(pGames > oGames){
@@ -2311,7 +2713,7 @@ function checkSetWin(){
         M.isTiebreak = false;
         return false; // Continue playing
     }
-    
+
     // Tiebreak at tied game target (6-6 or 4-4 for quick)
     if(pGames === winGames && oGames === winGames && !M.isTiebreak){
         M.isTiebreak = true;
@@ -2322,7 +2724,7 @@ function checkSetWin(){
         sounds.point();
         return false;
     }
-    
+
     return false;
 }
 
@@ -2330,46 +2732,50 @@ function checkSetWin(){
 
 function animateBall(){
     if(!M.ballActive) return;
-    
+    if(window.animationPaused){
+        requestAnimationFrame(animateBall);
+        return;
+    }
+
     // Enhanced physics with momentum conservation
     const speed = Math.sqrt(M.ballVel.x*M.ballVel.x + M.ballVel.y*M.ballVel.y);
     const isHighSpeed = speed > 1.5;
-    
+
     M.ballPos.x += M.ballVel.x;
     M.ballPos.y += M.ballVel.y;
     M.ballH += M.ballVel.z;
-    
+
     // Enhanced gravity with speed-dependent effect
     const gravity = 0.15 + (isHighSpeed ? 0.03 : 0);
     M.ballVel.z -= gravity;
-    
+
     // Enhanced spin physics with Magnus effect
     if(Math.abs(M.ballSpin) > 0.1){
         M.ballVel.x += M.ballSpin * 0.025;
         // Spin decay
         M.ballSpin *= 0.998;
     }
-    
+
     // Air resistance for realistic deceleration
     const resistance = 0.9995;
     M.ballVel.x *= resistance;
     M.ballVel.y *= resistance;
-    
+
     // Enhanced ground bounce with energy transfer
     if(M.ballH <= 0 && M.ballVel.z < 0){
         M.ballH = 0;
-        
+
         // Bounce intensity based on impact velocity
         const impactIntensity = Math.abs(M.ballVel.z);
         const bounceEfficiency = 0.72 + (impactIntensity > 2 ? 0.08 : 0); // Higher bounces on hard hits
-        
+
         M.ballVel.z = -M.ballVel.z * bounceEfficiency;
-        
+
         // Lateral bounce effects from spin
         if(Math.abs(M.ballSpin) > 0.1){
             M.ballVel.x += M.ballSpin * 0.15; // Spin kick on bounce
         }
-        
+
         // Enhanced sound based on impact
         if(impactIntensity > 2.5){
             sounds.powerBounce();
@@ -2378,28 +2784,28 @@ function animateBall(){
         } else {
             sounds.softBounce();
         }
-        
+
         // Satisfying screen micro-shake on hard bounces
         if(impactIntensity > 2.8){
             microShake(50);
         }
-        
+
         if(M.ballPos.y > 50) M.ballBounces++;
-        
+
         // Double bounce = point lost
         if(M.ballBounces > 1){
             ballMissed();
             return;
         }
     }
-    
+
     // Out of bounds (sidelines) - whoever hit it last loses the point
     if(M.ballPos.x < 10 || M.ballPos.x > 90){
         M.ballActive = false;
         M.canHit = false;
         resetBallUI();
         sounds.miss();
-        
+
         if(M.lastHitBy === 'player'){
             // Player hit it out - opponent gets point
             showCallOverlay('OUT!', false);
@@ -2415,49 +2821,49 @@ function animateBall(){
         }
         return;
     }
-    
-    const ball = document.getElementById('ball');
-    const shadow = document.getElementById('ballShadow');
+
+    const ball = safeGetElement('ball');
+    const shadow = safeGetElement('ballShadow');
     ball.style.left = M.ballPos.x + '%';
     ball.style.top = (M.ballPos.y - M.ballH/10) + '%';
     shadow.style.left = M.ballPos.x + '%';
     shadow.style.top = M.ballPos.y + '%';
-    
+
     // Check if ball is in player's hit zone
     const st = getStats();
     const hzStart = Math.max(52, 100 - M.settings.hitWindow * 100 - st.control * 0.12);
-    
+
     if(M.ballPos.y > hzStart && M.ballPos.y < 90 && M.ballH < 50 && M.ballBounces <= 1 && !M.canHit){
         M.canHit = true;
         ball.classList.add('glowing');
-        document.getElementById('hitZone').classList.add('active');
-        
-        const hint = document.getElementById('swipeHint');
+        safeGetElement('hitZone')?.classList.add('active');
+
+        const hint = safeGetElement('swipeHint');
         hint.textContent = 'SWIPE UP!';
         hint.classList.remove('serve');
         hint.classList.add('active');
-        
-        document.getElementById('playerPaddle').classList.add('can-hit');
+
+        safeGetElement('playerPaddle')?.classList.add('can-hit');
     }
-    
+
     // Ball passed hit zone
     if(M.canHit && (M.ballH > 50 || M.ballBounces > 1)){
         M.canHit = false;
         ball.classList.remove('glowing');
-        document.getElementById('hitZone').classList.remove('active');
-        document.getElementById('swipeHint').classList.remove('active');
-        document.getElementById('playerPaddle').classList.remove('can-hit');
+        safeGetElement('hitZone')?.classList.remove('active');
+        safeGetElement('swipeHint')?.classList.remove('active');
+        safeGetElement('playerPaddle')?.classList.remove('can-hit');
     }
-    
+
     // Ball passed player - missed
     if(M.ballPos.y > 93){
         ballMissed();
         return;
     }
-    
+
     // Update opponent position when ball is on their side
     if(M.ballPos.y < 50) updateOpp();
-    
+
     updatePlayerDirection();
     requestAnimationFrame(animateBall);
 }
@@ -2467,7 +2873,7 @@ function updateOpp(){
     const moving = Math.abs(diff) > 2;
     setOppRunning(moving);
     M.oppPos += diff * M.settings.oppSpeed;
-    document.getElementById('opponent').style.left = M.oppPos + '%';
+    safeGetElement('opponent')?.style.left = M.oppPos + '%';
 }
 
 function ballOut(reason){
@@ -2479,10 +2885,10 @@ function ballOut(reason){
     M.rally = 0;
     sounds.miss();
     showCallOverlay('OUT!', false);
-    
+
     M.streak = 0;
     updateStreakDisplay();
-    
+
     if(!scorePoint('o')) setTimeout(startNextPoint, 1500);
 }
 
@@ -2494,57 +2900,58 @@ function ballMissed(){
     M.pendingCombo = false;
     M.rally = 0;
     sounds.miss();
-    
+
     M.streak = 0;
     updateStreakDisplay();
-    
+
     if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
 }
 
 function resetBallUI(){
-    const ball = document.getElementById('ball');
-    const shadow = document.getElementById('ballShadow');
+    const ball = safeGetElement('ball');
+    const shadow = safeGetElement('ballShadow');
     ball.classList.remove('active', 'glowing', 'toss');
     shadow.classList.remove('active');
-    document.getElementById('hitZone').classList.remove('active');
-    document.getElementById('swipeHint').classList.remove('active', 'serve');
-    document.getElementById('playerPaddle').classList.remove('can-hit', 'serving');
-    document.getElementById('servePower').classList.remove('active');
-    document.getElementById('serveAim').classList.remove('active');
-    document.getElementById('serveTargetLine').classList.remove('active');
+    safeGetElement('hitZone')?.classList.remove('active');
+    safeGetElement('swipeHint')?.classList.remove('active', 'serve');
+    safeGetElement('playerPaddle')?.classList.remove('can-hit', 'serving');
+    safeGetElement('servePower')?.classList.remove('active');
+    safeGetElement('serveAim')?.classList.remove('active');
+    safeGetElement('serveTargetLine')?.classList.remove('active');
     clearServiceBoxHighlight();
+    ballTrailPositions = [];
 }
 
 // ========== HITTING ==========
 
 function hitBall(power, angle){
     if(!M.canHit) return;
-    
+
     M.lastHitBy = 'player'; // Track who hit last
     M.canHit = false;
-    const ball = document.getElementById('ball');
+    const ball = safeGetElement('ball');
     ball.classList.remove('glowing');
-    document.getElementById('hitZone').classList.remove('active');
-    document.getElementById('swipeHint').classList.remove('active');
-    document.getElementById('playerPaddle').classList.remove('can-hit');
-    
+    safeGetElement('hitZone')?.classList.remove('active');
+    safeGetElement('swipeHint')?.classList.remove('active');
+    safeGetElement('playerPaddle')?.classList.remove('can-hit');
+
     // Show power feedback
-    const pf = document.getElementById('powerFill');
+    const pf = safeGetElement('powerFill');
     pf.style.width = (power * 100) + '%';
     setTimeout(() => pf.style.width = '0%', 400);
-    
+
     const st = getStats();
     const dist = Math.abs(M.ballPos.x - M.playerPos);
     const acc = Math.max(0, 1 - dist/50);
     const qual = power * acc * (1 + st.control/100);
-    
+
     showHitEffect(power);
-    
+
     // Enhanced player swing animation
     setPlayerSwinging();
-    
+
     sounds.hit();
-    
+
     // Track quality but don't show combo yet - wait until we confirm shot was successful
     if(qual > 0.55){
         M.combo++;
@@ -2553,50 +2960,14 @@ function hitBall(power, angle){
         M.combo = 0;
         M.pendingCombo = false;
     }
-    
+
     returnBall(qual, angle);
 }
 
 // ========== VISUAL EFFECTS SYSTEM ==========
 
-function createBallTrail(x, y, speed) {
-    const court = document.querySelector('.court');
-    if(!court) return;
-    
-    // Only create trail for high-speed shots
-    if(speed < 1.5) return;
-    
-    const trail = document.createElement('div');
-    const opacity = Math.min(0.8, speed / 3);
-    const size = Math.min(15, 8 + speed * 2);
-    
-    trail.style.cssText = `
-        position: absolute;
-        left: ${x}%;
-        top: ${y}%;
-        width: ${size}px;
-        height: ${size}px;
-        background: radial-gradient(circle, rgba(252,248,54,${opacity}) 0%, rgba(252,248,54,0) 70%);
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 37;
-        transform: translate(-50%, -50%);
-    `;
-    
-    court.appendChild(trail);
-    
-    // Fade out trail
-    trail.animate([
-        { opacity: opacity, transform: 'translate(-50%, -50%) scale(1)' },
-        { opacity: 0, transform: 'translate(-50%, -50%) scale(0.3)' }
-    ], {
-        duration: 200 + speed * 50,
-        easing: 'ease-out'
-    }).onfinish = () => trail.remove();
-}
-
 function microShake(duration = 100) {
-    const court = document.getElementById('gameCourt');
+    const court = safeGetElement('gameCourt');
     if(!court) return;
     court.classList.remove('micro-shake');
     void court.offsetWidth;
@@ -2605,7 +2976,7 @@ function microShake(duration = 100) {
 }
 
 function powerShake(duration = 200) {
-    const court = document.getElementById('gameCourt');
+    const court = safeGetElement('gameCourt');
     if(!court) return;
     court.classList.remove('power-shake', 'shake');
     void court.offsetWidth;
@@ -2615,15 +2986,15 @@ function powerShake(duration = 200) {
 
 // Hitstop effect - brief pause for impact
 function hitstop(duration = 150) {
-    const court = document.getElementById('gameCourt');
+    const court = safeGetElement('gameCourt');
     if(!court) return;
-    
+
     // Flash white for impact
     court.style.filter = 'brightness(2) contrast(1.5)';
     setTimeout(() => {
         court.style.filter = '';
     }, duration);
-    
+
     // Briefly pause ball animation (if in rally mode)
     if(M.ballActive && window.animationPaused !== true) {
         window.animationPaused = true;
@@ -2637,90 +3008,96 @@ function hitstop(duration = 150) {
 let ballTrailPositions = [];
 function createBallTrail() {
     if(!M.ballActive || window.animationPaused) return;
-    
-    const ball = document.getElementById('ball');
+    if(isPerformanceMode()) return;
+
+    const ball = safeGetElement('ball');
     if(!ball || !ball.classList.contains('active')) return;
-    
+
     const ballRect = ball.getBoundingClientRect();
-    const courtRect = document.querySelector('.court').getBoundingClientRect();
-    
+    const court = getCourtElement();
+    if(!court) return;
+    const courtRect = court.getBoundingClientRect();
+
     // Calculate relative position
     const relX = ((ballRect.left + ballRect.width/2 - courtRect.left) / courtRect.width) * 100;
     const relY = ((ballRect.top + ballRect.height/2 - courtRect.top) / courtRect.height) * 100;
-    
+
     // Store position for trail
     ballTrailPositions.push({x: relX, y: relY, time: Date.now()});
-    
+
     // Limit trail length
     if(ballTrailPositions.length > 8) {
         ballTrailPositions.shift();
     }
-    
+
     // Create trail elements
     ballTrailPositions.forEach((pos, index) => {
         const age = Date.now() - pos.time;
         if(age > 300) return; // Remove old trails
-        
+
         const trail = document.createElement('div');
         trail.className = 'ball-trail active';
         trail.style.left = pos.x + '%';
         trail.style.top = pos.y + '%';
         trail.style.opacity = (1 - age / 300) * 0.6;
         trail.style.transform = `translate(-50%, -50%) scale(${1 - age / 400})`;
-        
-        document.querySelector('.court').appendChild(trail);
-        
+
+        court.appendChild(trail);
+
         setTimeout(() => trail.remove(), 300 - age);
     });
 }
 
 // Swipe trail visualization
 function createSwipeTrail(startX, startY, endX, endY) {
-    const court = document.querySelector('.court');
+    if(isPerformanceMode()) return;
+    const court = getCourtElement();
+    if(!court) return;
     const courtRect = court.getBoundingClientRect();
-    
+
     // Convert screen coordinates to court relative
     const startRelX = ((startX - courtRect.left) / courtRect.width) * 100;
     const startRelY = ((startY - courtRect.top) / courtRect.height) * 100;
     const endRelX = ((endX - courtRect.left) / courtRect.width) * 100;
     const endRelY = ((endY - courtRect.top) / courtRect.height) * 100;
-    
+
     // Create trail segments
     const segments = 12;
     for(let i = 0; i < segments; i++) {
         const progress = i / (segments - 1);
         const x = startRelX + (endRelX - startRelX) * progress;
         const y = startRelY + (endRelY - startRelY) * progress;
-        
+
         const segment = document.createElement('div');
         segment.className = 'swipe-trail-segment';
         segment.style.left = x + '%';
         segment.style.top = y + '%';
         segment.style.opacity = 1 - progress * 0.7;
         segment.style.animationDelay = (i * 20) + 'ms';
-        
+
         const container = document.createElement('div');
         container.className = 'swipe-trail active';
         container.appendChild(segment);
         court.appendChild(container);
-        
+
         setTimeout(() => container.remove(), 500 + i * 20);
     }
 }
 
 function createHitParticles(x, y, power) {
-    const court = document.querySelector('.court');
+    if(isPerformanceMode()) return;
+    const court = getCourtElement();
     if(!court) return;
-    
+
     const particleCount = Math.floor(3 + power * 8);
     const colors = power > 0.8 ? ['#FFD700', '#FF6B47', '#FF4757'] : ['#4ECDC4', '#45AAF2', '#26DE81'];
-    
+
     for(let i = 0; i < particleCount; i++) {
         const particle = document.createElement('div');
         const angle = (Math.PI * 2 * i) / particleCount;
         const velocity = 20 + power * 40;
-        const size = 3 + Math.random() * 4;
-        
+        const size = 3 + Math.floor(Math.random() * 4);
+
         particle.style.cssText = `
             position: absolute;
             left: ${x}%;
@@ -2733,50 +3110,48 @@ function createHitParticles(x, y, power) {
             z-index: 200;
             transform: translate(-50%, -50%);
         `;
-        
+
         court.appendChild(particle);
-        
+
         // Animate particle
         const tx = Math.cos(angle) * velocity;
         const ty = Math.sin(angle) * velocity;
-        
+
         particle.animate([
             { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
             { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(0)`, opacity: 0 }
         ], {
-            duration: 400 + Math.random() * 200,
+            duration: 400 + Math.floor(Math.random() * 200),
             easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
         }).onfinish = () => particle.remove();
     }
 }
 
 function showHitEffect(power){
-    const e = document.getElementById('hitEffect');
-    const b = document.getElementById('ball');
-    
+    const e = safeGetElement('hitEffect');
+    const b = safeGetElement('ball');
+
     if(!e || !b) return;
-    
+
     const ballRect = b.getBoundingClientRect();
-    const courtRect = document.querySelector('.court').getBoundingClientRect();
-    
     // Position effect at ball location
     e.style.left = b.style.left;
     e.style.top = b.style.top;
     e.classList.add('active');
     setTimeout(() => e.classList.remove('active'), 600);
-    
+
     // Create hit particles
     const ballX = parseFloat(b.style.left);
     const ballY = parseFloat(b.style.top);
     createHitParticles(ballX, ballY, power);
-    
+
     // Enhanced screen shake based on power
     if(power > 0.9){
         powerShake(250);
         hitstop(120); // Brief pause for impact
         sounds.powerHit();
     } else if(power > 0.7){
-        const court = document.getElementById('gameCourt');
+        const court = safeGetElement('gameCourt');
         court.classList.remove('shake');
         void court.offsetWidth;
         court.classList.add('shake');
@@ -2785,7 +3160,7 @@ function showHitEffect(power){
     } else {
         sounds.hit();
     }
-    
+
     // Haptic feedback for mobile
     if(navigator.vibrate && power > 0.6) {
         const intensity = Math.floor(power * 100);
@@ -2801,7 +3176,9 @@ function showCombo(){
     el.style.left = '50%';
     el.style.top = '50%';
     el.style.animation = 'comboFloat 0.9s ease-out forwards';
-    document.querySelector('.court').appendChild(el);
+    const court = getCourtElement();
+    if(!court) return;
+    court.appendChild(el);
     setTimeout(() => el.remove(), 900);
 }
 
@@ -2809,54 +3186,58 @@ function returnBall(qual, angle){
     M.ballActive = true;
     M.ballBounces = 0;
     M.rally++;
-    
+
     // Rally tension - crowd gets louder as rally continues
     sounds.rallyTension(M.rally);
-    
+
     // Gem spawn chance increases with rally length
     const gemChance = 0.05 + M.rally * 0.02;
     if(Math.random() < gemChance && !M.gemActive) spawnGem();
-    
+
     const st = getStats();
     const spd = 1 + st.power * 0.012;
     const ctrl = 1 + st.control * 0.008;
     const off = M.playerPos - M.ballPos.x;
     const ang = Math.sin(angle) * 1.1 * ctrl;
     const pos = off * 0.018;
-    
+
     // Add spin based on angle
     M.ballSpin = Math.sin(angle) * 0.5;
-    
+
     M.ballH = 30;
     M.ballVel = {
         x: Math.max(-1.3, Math.min(1.3, (ang + pos) * 0.75)),
         y: -1.6 * spd * qual * 0.65,
         z: 2.5 * qual
     };
-    
+
     animateReturn();
 }
 
 function animateReturn(){
     if(!M.ballActive) return;
-    
+    if(window.animationPaused){
+        requestAnimationFrame(animateReturn);
+        return;
+    }
+
     M.ballPos.x += M.ballVel.x;
     M.ballPos.y += M.ballVel.y;
     M.ballH += M.ballVel.z;
     M.ballVel.z -= 0.15;
-    
+
     // Spin effect
     if(M.ballSpin !== 0){
         M.ballVel.x += M.ballSpin * 0.025;
     }
-    
+
     // Ground bounce
     if(M.ballH <= 0 && M.ballVel.z < 0){
         M.ballH = 0;
         M.ballVel.z = -M.ballVel.z * 0.72;
         sounds.bounce();
     }
-    
+
     // Out wide - whoever hit it last loses the point
     if(M.ballPos.x < 10 || M.ballPos.x > 90){
         M.ballActive = false;
@@ -2865,7 +3246,7 @@ function animateReturn(){
         M.pendingCombo = false;  // Clear - don't show combo for shot that went out
         M.rally = 0;
         sounds.miss();
-        
+
         if(M.lastHitBy === 'player'){
             // Player hit it out - opponent gets point
             showCallOverlay('OUT!', false);
@@ -2880,83 +3261,83 @@ function animateReturn(){
         }
         return;
     }
-    
-    const ball = document.getElementById('ball');
-    const shadow = document.getElementById('ballShadow');
+
+    const ball = safeGetElement('ball');
+    const shadow = safeGetElement('ballShadow');
     ball.style.left = M.ballPos.x + '%';
     ball.style.top = (M.ballPos.y - M.ballH/10) + '%';
     shadow.style.left = M.ballPos.x + '%';
     shadow.style.top = M.ballPos.y + '%';
-    
+
     // Ball reached opponent's side
     if(M.ballPos.y < 12){
         M.ballActive = false;
-        
+
         const st = getStats();
         const dist = Math.abs(M.ballPos.x - M.oppPos);
         const reach = dist < 28;
         const hq = Math.max(0, 1 - dist * 0.025);
         const prob = reach ? (M.settings.oppAcc * hq - st.power * 0.002) : 0;
-        
+
         // Check for net cord as ball crosses net zone (43-57%)
         if(M.ballPos.y > 43 && M.ballPos.y < 57 && Math.random() < 0.08){
             showNetCordEffect();
             sounds.let();
         }
-        
+
         if(Math.random() < prob){
             // Opponent returns - clear pending combo (shot wasn't a winner)
             M.pendingCombo = false;
             M.rally++;
             M.ballBounces = 0;
-            
+
             // Rally tension - crowd gets louder as rally continues
             sounds.rallyTension(M.rally);
-            
+
             updateMatchUI();
-            
+
             M.ballPos = {x: M.oppPos, y: 12};
             M.ballH = 60;
-            
-            const tx = M.playerPos > 50 ? 25 + Math.random() * 25 : 50 + Math.random() * 25;
+
+            const tx = M.playerPos > 50 ? 25 + Math.floor(Math.random() * 25) : 50 + Math.floor(Math.random() * 25);
             M.ballVel = {
                 x: (tx - M.ballPos.x) / 100 * 1.8,
                 y: M.settings.speed * 0.6,
                 z: 1.5
             };
             M.ballSpin = (Math.random() - 0.5) * 0.3;
-            
-            document.getElementById('opponent').classList.add('hitting');
+
+            safeGetElement('opponent')?.classList.add('hitting');
             setOppSwinging();
-            setTimeout(() => document.getElementById('opponent').classList.remove('hitting'), 250);
+            setTimeout(() => safeGetElement('opponent')?.classList.remove('hitting'), 250);
             sounds.hit();
-            
+
             M.ballActive = true;
             M.canHit = false;
             ball.classList.add('active');
             ball.classList.remove('glowing');
             shadow.classList.add('active');
-            
+
             animateBall();
         } else {
             // Opponent missed - point for player! (Winner!)
             resetBallUI();
             M.rally = 0;
             M.winners++;
-            
+
             let reward = 10 + M.combo * 5;
             if(G.equipment.special === 'x1') reward *= 2;
             G.coins += reward;
-            
+
             M.streak++;
             updateStreakDisplay();
-            
+
             // NOW show combo - shot was successful!
             if(M.pendingCombo && M.combo >= 1){
                 showCombo();
                 M.pendingCombo = false;
             }
-            
+
             // Show winner call for clean winners
             if(M.combo >= 2 || Math.random() < 0.25){
                 showCallOverlay('WINNER!', true);
@@ -2964,20 +3345,20 @@ function animateReturn(){
             } else {
                 sounds.coin();
             }
-            
+
             toast('+' + reward + ' 💰');
-            
+
             if(!scorePoint('p')) setTimeout(startNextPoint, 1500);
         }
         return;
     }
-    
+
     if(M.ballPos.y < 50) updateOpp();
     updatePlayerDirection();
-    
+
     // Create ball trail for visual feedback
     createBallTrail();
-    
+
     requestAnimationFrame(animateReturn);
 }
 
@@ -2985,8 +3366,8 @@ function checkEnd(){
     // Check if match is over based on sets won
     // Quick/Standard: 1 set to win
     // Pro: Best of 3 sets (first to 2)
-    const setsToWin = G.matchType === 'pro' ? 2 : 1;
-    
+    const setsToWin = G.matchType === 'standard' ? 2 : 1;
+
     if(M.pSets >= setsToWin){
         endMatch();
         return true;
@@ -2995,18 +3376,18 @@ function checkEnd(){
         endMatch();
         return true;
     }
-    
+
     return false;
 }
 
 function endMatch(){
     M.active = false;
-    
+
     const won = M.pSets > M.oSets || (M.pSets === M.oSets && M.pGames > M.oGames);
-    
+
     // Enhanced reward calculation
     let coins = won ? 100 : 35;
-    
+
     // Performance bonuses
     if(won) {
         if(M.aces >= 5) coins += 50; // Ace bonus
@@ -3015,20 +3396,20 @@ function endMatch(){
         if(M.longestRally >= 8) coins += 25; // Rally bonus
         if(M.streak >= 5) coins += M.streak * 5; // Streak bonus
     }
-    
+
     coins = Math.floor(coins * M.settings.mult);
     if(G.equipment.special === 'x1') coins *= 2;
-    
+
     const skill = Math.floor((won ? 35 : 15) * M.settings.mult + M.aces * 3 + M.winners * 2);
-    
+
     let gems = 0;
     if(won) {
-        gems = Math.floor(Math.random() * 3) + 1;
+        gems = Math.floor(Math.floor(Math.random() * 3)) + 1;
         if(M.aces >= 3) gems += 1;
         if(M.winners >= 8) gems += 1;
         gems += Math.floor(M.streak / 3);
     }
-    
+
     // Update career stats
     if(!G.careerStats) {
         G.careerStats = {
@@ -3041,7 +3422,7 @@ function endMatch(){
             longestRally: 0
         };
     }
-    
+
     G.careerStats.matchesPlayed++;
     if(won) G.careerStats.matchesWon++;
     G.careerStats.totalAces += M.aces;
@@ -3049,24 +3430,24 @@ function endMatch(){
     G.careerStats.totalCoins += coins;
     if(M.streak > G.careerStats.bestStreak) G.careerStats.bestStreak = M.streak;
     if(M.longestRally > G.careerStats.longestRally) G.careerStats.longestRally = M.longestRally;
-    
+
     const oldNTRP = getNTRP();
     G.coins += coins;
     G.skillPoints += skill;
     G.gems += gems;
     const newNTRP = getNTRP();
-    
+
     save();
-    
+
     // Enhanced victory/defeat presentation
-    document.getElementById('gameHUD').classList.remove('active');
-    document.getElementById('gameCourt').classList.remove('active');
-    document.getElementById('streakDisplay').classList.remove('active');
-    
-    const rt = document.getElementById('resultsTitle');
+    safeGetElement('gameHUD')?.classList.remove('active');
+    safeGetElement('gameCourt')?.classList.remove('active');
+    safeGetElement('streakDisplay')?.classList.remove('active');
+
+    const rt = safeGetElement('resultsTitle');
     rt.textContent = won ? 'VICTORY!' : 'DEFEAT';
     rt.className = 'results-title ' + (won ? 'victory' : 'defeat');
-    
+
     // Enhanced score display
     let scoreText;
     if(M.pSets > 0 || M.oSets > 0) {
@@ -3074,28 +3455,28 @@ function endMatch(){
     } else {
         scoreText = `${M.pGames}-${M.oGames}`;
     }
-    
-    document.getElementById('finalScore').textContent = scoreText;
-    document.getElementById('coinsEarned').textContent = '+' + coins;
-    document.getElementById('skillGained').textContent = '+' + skill;
-    document.getElementById('gemsEarned').textContent = '+' + gems;
+
+    safeGetElement('finalScore')?.textContent = scoreText;
+    safeGetElement('coinsEarned')?.textContent = '+' + coins;
+    safeGetElement('skillGained')?.textContent = '+' + skill;
+    safeGetElement('gemsEarned')?.textContent = '+' + gems;
     // Enhanced match statistics
-    document.getElementById('acesCount').textContent = M.aces;
-    document.getElementById('winnersCount').textContent = M.winners;
-    document.getElementById('doubleFaultsCount').textContent = M.doubleFaults || 0;
-    document.getElementById('bestStreakCount').textContent = M.bestStreak || M.streak;
-    document.getElementById('longestRally').textContent = M.longestRally;
-    document.getElementById('totalPoints').textContent = M.pointsPlayed || 0;
-    
+    safeGetElement('acesCount')?.textContent = M.aces;
+    safeGetElement('winnersCount')?.textContent = M.winners;
+    safeGetElement('doubleFaultsCount')?.textContent = M.doubleFaults || 0;
+    safeGetElement('bestStreakCount')?.textContent = M.bestStreak || M.streak;
+    safeGetElement('longestRally')?.textContent = M.longestRally;
+    safeGetElement('totalPoints')?.textContent = M.pointsPlayed || 0;
+
     const avgRally = M.pointsPlayed > 0 ? (M.totalRallies / M.pointsPlayed).toFixed(1) : '0';
-    document.getElementById('avgRally').textContent = avgRally;
-    
+    safeGetElement('avgRally')?.textContent = avgRally;
+
     // Calculate match duration
     const matchDuration = M.startTime ? Math.floor((Date.now() - M.startTime) / 1000) : 0;
     const minutes = Math.floor(matchDuration / 60);
     const seconds = matchDuration % 60;
-    document.getElementById('matchDuration').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    
+    safeGetElement('matchDuration')?.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
     // Check daily challenge progress
     if(won) {
         checkChallengeProgress('aces', M.aces || 0);
@@ -3105,7 +3486,7 @@ function endMatch(){
         checkChallengeProgress('matchTime', matchDuration);
         checkChallengeProgress('streak', M.bestStreak || M.streak || 0);
     }
-    
+
     // Show match performance
     if(won) {
         if(M.aces >= 5 || M.winners >= 10 || M.streak >= 5) {
@@ -3115,20 +3496,20 @@ function endMatch(){
     } else {
         setTimeout(() => sounds.defeat(), 500);
     }
-    
+
     if(newNTRP > oldNTRP){
         setTimeout(() => {
             toast(`🎾 NTRP UPGRADED to ${newNTRP.toFixed(1)}!`);
             sounds.point();
         }, won ? 2000 : 1500);
     }
-    
-    document.getElementById('matchResults').classList.add('active');
+
+    safeGetElement('matchResults')?.classList.add('active');
 }
 
 function returnToMenu(){
-    document.getElementById('matchResults').classList.remove('active');
-    document.getElementById('mainMenu').classList.add('active');
+    safeGetElement('matchResults')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
     resetBallUI();
     updateUI();
 }
@@ -3139,18 +3520,18 @@ let touchY = null, touchX = null, touchT = null;
 
 document.addEventListener('touchstart', e => {
     if(!M.active) return;
-    
+
     const t = e.touches[0];
     touchY = t.clientY;
     touchX = t.clientX;
     touchT = Date.now();
-    
+
     // Handle serve charging
     if(M.isPlayerServe && M.servePhase === 'ready'){
         chargingServe(t.clientY, t.clientX);
         return;
     }
-    
+
     updatePlayerPos(t.clientX);
     setPlayerRunning(true);
 });
@@ -3158,128 +3539,128 @@ document.addEventListener('touchstart', e => {
 document.addEventListener('touchmove', e => {
     if(!M.active) return;
     e.preventDefault();
-    
+
     const t = e.touches[0];
-    
+
     // Continue charging serve
     if(M.servePhase === 'charging'){
         chargingServe(t.clientY, t.clientX);
         return;
     }
-    
+
     updatePlayerPos(t.clientX);
 }, {passive: false});
 
 document.addEventListener('touchend', e => {
     setPlayerRunning(false);
-    
+
     if(!M.active) return;
-    
+
     const t = e.changedTouches[0];
-    
+
     // Release serve
     if(M.servePhase === 'charging'){
         releaseServe(t.clientX, t.clientY);
         touchY = touchX = null;
         return;
     }
-    
+
     // Normal hit
     if(!M.canHit || !touchY) return;
-    
+
     const dy = touchY - t.clientY;
     const dx = t.clientX - touchX;
     const dt = Date.now() - touchT;
-    
+
     if(dy > 8 || (dt < 180 && Math.abs(dy) < 8)){
         const pwr = Math.min(1, Math.max(0.3, dy/90));
         const ang = Math.atan2(dx, Math.max(1, dy));
-        
+
         // Create swipe trail for visual feedback
         createSwipeTrail(touchX, touchY, t.clientX, t.clientY);
-        
+
         hitBall(pwr, ang);
     }
-    
+
     touchY = touchX = null;
 });
 
 // Mouse support
 document.addEventListener('mousedown', e => {
     if(!M.active) return;
-    
+
     touchY = e.clientY;
     touchX = e.clientX;
     touchT = Date.now();
-    
+
     if(M.isPlayerServe && M.servePhase === 'ready'){
         chargingServe(e.clientY, e.clientX);
         return;
     }
-    
+
     updatePlayerPos(e.clientX);
     setPlayerRunning(true);
 });
 
 document.addEventListener('mousemove', e => {
     if(!M.active) return;
-    
+
     if(M.servePhase === 'charging'){
         chargingServe(e.clientY, e.clientX);
         return;
     }
-    
+
     updatePlayerPos(e.clientX);
 });
 
 document.addEventListener('mouseup', e => {
     setPlayerRunning(false);
-    
+
     if(!M.active) return;
-    
+
     if(M.servePhase === 'charging'){
         releaseServe(e.clientX, e.clientY);
         touchY = touchX = null;
         return;
     }
-    
+
     if(!M.canHit || !touchY) return;
-    
+
     const dy = touchY - e.clientY;
     const dx = e.clientX - touchX;
-    
+
     if(dy > 8 || Date.now() - touchT < 180){
         const pwr = Math.min(1, Math.max(0.3, dy/90));
         const ang = Math.atan2(dx, Math.max(1, dy));
-        
-        // Create swipe trail for visual feedback  
+
+        // Create swipe trail for visual feedback
         createSwipeTrail(touchX, touchY, e.clientX, e.clientY);
-        
+
         hitBall(pwr, ang);
     }
-    
+
     touchY = touchX = null;
 });
 
 function updatePlayerPos(x){
     if(M.isPlayerServe) return; // Don't move during serve
-    
-    const court = document.querySelector('.court');
+
+    const court = getCourtElement();
     if(!court) return;
-    
+
     const r = court.getBoundingClientRect();
     const rel = ((x - r.left) / r.width) * 100;
     M.playerPos = Math.max(12, Math.min(88, rel));
-    document.getElementById('playerPaddle').style.left = M.playerPos + '%';
+    safeGetElement('playerPaddle')?.style.left = M.playerPos + '%';
     updatePlayerDirection();
 }
 
 function updatePlayerDirection(){
     if(!M.ballActive) return;
-    
+
     const playerSprite = document.querySelector('.player-sprite-active');
     if(!playerSprite) return;
-    
+
     if(M.ballPos.x < M.playerPos){
         playerSprite.classList.add('flipped');
     } else {
@@ -3288,8 +3669,8 @@ function updatePlayerDirection(){
 }
 
 // Gem collection
-document.getElementById('gemDrop').addEventListener('click', collectGem);
-document.getElementById('gemDrop').addEventListener('touchstart', e => {
+safeGetElement('gemDrop')?.addEventListener('click', collectGem);
+safeGetElement('gemDrop')?.addEventListener('touchstart', e => {
     e.stopPropagation();
     collectGem();
 });
@@ -3298,7 +3679,7 @@ window.addEventListener('load', () => {
     // Only prevent touchmove during active gameplay, not on menus
     document.body.addEventListener('touchmove', e => {
         // Only prevent default on game screen to allow menu scrolling
-        const gameScreen = document.getElementById('gameScreen');
+        const gameScreen = safeGetElement('gameCourt');
         if(gameScreen && gameScreen.classList.contains('active')) {
             e.preventDefault();
         }
@@ -3334,25 +3715,22 @@ let oppState = {
 };
 
 function initSprites(){
-    const opp = document.getElementById('opponentSprite');
-    const player = document.getElementById('playerSprite');
-    
+    const opp = safeGetElement('opponentSprite');
+    const player = safeGetElement('playerSprite');
+
     // Create image preloader with proper error handling
     const preloadImages = [SPRITES.playerRun, SPRITES.playerSwing, SPRITES.oppRun, SPRITES.oppSwing, SPRITES.playerIdle, SPRITES.oppIdle];
-    let loadedCount = 0;
-    
-    preloadImages.forEach(src => {
-        const img = new Image();
-        img.onload = () => {
-            loadedCount++;
-            if(loadedCount === preloadImages.length) {
-                console.log('✅ All sprites preloaded successfully');
-            }
-        };
-        img.onerror = () => console.warn('⚠️ Failed to preload sprite:', src);
-        img.src = src;
+    LoadingManager.setState(LoadingManager.states.LOADING_SPRITES);
+    Promise.all(preloadImages.map(src => loadSpriteWithRetry(src, 2))).then((results) => {
+        const failed = preloadImages.filter((_, idx) => !results[idx]);
+        if(failed.length > 0){
+            console.warn('⚠️ Some sprites failed to preload:', failed);
+        } else {
+            console.log('✅ All sprites preloaded successfully');
+        }
+        LoadingManager.setState(LoadingManager.states.READY);
     });
-    
+
     // Initialize with stable state
     if(opp && player) {
         setOpponentSprite(SpriteStates.IDLE, true);
@@ -3364,16 +3742,16 @@ function setPlayerSprite(newState, force = false) {
     const now = Date.now();
     if(!force && (playerState.transitioning || (now - playerState.lastChange < 50))) return;
     if(newState === playerState.current && !force) return;
-    
+
     playerState.transitioning = true;
     playerState.lastChange = now;
-    
-    const sprite = document.getElementById('playerSprite');
+
+    const sprite = safeGetElement('playerSprite');
     if(!sprite) return;
-    
+
     // Clear any existing animations
     sprite.classList.remove('cycling', 'playing-4', 'playing-5', 'playing-7', 'playing-8');
-    
+
     switch(newState) {
         case SpriteStates.RUNNING:
             sprite.style.backgroundImage = `url(${SPRITES.playerRun})`;
@@ -3381,7 +3759,7 @@ function setPlayerSprite(newState, force = false) {
             sprite.style.backgroundPosition = '0 0';
             sprite.classList.add('cycling');
             break;
-            
+
         case SpriteStates.SWINGING:
             sprite.style.backgroundImage = `url(${SPRITES.playerSwing})`;
             sprite.style.backgroundSize = '640px 96px';
@@ -3390,7 +3768,7 @@ function setPlayerSprite(newState, force = false) {
             // Auto-return to idle after swing
             setTimeout(() => setPlayerSprite(SpriteStates.IDLE), 500);
             break;
-            
+
         case SpriteStates.IDLE:
         default:
             sprite.style.backgroundImage = `url(${SPRITES.playerIdle})`;
@@ -3404,7 +3782,7 @@ function setPlayerSprite(newState, force = false) {
             }
             break;
     }
-    
+
     playerState.current = newState;
     playerState.transitioning = false;
 }
@@ -3413,22 +3791,22 @@ function setOpponentSprite(newState, force = false) {
     const now = Date.now();
     if(!force && (oppState.transitioning || (now - oppState.lastChange < 80))) return;
     if(newState === oppState.current && !force) return;
-    
+
     // Clear existing timers to prevent conflicts
     Object.values(oppState.timers).forEach(timer => {
         if(timer) clearTimeout(timer);
     });
     oppState.timers = { start: null, stop: null, swing: null };
-    
+
     oppState.transitioning = true;
     oppState.lastChange = now;
-    
-    const sprite = document.getElementById('opponentSprite');
+
+    const sprite = safeGetElement('opponentSprite');
     if(!sprite) return;
-    
+
     // Clear animations
     sprite.classList.remove('cycling', 'playing-4', 'playing-5', 'playing-7', 'playing-8');
-    
+
     switch(newState) {
         case SpriteStates.RUNNING:
             sprite.style.backgroundImage = `url(${SPRITES.oppRun})`;
@@ -3436,7 +3814,7 @@ function setOpponentSprite(newState, force = false) {
             sprite.style.backgroundPosition = '0 0';
             sprite.classList.add('cycling');
             break;
-            
+
         case SpriteStates.SWINGING:
             sprite.style.backgroundImage = `url(${SPRITES.oppSwing})`;
             sprite.style.backgroundSize = '640px 96px';
@@ -3447,7 +3825,7 @@ function setOpponentSprite(newState, force = false) {
                 setOpponentSprite(SpriteStates.IDLE, true);
             }, 500);
             break;
-            
+
         case SpriteStates.IDLE:
         default:
             sprite.style.backgroundImage = `url(${SPRITES.oppIdle})`;
@@ -3461,7 +3839,7 @@ function setOpponentSprite(newState, force = false) {
             }
             break;
     }
-    
+
     oppState.current = newState;
     oppState.transitioning = false;
 }
@@ -3469,16 +3847,16 @@ function setOpponentSprite(newState, force = false) {
 function playSprite(spriteId, frames){
     const sprite = document.getElementById(spriteId);
     if(!sprite) return;
-    
+
     // Remove all animation classes
     sprite.classList.remove('playing-4', 'playing-5', 'playing-7', 'playing-8');
-    
+
     // Force reflow to ensure clean state
     void sprite.offsetWidth;
-    
+
     // Add appropriate animation class
-    const animClass = frames === 8 ? 'playing-8' : 
-                      frames === 7 ? 'playing-7' : 
+    const animClass = frames === 8 ? 'playing-8' :
+                      frames === 7 ? 'playing-7' :
                       frames === 4 ? 'playing-4' : 'playing-5';
     sprite.classList.add(animClass);
 }
@@ -3502,6 +3880,25 @@ function setOppSwinging() {
 function setPlayerSwinging() {
     setPlayerSprite(SpriteStates.SWINGING, true);
 }
+
+// Enhanced initialization
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        console.log('🎾 Initializing Championship Tennis...');
+
+        LoadingManager.setState(LoadingManager.states.INITIALIZING);
+        MobileEnhancer.init();
+        AudioManager.init();
+        PerformanceOptimizer.init();
+
+        LoadingManager.setState(LoadingManager.states.READY);
+        console.log('✅ Game initialized successfully');
+
+    } catch (error) {
+        ErrorRecovery.handleCriticalError(error, 'initialization');
+    }
+});
+
 </script>
 </body>
 </html>
