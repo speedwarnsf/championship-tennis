@@ -8,8 +8,8 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;800&display=swap');
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
-        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#1a1a2e,#0f0f1e);height:100vh;overflow:hidden;touch-action:none;overscroll-behavior:none;position:fixed;width:100%}
-        .screen{position:fixed;inset:0;display:none;flex-direction:column;z-index:100}
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#1a1a2e,#0f0f1e);min-height:100vh;overflow:hidden;overscroll-behavior:none;width:100%}
+        .screen{position:fixed;inset:0;display:none;flex-direction:column;z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch}
         .screen.active{display:flex}
         .loading-screen{background:#000;justify-content:center;align-items:center;z-index:10000;overflow:hidden}
         .hero-image{position:relative;width:64vw;height:57vh;margin-bottom:15px;display:flex;justify-content:center;align-items:center}
@@ -202,7 +202,7 @@
         .continue-btn{padding:18px 50px;background:linear-gradient(135deg,#ffd700,#ffed4e);border:none;border-radius:25px;color:#1a1a2e;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
         .progress-toast{position:fixed;top:-80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ffd700,#ffed4e);padding:12px 25px;border-radius:25px;color:#1a1a2e;font-weight:700;z-index:3000;transition:top 0.4s ease}
         .progress-toast.show{top:40px}
-        .shop-screen{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:12px;overflow-y:auto;z-index:1100;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+        .shop-screen{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:12px;overflow-y:auto;z-index:1100;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
         /* ARCADE STYLE CHARACTER SELECT */
         .char-select{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:10px 10px 80px;overflow-y:auto;z-index:1100;flex-direction:column;position:relative;touch-action:pan-y;-webkit-overflow-scrolling:touch}
         .char-select::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.1) 2px,rgba(0,0,0,0.1) 4px);pointer-events:none;z-index:9999}
@@ -1331,7 +1331,7 @@ function closeShop(){
 }
 
 // Character system - must be before showCharSelect
-const V = '?v=27';
+const V = '?v=28';
 
 window.CHARACTERS = [
     {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
@@ -1405,7 +1405,7 @@ function renderCharGrid(){
     var chars = window.CHARACTERS;
     if(!chars || !chars.length) return;
     var html = '';
-    var V = '?v=27';
+    var V = '?v=28';
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
@@ -2192,17 +2192,17 @@ function animateReturn(){
         sounds.bounce();
     }
     
-    // Out wide
+    // Out wide - opponent's shot went out, point for player!
     if(M.ballPos.x < 10 || M.ballPos.x > 90){
         M.ballActive = false;
         resetBallUI();
         M.combo = 0;
         M.rally = 0;
-        M.streak = 0;
-        updateStreakDisplay();
         sounds.miss();
-        toast('OUT!');
-        if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
+        showCallOverlay('OUT!', true);
+        M.streak++;
+        updateStreakDisplay();
+        if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
         return;
     }
     
