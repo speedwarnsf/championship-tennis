@@ -1377,9 +1377,10 @@ function updateSprites(){
 }
 
 function showCharSelect(){
+    alert('showCharSelect called v21');
     document.getElementById('mainMenu').classList.remove('active');
     document.getElementById('charSelect').classList.add('active');
-    document.getElementById('charGrid').innerHTML = '<div style="background:lime;color:black;padding:20px;font-size:18px;">✅ showCharSelect OK (v20)</div>';
+    document.getElementById('charGrid').innerHTML = '<div style="background:lime;color:black;padding:20px;font-size:18px;">✅ showCharSelect OK (v21)</div>';
     try {
         renderCharGrid();
     } catch(e) {
