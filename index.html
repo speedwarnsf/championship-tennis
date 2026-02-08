@@ -217,6 +217,14 @@
         .char-preview{width:56px;height:68px;margin:0 auto 4px;background-size:448px 68px;background-repeat:no-repeat;background-position:0 0;image-rendering:pixelated;border:2px solid #1a2a4a;background-color:#0a0a1a}
         .char-name{font-size:9px;color:#8ac;font-weight:700;text-transform:uppercase;text-shadow:1px 1px 0 #000;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .char-stats{font-size:8px;color:#6a8aba;margin-top:2px;font-family:monospace}
+        .char-stat-bars{margin-top:4px}
+        .stat-bar-row{display:flex;align-items:center;gap:2px;margin:2px 0}
+        .stat-lbl{font-size:7px;color:#6a8aba;width:8px;text-align:center}
+        .stat-bar{flex:1;height:4px;background:#1a2a4a;border-radius:2px;overflow:hidden}
+        .stat-fill{height:100%;border-radius:2px}
+        .stat-fill.pwr{background:linear-gradient(90deg,#ff6b6b,#ff4757)}
+        .stat-fill.spd{background:linear-gradient(90deg,#4ecdc4,#26de81)}
+        .stat-fill.ctl{background:linear-gradient(90deg,#45aaf2,#2d98da)}
         .char-lock{font-size:16px;margin-bottom:3px;filter:drop-shadow(0 0 3px #000)}
         .char-detail{background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 100%);border:3px solid;border-color:#6a8aba #2a3a5a #2a3a5a #6a8aba;border-radius:6px;padding:12px;margin-bottom:10px;box-shadow:3px 3px 0 #0a1a2a}
         .char-detail-preview{width:72px;height:86px;margin:0 auto 8px;background-size:576px 86px;background-repeat:no-repeat;image-rendering:pixelated;border:2px solid #1a2a4a;background-color:#0a0a1a}
@@ -1323,7 +1331,7 @@ function closeShop(){
 }
 
 // Character system - must be before showCharSelect
-const V = '?v=24';
+const V = '?v=25';
 
 window.CHARACTERS = [
     {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
@@ -1399,7 +1407,7 @@ function renderCharGrid(){
     var chars = window.CHARACTERS;
     if(!chars || !chars.length) return;
     var html = '';
-    var V = '?v=24';
+    var V = '?v=25';
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
@@ -1410,7 +1418,11 @@ function renderCharGrid(){
         html += '<div class="char-preview" style="background-image:url(' + spriteUrl + ')"></div>';
         if(unlocked){
             html += '<div class="char-name">' + c.name + '</div>';
-            html += '<div class="char-stats">P' + c.power + ' S' + c.speed + ' C' + c.control + '</div>';
+            html += '<div class="char-stat-bars">';
+            html += '<div class="stat-bar-row"><span class="stat-lbl">P</span><div class="stat-bar"><div class="stat-fill pwr" style="width:' + c.power + '%"></div></div></div>';
+            html += '<div class="stat-bar-row"><span class="stat-lbl">S</span><div class="stat-bar"><div class="stat-fill spd" style="width:' + c.speed + '%"></div></div></div>';
+            html += '<div class="stat-bar-row"><span class="stat-lbl">C</span><div class="stat-bar"><div class="stat-fill ctl" style="width:' + c.control + '%"></div></div></div>';
+            html += '</div>';
         } else {
             html += '<div class="char-lock">🔒</div>';
             html += '<div class="char-name">' + c.cost + '💰</div>';
