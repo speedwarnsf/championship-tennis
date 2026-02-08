@@ -204,9 +204,9 @@
         .progress-toast.show{top:40px}
         .shop-screen{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:12px;overflow-y:auto;z-index:1100;touch-action:pan-y;-webkit-overflow-scrolling:touch}
         /* ARCADE STYLE CHARACTER SELECT */
-        .char-select{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:10px 10px 80px;overflow:hidden;z-index:1100;flex-direction:column;position:relative}
-        .char-select::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0.15) 4px);pointer-events:none;z-index:9999}
-        .char-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;flex:1;padding:10px;background:linear-gradient(135deg,#2a3a5a 0%,#1a2a4a 100%);border:3px solid #4a6a9a;border-radius:8px;box-shadow:inset 0 2px 4px rgba(0,0,0,0.5),0 4px 8px rgba(0,0,0,0.3)}
+        .char-select{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:10px 10px 80px;overflow-y:auto;z-index:1100;flex-direction:column;position:relative;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+        .char-select::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.1) 2px,rgba(0,0,0,0.1) 4px);pointer-events:none;z-index:9999}
+        .char-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow-y:scroll;touch-action:pan-y;-webkit-overflow-scrolling:touch;flex:1;padding:10px;background:linear-gradient(135deg,#2a3a5a 0%,#1a2a4a 100%);border:3px solid #4a6a9a;border-radius:8px;box-shadow:inset 0 2px 4px rgba(0,0,0,0.5),0 4px 8px rgba(0,0,0,0.3);max-height:calc(100vh - 280px)}
         .char-select-btn{position:fixed;bottom:15px;left:15px;right:15px;z-index:1101;background:linear-gradient(180deg,#ffd700 0%,#cc9900 50%,#aa7700 100%)!important;border:3px solid!important;border-color:#ffed4e #886600 #886600 #ffed4e!important;color:#000!important;text-shadow:none!important;box-shadow:3px 3px 0 #0a1a2a!important;font-size:16px!important;letter-spacing:3px!important}
         .char-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:8px 12px;background:linear-gradient(180deg,#4a6a9a 0%,#3a5a8a 50%,#2a4a7a 100%);border:2px solid #6a8aba;border-radius:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 2px 4px rgba(0,0,0,0.3)}
         .char-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;text-shadow:2px 2px 0 #000,0 0 10px rgba(100,200,255,0.5);letter-spacing:3px}
@@ -1331,7 +1331,7 @@ function closeShop(){
 }
 
 // Character system - must be before showCharSelect
-const V = '?v=25';
+const V = '?v=26';
 
 window.CHARACTERS = [
     {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
@@ -1407,7 +1407,7 @@ function renderCharGrid(){
     var chars = window.CHARACTERS;
     if(!chars || !chars.length) return;
     var html = '';
-    var V = '?v=25';
+    var V = '?v=26';
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
