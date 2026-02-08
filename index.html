@@ -113,8 +113,16 @@
         @keyframes ballToss{0%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-150%) scale(1.2)}100%{transform:translate(-50%,-50%) scale(1)}}
         @keyframes ballGlow{0%,100%{transform:translate(-50%,-50%) scale(1.3)}50%{transform:translate(-50%,-50%) scale(1.6)}}
         @keyframes flashFade{0%{opacity:1}100%{opacity:0}}
-        /* Ball trail effect */
+        /* Enhanced ball trail effect */
         .ball-trail{position:absolute;width:10px;height:10px;background:rgba(252,248,54,0.4);border-radius:50%;transform:translate(-50%,-50%);z-index:38;pointer-events:none;opacity:0;transition:opacity 0.1s}
+        .ball-trail.active{opacity:1;animation:trailFade 0.3s ease-out forwards}
+        @keyframes trailFade{0%{opacity:0.8;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(0.3)}}
+        
+        /* Swipe trail visualization */
+        .swipe-trail{position:absolute;pointer-events:none;z-index:45;opacity:0}
+        .swipe-trail.active{opacity:1;animation:swipeTrailFade 0.5s ease-out forwards}
+        .swipe-trail-segment{position:absolute;width:8px;height:8px;background:linear-gradient(135deg,#4caf50,#8bc34a);border-radius:50%;transform:translate(-50%,-50%)}
+        @keyframes swipeTrailFade{0%{opacity:1}100%{opacity:0}}
         .ball-shadow{position:absolute;width:26px;height:10px;background:radial-gradient(ellipse at center,rgba(0,0,0,0.4),transparent 70%);border-radius:50%;transform:translate(-50%,0);z-index:25;display:none}
         .ball-shadow.active{display:block}
         .opponent{position:absolute;top:5%;left:50%;transform:translateX(-50%);width:80px;height:96px;display:flex;align-items:center;justify-content:center;z-index:30;transition:left 0.2s ease-out}
@@ -206,6 +214,15 @@
         .reward-label{font-size:13px;color:rgba(255,255,255,0.8);text-transform:uppercase}
         .reward-value{font-family:'Bebas Neue',sans-serif;font-size:28px;background:linear-gradient(135deg,#4caf50,#8bc34a);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         .continue-btn{padding:18px 50px;background:linear-gradient(135deg,#ffd700,#ffed4e);border:none;border-radius:25px;color:#1a1a2e;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
+        
+        /* Daily Challenge System */
+        .challenge-banner{background:linear-gradient(135deg,#9b59b6,#8e44ad);border:2px solid rgba(155,89,182,0.5);border-radius:12px;margin:10px 0;padding:12px;color:#fff}
+        .challenge-title{font-family:'Bebas Neue',sans-serif;font-size:18px;color:#e8d5ff;margin-bottom:5px}
+        .challenge-desc{font-size:11px;color:rgba(255,255,255,0.8);margin-bottom:8px}
+        .challenge-progress{display:flex;justify-content:space-between;align-items:center}
+        .challenge-bar{flex:1;height:6px;background:rgba(0,0,0,0.3);border-radius:3px;margin-right:10px;overflow:hidden}
+        .challenge-fill{height:100%;background:linear-gradient(90deg,#4caf50,#8bc34a);transition:width 0.3s}
+        .challenge-reward{font-size:10px;color:#ffd700;font-weight:700}
         .progress-toast{position:fixed;top:-80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ffd700,#ffed4e);padding:12px 25px;border-radius:25px;color:#1a1a2e;font-weight:700;z-index:3000;transition:top 0.4s ease}
         .progress-toast.show{top:40px}
         .shop-screen{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:12px;overflow-y:auto;z-index:1100;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
@@ -317,11 +334,21 @@
         <div class="difficulty-section">
             <div class="difficulty-title">Match Length</div>
             <div class="difficulty-buttons">
-                <button class="difficulty-btn selected" onclick="selectMatchType('quick')" id="matchQuick">Quick<span class="difficulty-reward">First to 3</span></button>
-                <button class="difficulty-btn" onclick="selectMatchType('standard')" id="matchStandard">Standard<span class="difficulty-reward">First to 6</span></button>
+                <button class="difficulty-btn selected" onclick="selectMatchType('quick')" id="matchQuick">Quick<span class="difficulty-reward">First to 6</span></button>
+                <button class="difficulty-btn" onclick="selectMatchType('standard')" id="matchStandard">Standard<span class="difficulty-reward">Best of 3</span></button>
                 <button class="difficulty-btn" onclick="selectMatchType('timed')" id="matchTimed">Timed<span class="difficulty-reward">Best of Time</span></button>
             </div>
         </div>
+        <!-- Daily Challenge -->
+        <div class="challenge-banner" id="dailyChallenge">
+            <div class="challenge-title" id="challengeTitle">Daily Challenge: Ace Master</div>
+            <div class="challenge-desc" id="challengeDesc">Score 3 aces in a single match</div>
+            <div class="challenge-progress">
+                <div class="challenge-bar"><div class="challenge-fill" id="challengeFill" style="width:0%"></div></div>
+                <div class="challenge-reward" id="challengeReward">+100💰 +2💎</div>
+            </div>
+        </div>
+        
         <div class="menu-buttons">
             <button class="menu-btn primary" onclick="startMatch()">PLAY MATCH</button>
             <button class="menu-btn" onclick="showCharSelect()">SELECT PLAYER</button>
@@ -446,8 +473,15 @@
             <div class="rewards-title">Match Statistics</div>
             <div class="reward-item"><span class="reward-label">Aces</span><span class="reward-value" id="acesCount">0</span></div>
             <div class="reward-item"><span class="reward-label">Winners</span><span class="reward-value" id="winnersCount">0</span></div>
+            <div class="reward-item"><span class="reward-label">Double Faults</span><span class="reward-value" id="doubleFaultsCount">0</span></div>
+            <div class="reward-item"><span class="reward-label">Best Streak</span><span class="reward-value" id="bestStreakCount">0</span></div>
+        </div>
+        <div class="rewards-container" style="margin-top:-10px">
+            <div class="rewards-title">Rally Analysis</div>
             <div class="reward-item"><span class="reward-label">Longest Rally</span><span class="reward-value" id="longestRally">0</span></div>
             <div class="reward-item"><span class="reward-label">Avg Rally</span><span class="reward-value" id="avgRally">0</span></div>
+            <div class="reward-item"><span class="reward-label">Total Points</span><span class="reward-value" id="totalPoints">0</span></div>
+            <div class="reward-item"><span class="reward-label">Match Time</span><span class="reward-value" id="matchDuration">0:00</span></div>
         </div>
         <button class="continue-btn" onclick="returnToMenu()">CONTINUE</button>
     </div>
@@ -471,7 +505,81 @@
     </div>
     <div class="progress-toast" id="progressToast"></div>
 <script>
-const G={coins:500,gems:20,level:1,xp:0,ntrp:2.5,skillPoints:0,stats:{power:10,speed:10,control:10,serve:10},equipment:{racket:null,shoes:null,special:null,serveGear:null},owned:[],difficulty:'rookie',matchType:'quick',trainingCompleted:[]};
+const G={coins:500,gems:20,level:1,xp:0,ntrp:2.5,skillPoints:0,stats:{power:10,speed:10,control:10,serve:10},equipment:{racket:null,shoes:null,special:null,serveGear:null},owned:[],difficulty:'rookie',matchType:'quick',trainingCompleted:[],dailyChallenge:null};
+
+// Daily Challenge System
+const DAILY_CHALLENGES = [
+    {id:'ace_master',name:'Ace Master',desc:'Score 3 aces in a single match',target:3,type:'aces',reward:{coins:100,gems:2}},
+    {id:'winner_streak',name:'Winner Machine',desc:'Hit 5 winners in a match',target:5,type:'winners',reward:{coins:80,gems:1}},
+    {id:'rally_king',name:'Rally King',desc:'Win a 10+ shot rally',target:10,type:'longestRally',reward:{coins:120,gems:2}},
+    {id:'perfect_serve',name:'Perfect Server',desc:'No double faults in a match',target:0,type:'doubleFaults',reward:{coins:60,gems:1}},
+    {id:'quick_win',name:'Speed Demon',desc:'Win a match in under 5 minutes',target:300,type:'matchTime',reward:{coins:150,gems:3}},
+    {id:'streak_master',name:'Streak Master',desc:'Get a 8+ point streak',target:8,type:'streak',reward:{coins:90,gems:2}}
+];
+
+function initDailyChallenge() {
+    const today = new Date().toDateString();
+    
+    // Check if challenge is from today
+    if(!G.dailyChallenge || G.dailyChallenge.date !== today) {
+        // Generate new challenge
+        const challenge = DAILY_CHALLENGES[Math.floor(Math.random() * DAILY_CHALLENGES.length)];
+        G.dailyChallenge = {
+            ...challenge,
+            date: today,
+            progress: 0,
+            completed: false
+        };
+    }
+    
+    updateChallengeDisplay();
+}
+
+function updateChallengeDisplay() {
+    const challenge = G.dailyChallenge;
+    if(!challenge) return;
+    
+    document.getElementById('challengeTitle').textContent = `Daily Challenge: ${challenge.name}`;
+    document.getElementById('challengeDesc').textContent = challenge.desc;
+    
+    const progress = Math.min(100, (challenge.progress / challenge.target) * 100);
+    document.getElementById('challengeFill').style.width = progress + '%';
+    
+    const reward = `+${challenge.reward.coins}💰 +${challenge.reward.gems}💎`;
+    document.getElementById('challengeReward').textContent = challenge.completed ? 'COMPLETED!' : reward;
+    
+    // Change banner color if completed
+    const banner = document.getElementById('dailyChallenge');
+    if(challenge.completed) {
+        banner.style.background = 'linear-gradient(135deg,#4caf50,#45a049)';
+    }
+}
+
+function checkChallengeProgress(type, value) {
+    const challenge = G.dailyChallenge;
+    if(!challenge || challenge.completed || challenge.type !== type) return;
+    
+    if(type === 'doubleFaults' || type === 'matchTime') {
+        // For inverted challenges (less is better)
+        if(value <= challenge.target) {
+            challenge.progress = challenge.target;
+        }
+    } else {
+        // For normal challenges (more is better)
+        challenge.progress = Math.max(challenge.progress, value);
+    }
+    
+    // Check if completed
+    if(challenge.progress >= challenge.target) {
+        challenge.completed = true;
+        G.coins += challenge.reward.coins;
+        G.gems += challenge.reward.gems;
+        toast(`🏆 Daily Challenge Complete! +${challenge.reward.coins}💰 +${challenge.reward.gems}💎`);
+        sounds.winner();
+    }
+    
+    updateChallengeDisplay();
+}
 
 // Enhanced shop with serve equipment
 const SHOP={
@@ -618,6 +726,32 @@ function initAudio(){
     sounds.crowdOoh=()=>{
         playTone(200,0.2,0.08);
         setTimeout(()=>playTone(180,0.15,0.06),100);
+    };
+    
+    // Point celebration sounds
+    sounds.pointWon=()=>{
+        playTone(440,0.1,0.5);
+        setTimeout(()=>playTone(550,0.08,0.4),80);
+        setTimeout(()=>playTone(660,0.06,0.3),150);
+    };
+    
+    sounds.pointLost=()=>{
+        playTone(220,0.08,0.4);
+        setTimeout(()=>playTone(160,0.06,0.3),60);
+    };
+    
+    // Rally tension system - crowd gets louder with rally length
+    sounds.rallyTension=(rallyLength)=>{
+        if(rallyLength < 3) return; // No crowd noise for short rallies
+        
+        const volume = Math.min(0.15 + (rallyLength - 3) * 0.03, 0.4);
+        const intensity = Math.min(rallyLength - 2, 8);
+        
+        for(let i = 0; i < intensity; i++){
+            setTimeout(() => {
+                playTone(400 + Math.random() * 600, 0.05 + Math.random() * 0.05, volume);
+            }, i * 30 + Math.random() * 50);
+        }
     };
     
     // Enhanced point celebrations
@@ -1108,12 +1242,12 @@ function animateServeBall(result){
     M.ballPos.x += M.ballVel.x;
     M.ballPos.y += M.ballVel.y;
     M.ballH += M.ballVel.z;
-    M.ballVel.z -= 0.12;
+    M.ballVel.z -= 0.14;
     
     // Ground bounce
     if(M.ballH <= 0 && M.ballVel.z < 0){
         M.ballH = 0;
-        M.ballVel.z = -M.ballVel.z * 0.68;
+        M.ballVel.z = -M.ballVel.z * 0.72;
         sounds.bounce();
         M.ballBounces++;
         
@@ -1158,7 +1292,7 @@ function animateServeBall(result){
     const ball = document.getElementById('ball');
     const shadow = document.getElementById('ballShadow');
     ball.style.left = M.ballPos.x + '%';
-    ball.style.top = (M.ballPos.y - M.ballH/12) + '%';
+    ball.style.top = (M.ballPos.y - M.ballH/10) + '%';
     shadow.style.left = M.ballPos.x + '%';
     shadow.style.top = M.ballPos.y + '%';
     
@@ -1231,6 +1365,10 @@ function opponentReturn(){
     M.lastHitBy = 'opp'; // Track who hit last
     const st = getStats();
     M.rally++;
+    
+    // Rally tension - crowd gets louder as rally continues
+    sounds.rallyTension(M.rally);
+    
     updateMatchUI();
     
     const oppDist = Math.abs(M.ballPos.x - M.oppPos);
@@ -1366,6 +1504,9 @@ function load(){
         if(!G.stats.serve) G.stats.serve = 10;
         if(!G.equipment.serveGear) G.equipment.serveGear = null;
     }
+    
+    // Initialize daily challenges
+    initDailyChallenge();
 }
 
 function save(){
@@ -1829,6 +1970,7 @@ function actuallyStartMatch(){
     
     M = {
         active: true,
+        startTime: Date.now(), // Track match start for duration calculation
         pPoints: 0, oPoints: 0,
         pGames: 0, oGames: 0,
         pSets: 0, oSets: 0,
@@ -2020,6 +2162,27 @@ function celebratePoint(isAce){
 }
 
 function scorePoint(player){
+    // Point celebration effects
+    if(player === 'p'){
+        sounds.pointWon();
+        // Flash effect for player point
+        const flash = document.createElement('div');
+        flash.style.cssText = 'position:fixed;inset:0;background:rgba(76,255,80,0.3);z-index:1000;pointer-events:none;animation:flashFade 0.4s ease-out';
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 400);
+        // Enhanced haptic feedback
+        if(navigator.vibrate) navigator.vibrate([80, 50, 80]);
+    } else {
+        sounds.pointLost();
+        // Flash effect for opponent point
+        const flash = document.createElement('div');
+        flash.style.cssText = 'position:fixed;inset:0;background:rgba(244,67,54,0.3);z-index:1000;pointer-events:none;animation:flashFade 0.4s ease-out';
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 400);
+        // Gentle haptic feedback
+        if(navigator.vibrate) navigator.vibrate(60);
+    }
+    
     // Track statistics
     M.pointsPlayed++;
     M.totalRallies += M.rally;
@@ -2120,8 +2283,8 @@ function checkSetWin(){
     const oGames = M.oGames;
     const diff = Math.abs(pGames - oGames);
     
-    // Game target depends on match type (quick=4, standard/pro=6)
-    const winGames = G.matchType === 'quick' ? 4 : 6;
+    // Game target depends on match type (quick=6, standard/pro=6)
+    const winGames = G.matchType === 'quick' ? 6 : 6;
     
     // Set win: reach target games with 2 game lead
     if((pGames >= winGames || oGames >= winGames) && diff >= 2 && !M.isTiebreak){
@@ -2171,7 +2334,7 @@ function animateBall(){
     
     // Enhanced spin physics with Magnus effect
     if(Math.abs(M.ballSpin) > 0.1){
-        M.ballVel.x += M.ballSpin * 0.012;
+        M.ballVel.x += M.ballSpin * 0.025;
         // Spin decay
         M.ballSpin *= 0.998;
     }
@@ -2245,7 +2408,7 @@ function animateBall(){
     const ball = document.getElementById('ball');
     const shadow = document.getElementById('ballShadow');
     ball.style.left = M.ballPos.x + '%';
-    ball.style.top = (M.ballPos.y - M.ballH/12) + '%';
+    ball.style.top = (M.ballPos.y - M.ballH/10) + '%';
     shadow.style.left = M.ballPos.x + '%';
     shadow.style.top = M.ballPos.y + '%';
     
@@ -2435,6 +2598,101 @@ function powerShake(duration = 200) {
     setTimeout(() => court.classList.remove('power-shake'), duration);
 }
 
+// Hitstop effect - brief pause for impact
+function hitstop(duration = 150) {
+    const court = document.getElementById('gameCourt');
+    if(!court) return;
+    
+    // Flash white for impact
+    court.style.filter = 'brightness(2) contrast(1.5)';
+    setTimeout(() => {
+        court.style.filter = '';
+    }, duration);
+    
+    // Briefly pause ball animation (if in rally mode)
+    if(M.ballActive && window.animationPaused !== true) {
+        window.animationPaused = true;
+        setTimeout(() => {
+            window.animationPaused = false;
+        }, duration);
+    }
+}
+
+// Enhanced ball trail system
+let ballTrailPositions = [];
+function createBallTrail() {
+    if(!M.ballActive || window.animationPaused) return;
+    
+    const ball = document.getElementById('ball');
+    if(!ball || !ball.classList.contains('active')) return;
+    
+    const ballRect = ball.getBoundingClientRect();
+    const courtRect = document.querySelector('.court').getBoundingClientRect();
+    
+    // Calculate relative position
+    const relX = ((ballRect.left + ballRect.width/2 - courtRect.left) / courtRect.width) * 100;
+    const relY = ((ballRect.top + ballRect.height/2 - courtRect.top) / courtRect.height) * 100;
+    
+    // Store position for trail
+    ballTrailPositions.push({x: relX, y: relY, time: Date.now()});
+    
+    // Limit trail length
+    if(ballTrailPositions.length > 8) {
+        ballTrailPositions.shift();
+    }
+    
+    // Create trail elements
+    ballTrailPositions.forEach((pos, index) => {
+        const age = Date.now() - pos.time;
+        if(age > 300) return; // Remove old trails
+        
+        const trail = document.createElement('div');
+        trail.className = 'ball-trail active';
+        trail.style.left = pos.x + '%';
+        trail.style.top = pos.y + '%';
+        trail.style.opacity = (1 - age / 300) * 0.6;
+        trail.style.transform = `translate(-50%, -50%) scale(${1 - age / 400})`;
+        
+        document.querySelector('.court').appendChild(trail);
+        
+        setTimeout(() => trail.remove(), 300 - age);
+    });
+}
+
+// Swipe trail visualization
+function createSwipeTrail(startX, startY, endX, endY) {
+    const court = document.querySelector('.court');
+    const courtRect = court.getBoundingClientRect();
+    
+    // Convert screen coordinates to court relative
+    const startRelX = ((startX - courtRect.left) / courtRect.width) * 100;
+    const startRelY = ((startY - courtRect.top) / courtRect.height) * 100;
+    const endRelX = ((endX - courtRect.left) / courtRect.width) * 100;
+    const endRelY = ((endY - courtRect.top) / courtRect.height) * 100;
+    
+    // Create trail segments
+    const segments = 12;
+    for(let i = 0; i < segments; i++) {
+        const progress = i / (segments - 1);
+        const x = startRelX + (endRelX - startRelX) * progress;
+        const y = startRelY + (endRelY - startRelY) * progress;
+        
+        const segment = document.createElement('div');
+        segment.className = 'swipe-trail-segment';
+        segment.style.left = x + '%';
+        segment.style.top = y + '%';
+        segment.style.opacity = 1 - progress * 0.7;
+        segment.style.animationDelay = (i * 20) + 'ms';
+        
+        const container = document.createElement('div');
+        container.className = 'swipe-trail active';
+        container.appendChild(segment);
+        court.appendChild(container);
+        
+        setTimeout(() => container.remove(), 500 + i * 20);
+    }
+}
+
 function createHitParticles(x, y, power) {
     const court = document.querySelector('.court');
     if(!court) return;
@@ -2500,6 +2758,7 @@ function showHitEffect(power){
     // Enhanced screen shake based on power
     if(power > 0.9){
         powerShake(250);
+        hitstop(120); // Brief pause for impact
         sounds.powerHit();
     } else if(power > 0.7){
         const court = document.getElementById('gameCourt');
@@ -2536,6 +2795,9 @@ function returnBall(qual, angle){
     M.ballBounces = 0;
     M.rally++;
     
+    // Rally tension - crowd gets louder as rally continues
+    sounds.rallyTension(M.rally);
+    
     // Gem spawn chance increases with rally length
     const gemChance = 0.05 + M.rally * 0.02;
     if(Math.random() < gemChance && !M.gemActive) spawnGem();
@@ -2570,7 +2832,7 @@ function animateReturn(){
     
     // Spin effect
     if(M.ballSpin !== 0){
-        M.ballVel.x += M.ballSpin * 0.008;
+        M.ballVel.x += M.ballSpin * 0.025;
     }
     
     // Ground bounce
@@ -2606,7 +2868,7 @@ function animateReturn(){
     const ball = document.getElementById('ball');
     const shadow = document.getElementById('ballShadow');
     ball.style.left = M.ballPos.x + '%';
-    ball.style.top = (M.ballPos.y - M.ballH/12) + '%';
+    ball.style.top = (M.ballPos.y - M.ballH/10) + '%';
     shadow.style.left = M.ballPos.x + '%';
     shadow.style.top = M.ballPos.y + '%';
     
@@ -2630,6 +2892,10 @@ function animateReturn(){
             // Opponent returns
             M.rally++;
             M.ballBounces = 0;
+            
+            // Rally tension - crowd gets louder as rally continues
+            sounds.rallyTension(M.rally);
+            
             updateMatchUI();
             
             M.ballPos = {x: M.oppPos, y: 12};
@@ -2685,6 +2951,10 @@ function animateReturn(){
     
     if(M.ballPos.y < 50) updateOpp();
     updatePlayerDirection();
+    
+    // Create ball trail for visual feedback
+    createBallTrail();
+    
     requestAnimationFrame(animateReturn);
 }
 
@@ -2786,12 +3056,32 @@ function endMatch(){
     document.getElementById('coinsEarned').textContent = '+' + coins;
     document.getElementById('skillGained').textContent = '+' + skill;
     document.getElementById('gemsEarned').textContent = '+' + gems;
+    // Enhanced match statistics
     document.getElementById('acesCount').textContent = M.aces;
     document.getElementById('winnersCount').textContent = M.winners;
+    document.getElementById('doubleFaultsCount').textContent = M.doubleFaults || 0;
+    document.getElementById('bestStreakCount').textContent = M.bestStreak || M.streak;
     document.getElementById('longestRally').textContent = M.longestRally;
+    document.getElementById('totalPoints').textContent = M.pointsPlayed || 0;
     
     const avgRally = M.pointsPlayed > 0 ? (M.totalRallies / M.pointsPlayed).toFixed(1) : '0';
     document.getElementById('avgRally').textContent = avgRally;
+    
+    // Calculate match duration
+    const matchDuration = M.startTime ? Math.floor((Date.now() - M.startTime) / 1000) : 0;
+    const minutes = Math.floor(matchDuration / 60);
+    const seconds = matchDuration % 60;
+    document.getElementById('matchDuration').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    
+    // Check daily challenge progress
+    if(won) {
+        checkChallengeProgress('aces', M.aces || 0);
+        checkChallengeProgress('winners', M.winners || 0);
+        checkChallengeProgress('longestRally', M.longestRally || 0);
+        checkChallengeProgress('doubleFaults', M.doubleFaults || 0);
+        checkChallengeProgress('matchTime', matchDuration);
+        checkChallengeProgress('streak', M.bestStreak || M.streak || 0);
+    }
     
     // Show match performance
     if(won) {
@@ -2881,6 +3171,10 @@ document.addEventListener('touchend', e => {
     if(dy > 8 || (dt < 180 && Math.abs(dy) < 8)){
         const pwr = Math.min(1, Math.max(0.3, dy/90));
         const ang = Math.atan2(dx, Math.max(1, dy));
+        
+        // Create swipe trail for visual feedback
+        createSwipeTrail(touchX, touchY, t.clientX, t.clientY);
+        
         hitBall(pwr, ang);
     }
     
@@ -2934,6 +3228,10 @@ document.addEventListener('mouseup', e => {
     if(dy > 8 || Date.now() - touchT < 180){
         const pwr = Math.min(1, Math.max(0.3, dy/90));
         const ang = Math.atan2(dx, Math.max(1, dy));
+        
+        // Create swipe trail for visual feedback  
+        createSwipeTrail(touchX, touchY, e.clientX, e.clientY);
+        
         hitBall(pwr, ang);
     }
     
