@@ -79,7 +79,11 @@
         .game-court{position:fixed;inset:0;display:none;background:url('court.jpg') center/cover no-repeat;background-color:#000}
         .game-court.active{display:block}
         .game-court.shake{animation:screenShake 0.15s ease-in-out}
+        .game-court.micro-shake{animation:microShake 0.1s ease-in-out}
+        .game-court.power-shake{animation:powerShake 0.2s ease-in-out}
         @keyframes screenShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}50%{transform:translateX(3px)}75%{transform:translateX(-2px)}}
+        @keyframes microShake{0%,100%{transform:translate(0,0)}25%{transform:translate(-1px,-1px)}50%{transform:translate(1px,1px)}75%{transform:translate(-1px,1px)}}
+        @keyframes powerShake{0%,100%{transform:translate(0,0)}10%{transform:translate(-4px,-2px)}20%{transform:translate(4px,2px)}30%{transform:translate(-3px,3px)}40%{transform:translate(3px,-3px)}50%{transform:translate(-2px,2px)}60%{transform:translate(2px,-2px)}70%{transform:translate(-1px,1px)}80%{transform:translate(1px,-1px)}90%{transform:translate(-1px,-1px)}}
         .court{position:absolute;top:12%;left:8%;right:8%;bottom:12%;background:transparent;border:none;overflow:hidden}
         .court-lines{position:absolute;inset:0;display:none}
         .line{position:absolute;background:#fff;opacity:0.95}
@@ -580,20 +584,100 @@ let audio,sounds={};
 
 function initAudio(){
     audio=new(window.AudioContext||window.webkitAudioContext)();
-    // Layered hit sound for more satisfying impact
-    sounds.hit=()=>{playTone(80,0.08,0.45);setTimeout(()=>playTone(220,0.04,0.35),15);setTimeout(()=>playTone(600,0.03,0.2),30)};
-    sounds.powerHit=()=>{playTone(60,0.12,0.55);setTimeout(()=>playTone(280,0.05,0.4),20);setTimeout(()=>playTone(900,0.04,0.25),35)};
+    
+    // Enhanced layered hit sounds for more impact
+    sounds.hit=()=>{
+        playTone(80,0.08,0.45);
+        setTimeout(()=>playTone(220,0.04,0.35),15);
+        setTimeout(()=>playTone(600,0.03,0.2),30);
+        setTimeout(()=>playTone(140,0.02,0.15),5); // Extra thump
+    };
+    
+    sounds.powerHit=()=>{
+        playTone(60,0.12,0.55);
+        setTimeout(()=>playTone(280,0.05,0.4),20);
+        setTimeout(()=>playTone(900,0.04,0.25),35);
+        setTimeout(()=>playTone(45,0.08,0.3),10); // Deep power rumble
+        setTimeout(()=>playTone(1500,0.02,0.2),50); // Sharp crack
+    };
+    
+    // Enhanced bounce sounds with variety
     sounds.bounce=()=>playTone(120,0.03,0.35);
-    sounds.point=()=>{playTone(440,0.1,0.35);setTimeout(()=>playTone(660,0.1,0.35),80);setTimeout(()=>playTone(880,0.15,0.35),160)};
-    sounds.miss=()=>playTone(80,0.2,0.2);
+    sounds.powerBounce=()=>{
+        playTone(90,0.05,0.4);
+        setTimeout(()=>playTone(180,0.03,0.3),20);
+    };
+    sounds.softBounce=()=>playTone(140,0.025,0.25);
+    
+    // Crowd reactions for atmosphere
+    sounds.crowdCheer=()=>{
+        for(let i=0;i<5;i++){
+            setTimeout(()=>playTone(800+Math.random()*400,0.1,0.1),i*50);
+        }
+    };
+    sounds.crowdOoh=()=>{
+        playTone(200,0.2,0.08);
+        setTimeout(()=>playTone(180,0.15,0.06),100);
+    };
+    
+    // Enhanced point celebrations
+    sounds.point=()=>{
+        playTone(440,0.1,0.35);
+        setTimeout(()=>playTone(660,0.1,0.35),80);
+        setTimeout(()=>playTone(880,0.15,0.35),160);
+        setTimeout(()=>sounds.crowdCheer(),200);
+    };
+    
+    sounds.miss=()=>{
+        playTone(80,0.2,0.2);
+        setTimeout(()=>sounds.crowdOoh(),100);
+    };
+    
     sounds.coin=()=>{playTone(1200,0.05,0.25);setTimeout(()=>playTone(1600,0.05,0.25),40)};
     sounds.gem=()=>{playTone(1800,0.08,0.3);setTimeout(()=>playTone(2200,0.08,0.3),50)};
-    sounds.serve=()=>{playTone(100,0.06,0.5);setTimeout(()=>playTone(250,0.05,0.45),25);setTimeout(()=>playTone(500,0.04,0.35),50)};
+    
+    // Enhanced serve sounds
+    sounds.serve=()=>{
+        playTone(100,0.06,0.5);
+        setTimeout(()=>playTone(250,0.05,0.45),25);
+        setTimeout(()=>playTone(500,0.04,0.35),50);
+        setTimeout(()=>playTone(80,0.03,0.2),10); // Woosh
+    };
+    
     sounds.fault=()=>{playTone(150,0.15,0.3);setTimeout(()=>playTone(100,0.2,0.25),100)};
-    sounds.ace=()=>{playTone(600,0.1,0.4);setTimeout(()=>playTone(900,0.1,0.4),80);setTimeout(()=>playTone(1200,0.15,0.4),160)};
+    
+    sounds.ace=()=>{
+        playTone(600,0.1,0.4);
+        setTimeout(()=>playTone(900,0.1,0.4),80);
+        setTimeout(()=>playTone(1200,0.15,0.4),160);
+        setTimeout(()=>sounds.crowdCheer(),250);
+    };
+    
     sounds.let=()=>{playTone(300,0.1,0.3);setTimeout(()=>playTone(300,0.1,0.3),150)};
     sounds.changeover=()=>{playTone(400,0.15,0.25);setTimeout(()=>playTone(500,0.15,0.25),100);setTimeout(()=>playTone(600,0.2,0.25),200)};
-    sounds.winner=()=>{playTone(800,0.1,0.35);setTimeout(()=>playTone(1000,0.1,0.35),80);setTimeout(()=>playTone(1200,0.15,0.35),160)};
+    
+    sounds.winner=()=>{
+        playTone(800,0.1,0.35);
+        setTimeout(()=>playTone(1000,0.1,0.35),80);
+        setTimeout(()=>playTone(1200,0.15,0.35),160);
+        setTimeout(()=>sounds.crowdCheer(),200);
+    };
+    
+    // Victory sounds
+    sounds.victory=()=>{
+        playTone(523,0.15,0.4); // C
+        setTimeout(()=>playTone(659,0.15,0.4),150); // E
+        setTimeout(()=>playTone(784,0.15,0.4),300); // G
+        setTimeout(()=>playTone(1047,0.3,0.5),450); // C octave
+        setTimeout(()=>sounds.crowdCheer(),600);
+    };
+    
+    sounds.defeat=()=>{
+        playTone(220,0.2,0.3); // A
+        setTimeout(()=>playTone(196,0.2,0.3),200); // G
+        setTimeout(()=>playTone(174,0.3,0.3),400); // F
+        setTimeout(()=>sounds.crowdOoh(),600);
+    };
 }
 
 function playTone(f,d,v){
@@ -924,10 +1008,8 @@ function executePlayerServe(power, aimX){
     
     sounds.serve();
     
-    // Play serve animation
-    document.getElementById('playerSprite').style.backgroundImage = `url(${SPRITES.playerSwing})`;
-    document.getElementById('playerSprite').style.backgroundSize = '640px 96px';
-    playSprite('playerSprite', 8);
+    // Play serve animation with new system
+    setPlayerSwinging();
     
     setTimeout(() => {
         ball.classList.remove('toss');
@@ -1035,17 +1117,33 @@ function animateServeBall(result){
         sounds.bounce();
         M.ballBounces++;
         
-        // Check if serve landed in correct service box
+        // BULLETPROOF service box detection
         if(M.ballBounces === 1){
             const isDeuce = M.serveSide === 'deuce';
-            // Service boxes: deuce (right) x:50-88, y:27-50; ad (left) x:12-50, y:27-50
-            const boxLeft = isDeuce ? 50 : 12;
-            const boxRight = isDeuce ? 88 : 50;
-            const boxTop = 27;
-            const boxBottom = 50;
             
-            const inBox = M.ballPos.x >= boxLeft && M.ballPos.x <= boxRight && 
-                         M.ballPos.y >= boxTop && M.ballPos.y <= boxBottom;
+            // PRECISE service box coordinates (matching court lines exactly)
+            // Court dimensions: sidelines at 12%-88%, service lines at 27%-73%, net at 50%
+            // Service boxes are 27%-50% depth (from net to service line)
+            // Deuce court: right side (50%-88% width), Ad court: left side (12%-50% width)
+            const boxLeft = isDeuce ? 50.5 : 12;   // Slight overlap with center line
+            const boxRight = isDeuce ? 88 : 49.5;
+            const boxTop = 27;                      // Service line
+            const boxBottom = 50;                   // Net line
+            
+            // Minimal tolerance for pixel-perfect detection
+            const tolerance = 0.3;
+            const inBox = M.ballPos.x >= (boxLeft - tolerance) && 
+                         M.ballPos.x <= (boxRight + tolerance) && 
+                         M.ballPos.y >= (boxTop - tolerance) && 
+                         M.ballPos.y <= (boxBottom + tolerance);
+            
+            // Debug logging for precision tuning
+            if(!inBox) {
+                console.log(`❌ FAULT: Ball at (${M.ballPos.x.toFixed(2)}, ${M.ballPos.y.toFixed(2)}) missed ${M.serveSide} box (${boxLeft}-${boxRight}, ${boxTop}-${boxBottom})`);
+            } else {
+                console.log(`✅ GOOD: Ball at (${M.ballPos.x.toFixed(2)}, ${M.ballPos.y.toFixed(2)}) landed in ${M.serveSide} service box`);
+                showCallOverlay('GOOD SERVE', true);
+            }
             
             if(!inBox){
                 handleServeFault('out');
@@ -1398,15 +1496,33 @@ var selectedChar = window.CHARACTERS[0];
 var opponentChar = null; // Selected randomly, different from player
 
 function selectRandomOpponent(){
-    // Pick a random unlocked character that's different from the player
-    const available = window.CHARACTERS.filter(c => c.unlocked && c.id !== selectedChar.id);
+    // BULLETPROOF: Opponent must ALWAYS be different from player
+    let available = window.CHARACTERS.filter(c => c.unlocked && c.id !== selectedChar.id);
+    
+    // If no unlocked characters different from player, unlock all characters temporarily for opponent selection
     if(available.length === 0){
-        // Fallback: just pick any character different from player
-        const any = window.CHARACTERS.filter(c => c.id !== selectedChar.id);
-        opponentChar = any[Math.floor(Math.random() * any.length)] || window.CHARACTERS[0];
-    } else {
-        opponentChar = available[Math.floor(Math.random() * available.length)];
+        available = window.CHARACTERS.filter(c => c.id !== selectedChar.id);
+        if(available.length === 0){
+            // Emergency fallback - ensure we have at least 2 characters
+            available = window.CHARACTERS.slice(0, 2).filter(c => c.id !== selectedChar.id);
+        }
     }
+    
+    // Guarantee opponent is different
+    if(available.length > 0){
+        opponentChar = available[Math.floor(Math.random() * available.length)];
+    } else {
+        // Ultimate fallback - pick first character that's not player
+        opponentChar = window.CHARACTERS.find(c => c.id !== selectedChar.id) || window.CHARACTERS[0];
+    }
+    
+    // Double-check: If somehow opponent equals player, force different
+    if(!opponentChar || opponentChar.id === selectedChar.id){
+        const allChars = window.CHARACTERS;
+        opponentChar = allChars[selectedChar === allChars[0] ? 1 : 0];
+    }
+    
+    console.log(`🎾 Player: ${selectedChar.name} vs Opponent: ${opponentChar.name}`);
     return opponentChar;
 }
 
@@ -2041,21 +2157,58 @@ function checkSetWin(){
 function animateBall(){
     if(!M.ballActive) return;
     
+    // Enhanced physics with momentum conservation
+    const speed = Math.sqrt(M.ballVel.x*M.ballVel.x + M.ballVel.y*M.ballVel.y);
+    const isHighSpeed = speed > 1.5;
+    
     M.ballPos.x += M.ballVel.x;
     M.ballPos.y += M.ballVel.y;
     M.ballH += M.ballVel.z;
-    M.ballVel.z -= 0.15; // Gravity
     
-    // Apply spin (slight curve)
-    if(M.ballSpin !== 0){
-        M.ballVel.x += M.ballSpin * 0.01;
+    // Enhanced gravity with speed-dependent effect
+    const gravity = 0.15 + (isHighSpeed ? 0.03 : 0);
+    M.ballVel.z -= gravity;
+    
+    // Enhanced spin physics with Magnus effect
+    if(Math.abs(M.ballSpin) > 0.1){
+        M.ballVel.x += M.ballSpin * 0.012;
+        // Spin decay
+        M.ballSpin *= 0.998;
     }
     
-    // Ground bounce
+    // Air resistance for realistic deceleration
+    const resistance = 0.9995;
+    M.ballVel.x *= resistance;
+    M.ballVel.y *= resistance;
+    
+    // Enhanced ground bounce with energy transfer
     if(M.ballH <= 0 && M.ballVel.z < 0){
         M.ballH = 0;
-        M.ballVel.z = -M.ballVel.z * 0.72; // Realistic tennis bounce
-        sounds.bounce();
+        
+        // Bounce intensity based on impact velocity
+        const impactIntensity = Math.abs(M.ballVel.z);
+        const bounceEfficiency = 0.72 + (impactIntensity > 2 ? 0.08 : 0); // Higher bounces on hard hits
+        
+        M.ballVel.z = -M.ballVel.z * bounceEfficiency;
+        
+        // Lateral bounce effects from spin
+        if(Math.abs(M.ballSpin) > 0.1){
+            M.ballVel.x += M.ballSpin * 0.15; // Spin kick on bounce
+        }
+        
+        // Enhanced sound based on impact
+        if(impactIntensity > 2.5){
+            sounds.powerBounce();
+        } else if(impactIntensity > 1.5){
+            sounds.bounce();
+        } else {
+            sounds.softBounce();
+        }
+        
+        // Satisfying screen micro-shake on hard bounces
+        if(impactIntensity > 2.8){
+            microShake(50);
+        }
         
         if(M.ballPos.y > 50) M.ballBounces++;
         
@@ -2211,10 +2364,8 @@ function hitBall(power, angle){
     
     showHitEffect(power);
     
-    // Player swing animation
-    document.getElementById('playerSprite').style.backgroundImage = `url(${SPRITES.playerSwing})`;
-    document.getElementById('playerSprite').style.backgroundSize = '640px 96px';
-    playSprite('playerSprite', 8);
+    // Enhanced player swing animation
+    setPlayerSwinging();
     
     sounds.hit();
     
@@ -2228,21 +2379,143 @@ function hitBall(power, angle){
     returnBall(qual, angle);
 }
 
+// ========== VISUAL EFFECTS SYSTEM ==========
+
+function createBallTrail(x, y, speed) {
+    const court = document.querySelector('.court');
+    if(!court) return;
+    
+    // Only create trail for high-speed shots
+    if(speed < 1.5) return;
+    
+    const trail = document.createElement('div');
+    const opacity = Math.min(0.8, speed / 3);
+    const size = Math.min(15, 8 + speed * 2);
+    
+    trail.style.cssText = `
+        position: absolute;
+        left: ${x}%;
+        top: ${y}%;
+        width: ${size}px;
+        height: ${size}px;
+        background: radial-gradient(circle, rgba(252,248,54,${opacity}) 0%, rgba(252,248,54,0) 70%);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 37;
+        transform: translate(-50%, -50%);
+    `;
+    
+    court.appendChild(trail);
+    
+    // Fade out trail
+    trail.animate([
+        { opacity: opacity, transform: 'translate(-50%, -50%) scale(1)' },
+        { opacity: 0, transform: 'translate(-50%, -50%) scale(0.3)' }
+    ], {
+        duration: 200 + speed * 50,
+        easing: 'ease-out'
+    }).onfinish = () => trail.remove();
+}
+
+function microShake(duration = 100) {
+    const court = document.getElementById('gameCourt');
+    if(!court) return;
+    court.classList.remove('micro-shake');
+    void court.offsetWidth;
+    court.classList.add('micro-shake');
+    setTimeout(() => court.classList.remove('micro-shake'), duration);
+}
+
+function powerShake(duration = 200) {
+    const court = document.getElementById('gameCourt');
+    if(!court) return;
+    court.classList.remove('power-shake', 'shake');
+    void court.offsetWidth;
+    court.classList.add('power-shake');
+    setTimeout(() => court.classList.remove('power-shake'), duration);
+}
+
+function createHitParticles(x, y, power) {
+    const court = document.querySelector('.court');
+    if(!court) return;
+    
+    const particleCount = Math.floor(3 + power * 8);
+    const colors = power > 0.8 ? ['#FFD700', '#FF6B47', '#FF4757'] : ['#4ECDC4', '#45AAF2', '#26DE81'];
+    
+    for(let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        const angle = (Math.PI * 2 * i) / particleCount;
+        const velocity = 20 + power * 40;
+        const size = 3 + Math.random() * 4;
+        
+        particle.style.cssText = `
+            position: absolute;
+            left: ${x}%;
+            top: ${y}%;
+            width: ${size}px;
+            height: ${size}px;
+            background: ${colors[Math.floor(Math.random() * colors.length)]};
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 200;
+            transform: translate(-50%, -50%);
+        `;
+        
+        court.appendChild(particle);
+        
+        // Animate particle
+        const tx = Math.cos(angle) * velocity;
+        const ty = Math.sin(angle) * velocity;
+        
+        particle.animate([
+            { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+            { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(0)`, opacity: 0 }
+        ], {
+            duration: 400 + Math.random() * 200,
+            easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+        }).onfinish = () => particle.remove();
+    }
+}
+
 function showHitEffect(power){
     const e = document.getElementById('hitEffect');
     const b = document.getElementById('ball');
+    
+    if(!e || !b) return;
+    
+    const ballRect = b.getBoundingClientRect();
+    const courtRect = document.querySelector('.court').getBoundingClientRect();
+    
+    // Position effect at ball location
     e.style.left = b.style.left;
     e.style.top = b.style.top;
     e.classList.add('active');
     setTimeout(() => e.classList.remove('active'), 600);
     
-    // Screen shake on powerful hits
-    if(power > 0.7){
+    // Create hit particles
+    const ballX = parseFloat(b.style.left);
+    const ballY = parseFloat(b.style.top);
+    createHitParticles(ballX, ballY, power);
+    
+    // Enhanced screen shake based on power
+    if(power > 0.9){
+        powerShake(250);
+        sounds.powerHit();
+    } else if(power > 0.7){
         const court = document.getElementById('gameCourt');
         court.classList.remove('shake');
         void court.offsetWidth;
         court.classList.add('shake');
         setTimeout(() => court.classList.remove('shake'), 150);
+        sounds.hit();
+    } else {
+        sounds.hit();
+    }
+    
+    // Haptic feedback for mobile
+    if(navigator.vibrate && power > 0.6) {
+        const intensity = Math.floor(power * 100);
+        navigator.vibrate(intensity);
     }
 }
 
@@ -2436,23 +2709,53 @@ function checkEnd(){
 function endMatch(){
     M.active = false;
     
-    const won = M.pGames > M.oGames;
+    const won = M.pSets > M.oSets || (M.pSets === M.oSets && M.pGames > M.oGames);
     
-    let coins = won ? 80 : 25;
+    // Enhanced reward calculation
+    let coins = won ? 100 : 35;
+    
+    // Performance bonuses
+    if(won) {
+        if(M.aces >= 5) coins += 50; // Ace bonus
+        if(M.winners >= 10) coins += 40; // Winner bonus
+        if(M.doubleFaults <= 1) coins += 30; // Consistency bonus
+        if(M.longestRally >= 8) coins += 25; // Rally bonus
+        if(M.streak >= 5) coins += M.streak * 5; // Streak bonus
+    }
+    
     coins = Math.floor(coins * M.settings.mult);
     if(G.equipment.special === 'x1') coins *= 2;
     
-    // Bonus for aces
-    coins += M.aces * 10;
-    
-    const skill = Math.floor((won ? 25 : 10) * M.settings.mult);
+    const skill = Math.floor((won ? 35 : 15) * M.settings.mult + M.aces * 3 + M.winners * 2);
     
     let gems = 0;
-    if(won && Math.random() < 0.2 * M.settings.mult){
+    if(won) {
         gems = Math.floor(Math.random() * 3) + 1;
+        if(M.aces >= 3) gems += 1;
+        if(M.winners >= 8) gems += 1;
+        gems += Math.floor(M.streak / 3);
     }
-    // Bonus gems for streak
-    gems += Math.floor(M.streak / 3);
+    
+    // Update career stats
+    if(!G.careerStats) {
+        G.careerStats = {
+            matchesPlayed: 0,
+            matchesWon: 0,
+            totalAces: 0,
+            totalWinners: 0,
+            totalCoins: 0,
+            bestStreak: 0,
+            longestRally: 0
+        };
+    }
+    
+    G.careerStats.matchesPlayed++;
+    if(won) G.careerStats.matchesWon++;
+    G.careerStats.totalAces += M.aces;
+    G.careerStats.totalWinners += M.winners;
+    G.careerStats.totalCoins += coins;
+    if(M.streak > G.careerStats.bestStreak) G.careerStats.bestStreak = M.streak;
+    if(M.longestRally > G.careerStats.longestRally) G.careerStats.longestRally = M.longestRally;
     
     const oldNTRP = getNTRP();
     G.coins += coins;
@@ -2460,36 +2763,54 @@ function endMatch(){
     G.gems += gems;
     const newNTRP = getNTRP();
     
-    if(newNTRP > oldNTRP){
-        setTimeout(() => {
-            toast(`NTRP UPGRADED to ${newNTRP.toFixed(1)}!`);
-            sounds.point();
-        }, 1500);
-    }
-    
     save();
     
+    // Enhanced victory/defeat presentation
     document.getElementById('gameHUD').classList.remove('active');
     document.getElementById('gameCourt').classList.remove('active');
     document.getElementById('streakDisplay').classList.remove('active');
     
     const rt = document.getElementById('resultsTitle');
-    rt.textContent = won ? 'VICTORY' : 'DEFEAT';
+    rt.textContent = won ? 'VICTORY!' : 'DEFEAT';
     rt.className = 'results-title ' + (won ? 'victory' : 'defeat');
     
-    document.getElementById('finalScore').textContent = M.pGames + ' - ' + M.oGames;
+    // Enhanced score display
+    let scoreText;
+    if(M.pSets > 0 || M.oSets > 0) {
+        scoreText = `${M.pSets}-${M.oSets} (${M.pGames}-${M.oGames})`;
+    } else {
+        scoreText = `${M.pGames}-${M.oGames}`;
+    }
+    
+    document.getElementById('finalScore').textContent = scoreText;
     document.getElementById('coinsEarned').textContent = '+' + coins;
     document.getElementById('skillGained').textContent = '+' + skill;
     document.getElementById('gemsEarned').textContent = '+' + gems;
     document.getElementById('acesCount').textContent = M.aces;
     document.getElementById('winnersCount').textContent = M.winners;
     document.getElementById('longestRally').textContent = M.longestRally;
-    document.getElementById('avgRally').textContent = M.pointsPlayed > 0 ? 
-        (M.totalRallies / M.pointsPlayed).toFixed(1) : '0';
+    
+    const avgRally = M.pointsPlayed > 0 ? (M.totalRallies / M.pointsPlayed).toFixed(1) : '0';
+    document.getElementById('avgRally').textContent = avgRally;
+    
+    // Show match performance
+    if(won) {
+        if(M.aces >= 5 || M.winners >= 10 || M.streak >= 5) {
+            setTimeout(() => toast('🏆 OUTSTANDING PERFORMANCE!'), 1000);
+        }
+        setTimeout(() => sounds.victory(), 500);
+    } else {
+        setTimeout(() => sounds.defeat(), 500);
+    }
+    
+    if(newNTRP > oldNTRP){
+        setTimeout(() => {
+            toast(`🎾 NTRP UPGRADED to ${newNTRP.toFixed(1)}!`);
+            sounds.point();
+        }, won ? 2000 : 1500);
+    }
     
     document.getElementById('matchResults').classList.add('active');
-    
-    if(won) sounds.point();
 }
 
 function returnToMenu(){
@@ -2664,101 +2985,189 @@ window.addEventListener('load', () => {
     initSprites();
 });
 
-// ========== SPRITE ANIMATION FUNCTIONS ==========
+// ========== ENHANCED SPRITE SYSTEM - NO MORE FLICKERING ==========
+
+// Sprite state management - bulletproof against flicker
+const SpriteStates = {
+    IDLE: 'idle',
+    RUNNING: 'running',
+    SWINGING: 'swinging',
+    TRANSITIONING: 'transitioning'
+};
+
+let playerState = {
+    current: SpriteStates.IDLE,
+    transitioning: false,
+    lastChange: 0
+};
+
+let oppState = {
+    current: SpriteStates.IDLE,
+    transitioning: false,
+    lastChange: 0,
+    timers: {
+        start: null,
+        stop: null,
+        swing: null
+    }
+};
 
 function initSprites(){
     const opp = document.getElementById('opponentSprite');
     const player = document.getElementById('playerSprite');
     
-    opp.style.backgroundImage = `url(${SPRITES.oppIdle})`;
-    opp.style.backgroundSize = '80px 96px';
-    player.style.backgroundImage = `url(${SPRITES.playerIdle})`;
-    player.style.backgroundSize = '80px 96px';
+    // Create image preloader with proper error handling
+    const preloadImages = [SPRITES.playerRun, SPRITES.playerSwing, SPRITES.oppRun, SPRITES.oppSwing, SPRITES.playerIdle, SPRITES.oppIdle];
+    let loadedCount = 0;
     
-    // Preload sprites
-    [SPRITES.playerRun, SPRITES.playerSwing, SPRITES.oppRun, SPRITES.oppSwing].forEach(s => {
-        new Image().src = s;
+    preloadImages.forEach(src => {
+        const img = new Image();
+        img.onload = () => {
+            loadedCount++;
+            if(loadedCount === preloadImages.length) {
+                console.log('✅ All sprites preloaded successfully');
+            }
+        };
+        img.onerror = () => console.warn('⚠️ Failed to preload sprite:', src);
+        img.src = src;
     });
+    
+    // Initialize with stable state
+    if(opp && player) {
+        setOpponentSprite(SpriteStates.IDLE, true);
+        setPlayerSprite(SpriteStates.IDLE, true);
+    }
+}
+
+function setPlayerSprite(newState, force = false) {
+    const now = Date.now();
+    if(!force && (playerState.transitioning || (now - playerState.lastChange < 50))) return;
+    if(newState === playerState.current && !force) return;
+    
+    playerState.transitioning = true;
+    playerState.lastChange = now;
+    
+    const sprite = document.getElementById('playerSprite');
+    if(!sprite) return;
+    
+    // Clear any existing animations
+    sprite.classList.remove('cycling', 'playing-4', 'playing-5', 'playing-7', 'playing-8');
+    
+    switch(newState) {
+        case SpriteStates.RUNNING:
+            sprite.style.backgroundImage = `url(${SPRITES.playerRun})`;
+            sprite.style.backgroundSize = '640px 96px';
+            sprite.style.backgroundPosition = '0 0';
+            sprite.classList.add('cycling');
+            break;
+            
+        case SpriteStates.SWINGING:
+            sprite.style.backgroundImage = `url(${SPRITES.playerSwing})`;
+            sprite.style.backgroundSize = '640px 96px';
+            sprite.style.backgroundPosition = '0 0';
+            playSprite('playerSprite', 8);
+            // Auto-return to idle after swing
+            setTimeout(() => setPlayerSprite(SpriteStates.IDLE), 500);
+            break;
+            
+        case SpriteStates.IDLE:
+        default:
+            sprite.style.backgroundImage = `url(${SPRITES.playerIdle})`;
+            sprite.style.backgroundSize = '80px 96px';
+            sprite.style.backgroundPosition = '0 0';
+            break;
+    }
+    
+    playerState.current = newState;
+    playerState.transitioning = false;
+}
+
+function setOpponentSprite(newState, force = false) {
+    const now = Date.now();
+    if(!force && (oppState.transitioning || (now - oppState.lastChange < 80))) return;
+    if(newState === oppState.current && !force) return;
+    
+    // Clear existing timers to prevent conflicts
+    Object.values(oppState.timers).forEach(timer => {
+        if(timer) clearTimeout(timer);
+    });
+    oppState.timers = { start: null, stop: null, swing: null };
+    
+    oppState.transitioning = true;
+    oppState.lastChange = now;
+    
+    const sprite = document.getElementById('opponentSprite');
+    if(!sprite) return;
+    
+    // Clear animations
+    sprite.classList.remove('cycling', 'playing-4', 'playing-5', 'playing-7', 'playing-8');
+    
+    switch(newState) {
+        case SpriteStates.RUNNING:
+            sprite.style.backgroundImage = `url(${SPRITES.oppRun})`;
+            sprite.style.backgroundSize = '640px 96px';
+            sprite.style.backgroundPosition = '0 0';
+            sprite.classList.add('cycling');
+            break;
+            
+        case SpriteStates.SWINGING:
+            sprite.style.backgroundImage = `url(${SPRITES.oppSwing})`;
+            sprite.style.backgroundSize = '640px 96px';
+            sprite.style.backgroundPosition = '0 0';
+            playSprite('opponentSprite', 8);
+            // Auto-return to idle after swing
+            oppState.timers.swing = setTimeout(() => {
+                setOpponentSprite(SpriteStates.IDLE, true);
+            }, 500);
+            break;
+            
+        case SpriteStates.IDLE:
+        default:
+            sprite.style.backgroundImage = `url(${SPRITES.oppIdle})`;
+            sprite.style.backgroundSize = '80px 96px';
+            sprite.style.backgroundPosition = '0 0';
+            break;
+    }
+    
+    oppState.current = newState;
+    oppState.transitioning = false;
 }
 
 function playSprite(spriteId, frames){
     const sprite = document.getElementById(spriteId);
-    sprite.classList.remove('playing-4', 'playing-5', 'playing-7', 'playing-8');
-    void sprite.offsetWidth; // Force reflow
-    sprite.classList.add(frames === 8 ? 'playing-8' : frames === 7 ? 'playing-7' : frames === 4 ? 'playing-4' : 'playing-5');
-}
-
-function setPlayerRunning(running){
-    const sprite = document.getElementById('playerSprite');
-    if(running){
-        sprite.style.backgroundImage = `url(${SPRITES.playerRun})`;
-        sprite.style.backgroundSize = '640px 96px';
-        sprite.classList.add('cycling');
-    } else {
-        sprite.classList.remove('cycling');
-        sprite.style.backgroundImage = `url(${SPRITES.playerIdle})`;
-        sprite.style.backgroundSize = '80px 96px';
-        sprite.style.backgroundPosition = '0 0';
-    }
-}
-
-let oppRunning = false, oppStopTimer = null, oppStartTimer = null;
-let lastOppSpriteChange = 0;
-
-function setOppRunning(running){
-    const now = Date.now();
-    // Debounce rapid state changes - minimum 100ms between changes
-    if(now - lastOppSpriteChange < 100) return;
+    if(!sprite) return;
     
-    if(running){
-        if(oppStopTimer){
-            clearTimeout(oppStopTimer);
-            oppStopTimer = null;
-        }
-        if(oppRunning) return;
-        // Delay start of running animation to prevent flicker
-        if(oppStartTimer) return;
-        oppStartTimer = setTimeout(() => {
-            oppStartTimer = null;
-            if(!oppRunning){
-                oppRunning = true;
-                lastOppSpriteChange = Date.now();
-                const opp = document.getElementById('opponentSprite');
-                opp.style.backgroundImage = `url(${SPRITES.oppRun})`;
-                opp.style.backgroundSize = '640px 96px';
-                opp.classList.add('cycling');
-            }
-        }, 50);
-    } else {
-        if(oppStartTimer){
-            clearTimeout(oppStartTimer);
-            oppStartTimer = null;
-        }
-        if(!oppRunning || oppStopTimer) return;
-        oppStopTimer = setTimeout(() => {
-            oppRunning = false;
-            oppStopTimer = null;
-            lastOppSpriteChange = Date.now();
-            const opp = document.getElementById('opponentSprite');
-            opp.classList.remove('cycling');
-            opp.style.backgroundImage = `url(${SPRITES.oppIdle})`;
-            opp.style.backgroundSize = '80px 96px';
-            opp.style.backgroundPosition = '0 0';
-        }, 200);
+    // Remove all animation classes
+    sprite.classList.remove('playing-4', 'playing-5', 'playing-7', 'playing-8');
+    
+    // Force reflow to ensure clean state
+    void sprite.offsetWidth;
+    
+    // Add appropriate animation class
+    const animClass = frames === 8 ? 'playing-8' : 
+                      frames === 7 ? 'playing-7' : 
+                      frames === 4 ? 'playing-4' : 'playing-5';
+    sprite.classList.add(animClass);
+}
+
+// Simplified, bulletproof wrapper functions
+function setPlayerRunning(running) {
+    setPlayerSprite(running ? SpriteStates.RUNNING : SpriteStates.IDLE);
+}
+
+function setOppRunning(running) {
+    // Only change if not currently swinging
+    if(oppState.current !== SpriteStates.SWINGING) {
+        setOpponentSprite(running ? SpriteStates.RUNNING : SpriteStates.IDLE);
     }
 }
 
-function setOppSwinging(){
-    oppRunning = false;
-    const opp = document.getElementById('opponentSprite');
-    opp.classList.remove('cycling');
-    opp.style.backgroundImage = `url(${SPRITES.oppSwing})`;
-    opp.style.backgroundSize = '640px 96px';
-    playSprite('opponentSprite', 8);
-    setTimeout(() => {
-        opp.style.backgroundImage = `url(${SPRITES.oppIdle})`;
-        opp.style.backgroundSize = '80px 96px';
-    }, 500);
+function setOppSwinging() {
+    setOpponentSprite(SpriteStates.SWINGING, true);
+}
+
+function setPlayerSwinging() {
+    setPlayerSprite(SpriteStates.SWINGING, true);
 }
 </script>
 </body>
