@@ -2007,6 +2007,7 @@ function actuallyStartMatch(){
         lastHitBy: 'player', // Track who hit the ball last ('player' or 'opp')
         canHit: false,
         combo: 0,
+        pendingCombo: false,  // Don't show combo until shot is confirmed successful
         streak: 0,
         oppPos: 50,
         playerPos: 70,
@@ -2473,6 +2474,7 @@ function ballOut(reason){
     M.canHit = false;
     resetBallUI();
     M.combo = 0;
+    M.pendingCombo = false;
     M.rally = 0;
     sounds.miss();
     showCallOverlay('OUT!', false);
@@ -2488,6 +2490,7 @@ function ballMissed(){
     M.canHit = false;
     resetBallUI();
     M.combo = 0;
+    M.pendingCombo = false;
     M.rally = 0;
     sounds.miss();
     
@@ -2541,11 +2544,13 @@ function hitBall(power, angle){
     
     sounds.hit();
     
+    // Track quality but don't show combo yet - wait until we confirm shot was successful
     if(qual > 0.55){
         M.combo++;
-        showCombo();
+        M.pendingCombo = true;  // Will show combo when opponent fails to return or scrambles
     } else {
         M.combo = 0;
+        M.pendingCombo = false;
     }
     
     returnBall(qual, angle);
@@ -2856,6 +2861,7 @@ function animateReturn(){
         M.ballActive = false;
         resetBallUI();
         M.combo = 0;
+        M.pendingCombo = false;  // Clear - don't show combo for shot that went out
         M.rally = 0;
         sounds.miss();
         
@@ -2898,7 +2904,8 @@ function animateReturn(){
         }
         
         if(Math.random() < prob){
-            // Opponent returns
+            // Opponent returns - clear pending combo (shot wasn't a winner)
+            M.pendingCombo = false;
             M.rally++;
             M.ballBounces = 0;
             
@@ -2942,6 +2949,12 @@ function animateReturn(){
             
             M.streak++;
             updateStreakDisplay();
+            
+            // NOW show combo - shot was successful!
+            if(M.pendingCombo && M.combo >= 1){
+                showCombo();
+                M.pendingCombo = false;
+            }
             
             // Show winner call for clean winners
             if(M.combo >= 2 || Math.random() < 0.25){
