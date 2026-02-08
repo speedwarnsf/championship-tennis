@@ -2600,7 +2600,14 @@ document.getElementById('gemDrop').addEventListener('touchstart', e => {
 });
 
 window.addEventListener('load', () => {
-    document.body.addEventListener('touchmove', e => e.preventDefault(), {passive: false});
+    // Only prevent touchmove during active gameplay, not on menus
+    document.body.addEventListener('touchmove', e => {
+        // Only prevent default on game screen to allow menu scrolling
+        const gameScreen = document.getElementById('gameScreen');
+        if(gameScreen && gameScreen.classList.contains('active')) {
+            e.preventDefault();
+        }
+    }, {passive: false});
     initSprites();
 });
 
