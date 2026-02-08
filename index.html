@@ -1331,7 +1331,7 @@ function closeShop(){
 }
 
 // Character system - must be before showCharSelect
-const V = '?v=28';
+const V = '?v=29';
 
 window.CHARACTERS = [
     {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
@@ -1405,7 +1405,7 @@ function renderCharGrid(){
     var chars = window.CHARACTERS;
     if(!chars || !chars.length) return;
     var html = '';
-    var V = '?v=28';
+    var V = '?v=29';
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
@@ -1742,18 +1742,18 @@ function startMatch(){
 }
 
 function startTimer(){
+    // Timer now counts UP (elapsed time) for stats, doesn't end match
+    M.time = 0;
+    const timerEl = document.getElementById('matchTimer');
+    timerEl.textContent = '0:00';
+    
     const int = setInterval(() => {
         if(!M.active){
             clearInterval(int);
             return;
         }
-        M.time--;
-        document.getElementById('matchTimer').textContent = 
-            Math.floor(M.time/60) + ':' + (M.time%60).toString().padStart(2,'0');
-        if(M.time <= 0){
-            clearInterval(int);
-            endMatch();
-        }
+        M.time++;
+        timerEl.textContent = Math.floor(M.time/60) + ':' + (M.time%60).toString().padStart(2,'0');
     }, 1000);
 }
 
@@ -2292,38 +2292,47 @@ function animateReturn(){
 }
 
 function checkEnd(){
+    // Real tennis: win by SETS, not time!
+    // Quick match: 1 set to win (first to 4 games, win by 2)
+    // Standard: 1 set to win (first to 6 games, win by 2)
+    // Pro: Best of 3 sets
+    
     const gameDiff = Math.abs(M.pGames - M.oGames);
+    const winGames = G.matchType === 'quick' ? 4 : 6;
+    const setsToWin = G.matchType === 'pro' ? 2 : 1;
     
-    // Different win conditions based on match type
-    const winGames = G.matchType === 'quick' ? 3 : 6;
-    
-    if(G.matchType === 'timed'){
-        // Timed mode: play until time runs out
-        if(M.time <= 0){
-            endMatch();
-            return true;
+    // Check for set win
+    if((M.pGames >= winGames || M.oGames >= winGames) && gameDiff >= 2){
+        if(M.pGames > M.oGames){
+            M.pSets++;
+            if(M.pSets >= setsToWin){
+                endMatch();
+                return true;
+            }
+            toast('SET! You lead ' + M.pSets + '-' + M.oSets);
+        } else {
+            M.oSets++;
+            if(M.oSets >= setsToWin){
+                endMatch();
+                return true;
+            }
+            toast('SET! Opponent leads ' + M.oSets + '-' + M.pSets);
         }
-    } else {
-        // Quick or Standard: win by games
-        if((M.pGames >= winGames || M.oGames >= winGames) && gameDiff >= 2){
-            endMatch();
-            return true;
-        }
-        // Tiebreak at winGames-winGames
-        if(M.pGames === winGames && M.oGames === winGames && !M.isTiebreak){
-            M.isTiebreak = true;
-            M.tiebreakServer = M.servingPlayer;
-            M.pPoints = 0;
-            M.oPoints = 0;
-            toast('TIEBREAK!');
-            sounds.point();
-        }
+        // Reset games for new set
+        M.pGames = 0;
+        M.oGames = 0;
+        sounds.point();
+        return false;
     }
     
-    // Time's up (for all modes as backup)
-    if(M.time <= 0){
-        endMatch();
-        return true;
+    // Tiebreak at 6-6 (or 4-4 for quick)
+    if(M.pGames === winGames && M.oGames === winGames && !M.isTiebreak){
+        M.isTiebreak = true;
+        M.tiebreakServer = M.servingPlayer;
+        M.pPoints = 0;
+        M.oPoints = 0;
+        toast('TIEBREAK! First to 7, win by 2');
+        sounds.point();
     }
     
     return false;
