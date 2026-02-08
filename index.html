@@ -1318,7 +1318,7 @@ function closeShop(){
 }
 
 // Character system - must be before showCharSelect
-const V = '?v=9';
+const V = '?v=22';
 
 window.CHARACTERS = [
     {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
@@ -1347,8 +1347,8 @@ window.CHARACTERS = [
 var selectedChar = window.CHARACTERS[0];
 
 function getCharSprites(char){
-    const useDefault = ['player1','player2','player3','player4'].includes(char.id);
-    if(useDefault){
+    // Only player1 uses legacy sprites; everyone else has unique sprites in sprites-v2/characters/
+    if(char.id === 'player1'){
         return {
             playerSwing: 'player-retro-backswing.png' + V,
             playerRun: 'player-retro-run.png' + V,
@@ -1394,12 +1394,11 @@ function renderCharGrid(){
     var chars = window.CHARACTERS;
     if(!chars || !chars.length) return;
     var html = '';
-    var V = '?v=20';
+    var V = '?v=22';
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
-        var useDefault = ['player1','player2','player3','player4'].indexOf(c.id) >= 0;
-        var spriteUrl = useDefault ? 'player-retro-backswing.png' + V : 'sprites-v2/characters/' + c.id + '-back-swing.png' + V;
+        var spriteUrl = c.id === 'player1' ? 'player-retro-backswing.png' + V : 'sprites-v2/characters/' + c.id + '-back-swing.png' + V;
         var isSelected = selectedChar && selectedChar.id === c.id;
         html += '<div class="char-card' + (isSelected ? ' selected' : '') + (unlocked ? '' : ' locked') + '" ';
         html += 'onclick="' + (unlocked ? 'selectCharacter(window.CHARACTERS[' + i + '])' : 'tryUnlock(\'' + c.id + '\')') + '">';
