@@ -916,6 +916,7 @@ function releaseServe(endX, endY){
 
 function executePlayerServe(power, aimX){
     const st = getStats();
+    M.lastHitBy = 'player'; // Track who hit last
     
     // Ball toss animation
     const ball = document.getElementById('ball');
@@ -1129,6 +1130,7 @@ function handleServeFault(type){
 
 function opponentReturn(){
     // Opponent hits the ball back
+    M.lastHitBy = 'opp'; // Track who hit last
     const st = getStats();
     M.rally++;
     updateMatchUI();
@@ -1210,6 +1212,7 @@ function opponentServe(){
         clearServiceBoxHighlight();
         
         M.ballActive = true;
+        M.lastHitBy = 'opp'; // Track who hit last
         M.ballPos = {x: M.oppPos, y: 10};
         M.ballH = 80;
         M.ballBounces = 0;
@@ -1734,6 +1737,7 @@ function actuallyStartMatch(){
         ballH: 100,
         ballBounces: 0,
         ballSpin: 0,
+        lastHitBy: 'player', // Track who hit the ball last ('player' or 'opp')
         canHit: false,
         combo: 0,
         streak: 0,
@@ -2062,18 +2066,21 @@ function animateBall(){
         }
     }
     
-    // Out of bounds (sidelines) - check who hit it out
+    // Out of bounds (sidelines) - whoever hit it last loses the point
     if(M.ballPos.x < 10 || M.ballPos.x > 90){
-        // ballVel.y < 0 means traveling toward opponent = player hit it out
-        const playerHitOut = M.ballVel.y < 0;
-        if(playerHitOut){
-            ballOut('wide'); // Player hit out, opponent gets point
+        M.ballActive = false;
+        M.canHit = false;
+        resetBallUI();
+        sounds.miss();
+        
+        if(M.lastHitBy === 'player'){
+            // Player hit it out - opponent gets point
+            showCallOverlay('OUT!', false);
+            M.streak = 0;
+            updateStreakDisplay();
+            if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
         } else {
-            // Opponent hit out, player gets point
-            M.ballActive = false;
-            M.canHit = false;
-            resetBallUI();
-            sounds.miss();
+            // Opponent hit it out - player gets point
             showCallOverlay('OUT!', true);
             M.streak++;
             updateStreakDisplay();
@@ -2184,6 +2191,7 @@ function resetBallUI(){
 function hitBall(power, angle){
     if(!M.canHit) return;
     
+    M.lastHitBy = 'player'; // Track who hit last
     M.canHit = false;
     const ball = document.getElementById('ball');
     ball.classList.remove('glowing');
@@ -2299,7 +2307,7 @@ function animateReturn(){
         sounds.bounce();
     }
     
-    // Out wide - who hit it out? Check ball direction
+    // Out wide - whoever hit it last loses the point
     if(M.ballPos.x < 10 || M.ballPos.x > 90){
         M.ballActive = false;
         resetBallUI();
@@ -2307,15 +2315,13 @@ function animateReturn(){
         M.rally = 0;
         sounds.miss();
         
-        // ballVel.y < 0 means ball traveling toward opponent = player hit it out
-        // ballVel.y > 0 means ball traveling toward player = opponent hit it out
-        const playerHitOut = M.ballVel.y < 0;
-        
-        if(playerHitOut){
+        if(M.lastHitBy === 'player'){
+            // Player hit it out - opponent gets point
             showCallOverlay('OUT!', false);
             M.streak = 0;
             if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
         } else {
+            // Opponent hit it out - player gets point
             showCallOverlay('OUT!', true);
             M.streak++;
             updateStreakDisplay();
