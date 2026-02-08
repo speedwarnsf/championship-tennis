@@ -136,7 +136,7 @@
         .player-sprite.flipped{transform:scaleX(-1)}
         .player-paddle .player-sprite.near{transform:scale(1.13)!important}
         .player-paddle .player-sprite.near.flipped{transform:scale(-1.13,1.13)!important}
-        .sprite-inner{width:80px;height:96px;background-size:640px 96px;background-repeat:no-repeat;background-position:0 0}
+        .sprite-inner{width:80px;height:96px;background-size:640px 96px;background-repeat:no-repeat;background-position:0 0;overflow:hidden}
         .sprite-inner.playing-8{animation:playSprite8 0.5s steps(7) 1}
         .sprite-inner.playing-7{animation:playSprite7 0.5s steps(6) 1}
         .sprite-inner.playing-5{animation:playSprite5 0.5s steps(4) 1}
@@ -1158,11 +1158,14 @@ function executePlayerServe(power, aimX){
         // Aim target is where player was aiming (tracked in M.serveAimX)
         const serveAccuracy = st.serve / 100;
         const aimTarget = aimX; // This is the aim position player targeted
-        // Reduced spread so ball follows aim line more closely
-        const randomSpread = (Math.random() - 0.5) * (10 - serveAccuracy * 8);
         
-        // Higher serve stat = closer to intended target
-        let targetX = aimTarget + randomSpread * (1 - serveAccuracy * 0.7);
+        // Minimal random spread - ball should mostly follow aim line
+        // At low serve stat, max ±2% deviation; at high stat, max ±0.5%
+        const maxSpread = 2 - serveAccuracy * 1.5;
+        const randomSpread = (Math.random() - 0.5) * maxSpread * 2;
+        
+        // Ball goes very close to where player aimed
+        let targetX = aimTarget + randomSpread;
         
         // Power affects speed and fault chance
         const baseSpeed = 1.5 + power * 1.5;
@@ -1611,7 +1614,7 @@ function closeShop(){
 }
 
 // Character system - must be before showCharSelect
-const V = '?v=30';
+const V = '?v=31';
 
 window.CHARACTERS = [
     {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
@@ -1746,7 +1749,7 @@ function renderCharGrid(){
     var chars = window.CHARACTERS;
     if(!chars || !chars.length) return;
     var html = '';
-    var V = '?v=30';
+    var V = '?v=31';
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
