@@ -214,7 +214,7 @@
         .char-card:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #0a1a2a}
         .char-card.selected{border-color:#ffd700 #aa8800 #aa8800 #ffd700;background:linear-gradient(180deg,#4a5a7a 0%,#3a4a6a 50%,#2a3a5a 100%);box-shadow:2px 2px 0 #0a1a2a,0 0 15px rgba(255,215,0,0.4)}
         .char-card.locked{opacity:0.6;filter:grayscale(0.5) brightness(0.7)}
-        .char-preview{width:56px;height:68px;margin:0 auto 4px;background-size:448px 68px;background-repeat:no-repeat;background-position:0 0;image-rendering:pixelated;border:2px solid #1a2a4a;background-color:#0a0a1a}
+        .char-preview{width:64px;height:77px;margin:0 auto 4px;background-size:512px 77px;background-repeat:no-repeat;background-position:0 0;image-rendering:pixelated;border:2px solid #1a2a4a;background-color:#0a0a1a}
         .char-name{font-size:9px;color:#8ac;font-weight:700;text-transform:uppercase;text-shadow:1px 1px 0 #000;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .char-stats{font-size:8px;color:#6a8aba;margin-top:2px;font-family:monospace}
         .char-stat-bars{margin-top:4px}
@@ -1331,7 +1331,7 @@ function closeShop(){
 }
 
 // Character system - must be before showCharSelect
-const V = '?v=26';
+const V = '?v=27';
 
 window.CHARACTERS = [
     {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
@@ -1350,8 +1350,6 @@ window.CHARACTERS = [
     {id:'chubby', name:'Jimmy Con-ers', power:75, speed:30, control:45, unlocked:false, cost:2000, special:true},
     {id:'beach', name:'Maria Shara-Pova', power:40, speed:65, control:45, unlocked:false, cost:2000, special:true},
     {id:'goth', name:'Monica Slay-less', power:55, speed:45, control:50, unlocked:false, cost:2500, special:true},
-    {id:'grandpa', name:'Rod Layer', power:35, speed:35, control:80, unlocked:false, cost:2500, special:true},
-    {id:'indian', name:'Sania Mirr-za', power:50, speed:50, control:50, unlocked:false, cost:2500, special:true},
     {id:'anime', name:'Nick Curious', power:55, speed:65, control:30, unlocked:false, cost:3000, special:true},
     {id:'latino', name:'Carlos All-Crazz', power:60, speed:55, control:35, unlocked:false, cost:3000, special:true},
     {id:'redhead', name:'Billie Jean Queen', power:50, speed:55, control:45, unlocked:false, cost:3000, special:true}
@@ -1407,7 +1405,7 @@ function renderCharGrid(){
     var chars = window.CHARACTERS;
     if(!chars || !chars.length) return;
     var html = '';
-    var V = '?v=26';
+    var V = '?v=27';
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
@@ -1625,8 +1623,8 @@ function actuallyStartMatch(){
     
     // Adjust time based on match type
     let matchTime = s.time;
-    if(G.matchType === 'quick') matchTime = 90;  // Shorter for quick match
-    else if(G.matchType === 'timed') matchTime = 180; // 3 minutes for timed
+    if(G.matchType === 'quick') matchTime = 180;  // 3 minutes for quick match
+    else if(G.matchType === 'timed') matchTime = 300; // 5 minutes for timed
     
     // Randomly decide who serves first
     const playerServesFirst = Math.random() < 0.5;
