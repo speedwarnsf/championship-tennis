@@ -1,6 +1,5 @@
-# Exclude raw/source files
+# Exclude raw/source files and large originals
 sprites-v2/raw/
-sprites-v2/*.png
 *.log
 generate_all_sprites.py
 process_sprite.py
@@ -9,7 +8,5 @@ hero_player_female.png
 tennis_sprites.png
 test_sprites.png
 player1_test_spritesheet.png
-player-athletic-backswing.png
 index-v1.html
 index_backup.html
-victory-poses-sheet.png
