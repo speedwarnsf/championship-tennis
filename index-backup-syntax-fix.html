@@ -1,0 +1,3905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Centre Court - Championship Tennis</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="preload" href="court.jpg" as="image">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;800&display=swap');
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#1a1a2e,#0f0f1e);min-height:100vh;overflow:hidden;overscroll-behavior:none;width:100%}
+        .screen{position:fixed;inset:0;display:none;flex-direction:column;z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch}
+        .screen.active{display:flex}
+        .loading-screen{background:#000;justify-content:center;align-items:center;z-index:10000;overflow:hidden}
+        .hero-image{position:relative;width:64vw;height:57vh;margin-bottom:15px;display:flex;justify-content:center;align-items:center}
+        .hero-player{position:absolute;width:100%;height:100%;opacity:0;animation:slideInPlayer 0.6s ease-out 0.8s forwards;image-rendering:pixelated;clip-path:inset(0 20% 0 0);object-fit:contain}
+        .hero-ball{position:absolute;width:100%;height:100%;opacity:0;animation:slideInBall 1.4s ease-in-out forwards;image-rendering:pixelated;clip-path:inset(0 0 0 80%);object-fit:contain}
+        @keyframes slideInPlayer{0%{opacity:0;transform:translateX(-100vw)}100%{opacity:1;transform:translateX(0)}}
+        @keyframes slideInBall{0%{opacity:0;transform:translateX(100vw)}100%{opacity:1;transform:translateX(0)}}
+        .loading-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;animation:fadeInContent 0.8s ease-out 1.4s forwards;opacity:0;margin-top:-70px}
+        @keyframes fadeInContent{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+        .loading-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,12vw,72px);background:linear-gradient(135deg,#9b59b6,#bb86fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:6px;text-shadow:0 0 30px rgba(187,134,252,0.3)}
+        .loading-subtitle{color:rgba(255,255,255,0.5);font-size:13px;letter-spacing:5px;text-transform:uppercase;margin-bottom:50px}
+        .play-button{padding:18px 70px;background:#fff;border:none;border-radius:35px;color:#1a1a2e;font-size:15px;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.3);transition:transform 0.2s,box-shadow 0.2s}
+        .play-button:hover{transform:scale(1.05);box-shadow:0 15px 40px rgba(0,0,0,0.4)}
+        .main-menu{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);justify-content:space-between;padding:15px;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+        .game-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,11vw,64px);color:#ffd700;text-align:center;letter-spacing:4px;text-shadow:3px 3px 0 #000,0 0 20px rgba(255,215,0,0.5)}
+        .tagline{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,215,0,0.6);text-align:center}
+        .player-card{background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 100%);border:3px solid;border-color:#6a8aba #2a3a5a #2a3a5a #6a8aba;border-radius:8px;padding:12px;margin:10px 0;box-shadow:3px 3px 0 rgba(0,0,0,0.4)}
+        .player-level{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+        .level-badge{background:linear-gradient(180deg,#ffd700 0%,#cc9900 100%);padding:5px 12px;border:2px solid;border-color:#ffed4e #886600 #886600 #ffed4e;border-radius:4px;font-size:11px;font-weight:700;color:#000}
+        .skill-progress{margin-bottom:15px}
+        .skill-label{font-size:9px;color:rgba(255,215,0,0.8);margin-bottom:6px;text-align:center}
+        .skill-bar{height:8px;background:rgba(0,0,0,0.3);border-radius:10px;overflow:hidden}
+        .skill-fill{height:100%;background:linear-gradient(90deg,#667eea,#764ba2);width:0%;transition:width 0.3s}
+        .currency-display{display:flex;gap:15px}
+        .currency-item{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.3);padding:6px 12px;border-radius:15px}
+        .currency-icon{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px}
+        .coins{background:linear-gradient(135deg,#ffd700,#ffed4e)}
+        .gems{background:linear-gradient(135deg,#e74c3c,#c0392b)}
+        .currency-amount{font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff}
+        .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+        .stat-item{text-align:center;background:rgba(0,0,0,0.3);padding:8px 4px;border-radius:12px}
+        .stat-label{font-size:8px;text-transform:uppercase;color:rgba(255,215,0,0.6)}
+        .stat-value{font-family:'Bebas Neue',sans-serif;font-size:20px;background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .difficulty-section{margin:10px 0}
+        .difficulty-title{text-align:center;color:rgba(255,215,0,0.8);font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px}
+        .difficulty-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+        .difficulty-btn{padding:12px 8px;border:2px solid rgba(255,255,255,0.2);border-radius:12px;background:rgba(255,255,255,0.05);color:#fff;font-size:10px;font-weight:600;text-transform:uppercase;cursor:pointer}
+        .difficulty-btn.selected{border-color:#ffd700;background:rgba(255,215,0,0.15)}
+        .diff-rookie{border-color:#4caf50}
+        .diff-pro{border-color:#ff9800}
+        .diff-legend{border-color:#f44336}
+        .difficulty-reward{display:block;font-size:8px;color:rgba(255,255,255,0.6);margin-top:3px}
+        .menu-buttons{display:flex;flex-direction:column;gap:12px}
+        .menu-btn{padding:14px 20px;background:linear-gradient(180deg,#4a5a7a 0%,#3a4a6a 50%,#2a3a5a 100%);border:3px solid;border-color:#6a8aba #2a3a5a #2a3a5a #6a8aba;border-radius:6px;color:#fff;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;text-shadow:1px 1px 2px #000;box-shadow:3px 3px 0 rgba(0,0,0,0.4)}
+        .menu-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 rgba(0,0,0,0.4)}
+        .menu-btn.primary{background:linear-gradient(180deg,#ffd700 0%,#cc9900 50%,#aa7700 100%);border-color:#ffed4e #886600 #886600 #ffed4e;color:#000;font-size:15px;padding:16px 24px;text-shadow:none}
+        .video-intro{position:fixed;inset:0;background:#000;display:none;z-index:5000;justify-content:center;align-items:center;opacity:1;transition:opacity 0.5s ease}
+        .video-intro.active{display:flex}
+        .video-intro.fade-out{opacity:0}
+        .skip-btn{position:absolute;bottom:30px;right:20px;padding:12px 24px;background:rgba(255,215,0,0.9);border:none;border-radius:8px;color:#1a1a2e;font-weight:700;font-size:14px;cursor:pointer;z-index:5001}
+        #videoPlayer{width:100vw;height:100vh;object-fit:cover}
+        .game-hud{position:fixed;top:0;left:0;right:0;padding:10px 15px;display:none;z-index:100;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent)}
+        .game-hud.active{display:block}
+        .match-info{display:flex;justify-content:space-between;align-items:flex-start}
+        .player-info{background:rgba(0,0,0,0.5);padding:10px 15px;border-radius:12px;border:1px solid rgba(255,215,0,0.3);text-align:center;min-width:80px}
+        .player-name{font-size:9px;text-transform:uppercase;color:rgba(255,215,0,0.8)}
+        .player-points{font-family:'Bebas Neue',sans-serif;font-size:32px;background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .player-games{font-size:9px;color:rgba(255,255,255,0.7);margin-top:2px}
+        .player-sets{font-size:10px;color:#4caf50;font-weight:700;margin-top:2px}
+        .match-center{display:flex;flex-direction:column;align-items:center;gap:4px}
+        .match-timer{background:rgba(255,215,0,0.2);padding:6px 16px;border-radius:20px;color:#fff;font-size:13px;font-weight:700}
+        .rally-counter{font-size:9px;color:rgba(255,255,255,0.7);text-transform:uppercase}
+        .serve-indicator{font-size:9px;color:#4caf50;font-weight:700;text-transform:uppercase;padding:3px 8px;background:rgba(76,175,80,0.2);border-radius:10px}
+        .serve-indicator.fault{color:#f44336;background:rgba(244,67,54,0.2)}
+        .serve-speed{font-size:10px;color:#ffd700;font-weight:700;margin-top:2px}
+        .tiebreak-indicator{font-size:8px;color:#ff9800;text-transform:uppercase;margin-top:2px}
+        .game-court{position:fixed;inset:0;display:none;background:url('court.jpg') center/cover no-repeat;background-color:#000}
+        .game-court.active{display:block}
+        .game-court.shake{animation:screenShake 0.15s ease-in-out}
+        .game-court.micro-shake{animation:microShake 0.1s ease-in-out}
+        .game-court.power-shake{animation:powerShake 0.2s ease-in-out}
+        @keyframes screenShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}50%{transform:translateX(3px)}75%{transform:translateX(-2px)}}
+        @keyframes microShake{0%,100%{transform:translate(0,0)}25%{transform:translate(-1px,-1px)}50%{transform:translate(1px,1px)}75%{transform:translate(-1px,1px)}}
+        @keyframes powerShake{0%,100%{transform:translate(0,0)}10%{transform:translate(-4px,-2px)}20%{transform:translate(4px,2px)}30%{transform:translate(-3px,3px)}40%{transform:translate(3px,-3px)}50%{transform:translate(-2px,2px)}60%{transform:translate(2px,-2px)}70%{transform:translate(-1px,1px)}80%{transform:translate(1px,-1px)}90%{transform:translate(-1px,-1px)}}
+        .court{position:absolute;top:12%;left:8%;right:8%;bottom:12%;background:transparent;border:none;overflow:hidden}
+        .court-lines{position:absolute;inset:0;display:none}
+        .line{position:absolute;background:#fff;opacity:0.95}
+        .sideline-left{left:12%;top:0;bottom:0;width:3px}
+        .sideline-right{right:12%;top:0;bottom:0;width:3px}
+        .baseline-top{top:6%;left:0;right:0;height:3px}
+        .baseline-bottom{bottom:6%;left:0;right:0;height:3px}
+        .service-top{top:27%;left:12%;right:12%;height:2px}
+        .service-bottom{bottom:27%;left:12%;right:12%;height:2px}
+        .center-service{left:50%;top:27%;bottom:27%;width:2px}
+        .net{top:50%;left:-2%;right:-2%;height:6px;background:linear-gradient(to bottom,rgba(255,255,255,0.9),rgba(100,100,100,0.9));z-index:20;transform:translateY(-50%)}
+        /* Service box highlighting */
+        .service-box{position:absolute;border:3px solid transparent;border-radius:8px;pointer-events:none;z-index:15;opacity:0;transition:opacity 0.3s}
+        .service-box.deuce{top:27%;bottom:50%;left:50%;right:12%}
+        .service-box.ad{top:27%;bottom:50%;left:12%;right:50%}
+        .service-box.active{opacity:1;border-color:rgba(76,255,80,0.5);background:rgba(76,255,80,0.1);animation:serviceBoxPulse 1s ease-in-out infinite}
+        @keyframes serviceBoxPulse{0%,100%{border-color:rgba(76,255,80,0.3)}50%{border-color:rgba(76,255,80,0.7)}}
+        /* Net cord effect */
+        .net-cord{position:absolute;top:50%;left:-2%;right:-2%;height:6px;z-index:21;transform:translateY(-50%);pointer-events:none;opacity:0}
+        .net-cord.active{animation:netCordFlash 0.4s ease-out}
+        @keyframes netCordFlash{0%{opacity:1;box-shadow:0 0 20px rgba(255,215,0,0.8),0 0 40px rgba(255,215,0,0.5)}100%{opacity:0;box-shadow:none}}
+        .ball{position:absolute;width:20px;height:20px;background:radial-gradient(circle at 30% 30%,#fcf836,#c9d11a);border-radius:50%;transform:translate(-50%,-50%);z-index:40;display:none;box-shadow:0 2px 4px rgba(0,0,0,0.4)}
+        .ball.fast{box-shadow:0 2px 4px rgba(0,0,0,0.4),-8px 0 12px rgba(252,248,54,0.3)}
+        .ball.active{display:block}
+        .ball.glowing{box-shadow:0 0 30px rgba(76,255,80,1),0 0 50px rgba(76,255,80,0.5);animation:ballGlow 0.4s ease-in-out infinite}
+        .ball.toss{animation:ballToss 0.6s ease-out}
+        @keyframes ballToss{0%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-150%) scale(1.2)}100%{transform:translate(-50%,-50%) scale(1)}}
+        @keyframes ballGlow{0%,100%{transform:translate(-50%,-50%) scale(1.3)}50%{transform:translate(-50%,-50%) scale(1.6)}}
+        @keyframes flashFade{0%{opacity:1}100%{opacity:0}}
+        /* Enhanced ball trail effect */
+        .ball-trail{position:absolute;width:10px;height:10px;background:rgba(252,248,54,0.4);border-radius:50%;transform:translate(-50%,-50%);z-index:38;pointer-events:none;opacity:0;transition:opacity 0.1s}
+        .ball-trail.active{opacity:1;animation:trailFade 0.3s ease-out forwards}
+        @keyframes trailFade{0%{opacity:0.8;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(0.3)}}
+
+        /* Swipe trail visualization */
+        .swipe-trail{position:absolute;pointer-events:none;z-index:45;opacity:0}
+        .swipe-trail.active{opacity:1;animation:swipeTrailFade 0.5s ease-out forwards}
+        .swipe-trail-segment{position:absolute;width:8px;height:8px;background:linear-gradient(135deg,#4caf50,#8bc34a);border-radius:50%;transform:translate(-50%,-50%)}
+        @keyframes swipeTrailFade{0%{opacity:1}100%{opacity:0}}
+        .ball-shadow{position:absolute;width:26px;height:10px;background:radial-gradient(ellipse at center,rgba(0,0,0,0.4),transparent 70%);border-radius:50%;transform:translate(-50%,0);z-index:25;display:none}
+        .ball-shadow.active{display:block}
+        .opponent{position:absolute;top:5%;left:50%;transform:translateX(-50%);width:80px;height:96px;display:flex;align-items:center;justify-content:center;z-index:30;transition:left 0.2s ease-out}
+        .opponent.hitting{animation:opponentHit 0.3s ease}
+        @keyframes opponentHit{50%{transform:translateX(-50%) scale(1.2) rotate(-5deg)}}
+        .player-paddle{position:absolute;bottom:5%;width:86px;height:104px;display:flex;align-items:center;justify-content:center;transform:translateX(-50%);transition:left 0.1s ease-out;z-index:35}
+        .player-paddle.can-hit{filter:drop-shadow(0 0 20px rgba(76,255,80,0.8));animation:paddleReady 0.4s ease-in-out infinite}
+        .player-paddle.serving{filter:drop-shadow(0 0 25px rgba(255,215,0,0.8))}
+        @keyframes paddleReady{0%,100%{transform:translateX(-50%) scale(1.05)}50%{transform:translateX(-50%) scale(1)}}
+        .player-sprite{position:relative;width:80px;height:96px;overflow:hidden;image-rendering:pixelated;transform:scale(1);transition:transform 0.2s ease}
+        .player-sprite.flipped{transform:scaleX(-1)}
+        .player-paddle .player-sprite.near{transform:scale(1.13)!important}
+        .player-paddle .player-sprite.near.flipped{transform:scale(-1.13,1.13)!important}
+        .sprite-inner{width:80px;height:96px;background-size:640px 96px;background-repeat:no-repeat;background-position:0 0;overflow:hidden}
+        .sprite-inner.playing-8{animation:playSprite8 0.5s steps(7) 1}
+        .sprite-inner.playing-7{animation:playSprite7 0.5s steps(6) 1}
+        .sprite-inner.playing-5{animation:playSprite5 0.5s steps(4) 1}
+        .sprite-inner.playing-4{animation:playSprite4 0.4s steps(3) 1}
+        .sprite-inner.cycling{animation:playSprite8 0.8s steps(7) infinite}
+        @keyframes playSprite8{0%{background-position:0 0}100%{background-position:-560px 0}}
+        @keyframes playSprite7{0%{background-position:0 0}100%{background-position:-360px 0}}
+        @keyframes playSprite5{0%{background-position:0% var(--sprite-y)}100%{background-position:100% var(--sprite-y)}}
+        @keyframes playSprite4{0%{background-position:0% var(--sprite-y)}100%{background-position:100% var(--sprite-y)}}
+        .hit-zone{position:absolute;bottom:8%;left:8%;right:8%;top:52%;border:3px dashed rgba(255,215,0,0.2);border-radius:20px;pointer-events:none;z-index:5;display:none}
+        .hit-zone.active{border-color:rgba(76,255,80,0.4);background:rgba(76,255,80,0.05)}
+        /* Serve power meter */
+        .serve-power{position:absolute;bottom:20%;left:50%;transform:translateX(-50%);width:60%;max-width:200px;display:none;flex-direction:column;align-items:center;gap:8px;z-index:100}
+        .serve-power.active{display:flex}
+        .serve-power-label{font-size:11px;color:#fff;text-transform:uppercase;letter-spacing:2px;text-shadow:0 2px 4px rgba(0,0,0,0.5)}
+        .serve-power-bar{width:100%;height:20px;background:rgba(0,0,0,0.6);border:2px solid rgba(255,215,0,0.5);border-radius:10px;overflow:hidden}
+        .serve-power-fill{height:100%;width:0%;background:linear-gradient(90deg,#4caf50,#ffd700 50%,#f44336);transition:width 0.05s}
+        .serve-power-zones{display:flex;justify-content:space-between;width:100%;font-size:8px;color:rgba(255,255,255,0.6);padding:0 2px}
+        /* Serve aim indicator */
+        .serve-aim{position:absolute;width:30px;height:30px;border:3px solid #ffd700;border-radius:50%;transform:translate(-50%,-50%);z-index:45;display:none;pointer-events:none;box-shadow:0 0 15px rgba(255,215,0,0.5)}
+        .serve-aim.active{display:block;animation:aimPulse 0.8s ease-in-out infinite}
+        .serve-aim-dot{position:absolute;top:50%;left:50%;width:6px;height:6px;background:#ffd700;border-radius:50%;transform:translate(-50%,-50%)}
+        @keyframes aimPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1}50%{transform:translate(-50%,-50%) scale(1.3);opacity:0.8}}
+        /* Serve target line */
+        .serve-target-line{position:absolute;width:2px;background:linear-gradient(to top,rgba(255,215,0,0.6),transparent);z-index:44;display:none;pointer-events:none;transform-origin:bottom center}
+        .serve-target-line.active{display:block}
+        .power-bar{position:absolute;bottom:2%;left:20%;right:20%;height:12px;background:rgba(0,0,0,0.5);border:2px solid rgba(255,215,0,0.5);border-radius:6px;overflow:hidden;display:none}
+        .power-fill{height:100%;width:0%;background:linear-gradient(90deg,#4caf50,#ffd700,#f44336);transition:width 0.15s}
+        .hit-effect{position:absolute;width:120px;height:120px;border:4px solid #ffd700;border-radius:50%;opacity:0;pointer-events:none;transform:translate(-50%,-50%) scale(0.5);z-index:200;display:none}
+        .hit-effect.active{animation:hitRipple 0.6s ease-out}
+        @keyframes hitRipple{0%{opacity:1;transform:translate(-50%,-50%) scale(0.5)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.5)}}
+        /* Gem improvements */
+        .gem-drop{position:absolute;width:45px;height:45px;font-size:36px;display:none;transform:translate(-50%,-50%);z-index:150;cursor:pointer;filter:drop-shadow(0 0 10px rgba(231,76,60,0.8))}
+        .gem-drop.active{display:block;animation:gemFloat 1.5s ease-in-out infinite}
+        .gem-drop.urgent{animation:gemUrgent 0.3s ease-in-out infinite}
+        @keyframes gemFloat{0%,100%{transform:translate(-50%,-50%) scale(1) rotate(0deg)}50%{transform:translate(-50%,-60%) scale(1.15) rotate(10deg)}}
+        @keyframes gemUrgent{0%,100%{transform:translate(-50%,-50%) scale(1.1);filter:drop-shadow(0 0 20px rgba(255,0,0,0.9))}50%{transform:translate(-50%,-50%) scale(0.9);filter:drop-shadow(0 0 10px rgba(255,0,0,0.5))}}
+        /* Gem collect particles */
+        .gem-particle{position:absolute;width:8px;height:8px;background:linear-gradient(135deg,#e74c3c,#ff6b6b);border-radius:50%;pointer-events:none;z-index:160}
+        @keyframes gemBurst{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}}
+        .gem-timer{position:absolute;bottom:-15px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.8);white-space:nowrap}
+        .gem-multiplier{position:absolute;top:-8px;right:-8px;background:linear-gradient(135deg,#ffd700,#ffed4e);color:#1a1a2e;font-size:9px;font-weight:700;padding:2px 5px;border-radius:8px}
+        .combo-text{position:absolute;font-family:'Bebas Neue',sans-serif;font-size:42px;background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;pointer-events:none;z-index:500}
+        @keyframes comboFloat{0%{opacity:1;transform:translate(-50%,-50%) scale(0)}50%{opacity:1;transform:translate(-50%,-80px) scale(1.4)}100%{opacity:0;transform:translate(-50%,-120px) scale(1)}}
+        /* Streak indicator */
+        .streak-display{position:fixed;bottom:15%;right:10px;background:rgba(0,0,0,0.7);border:2px solid rgba(255,215,0,0.4);border-radius:12px;padding:8px 12px;display:none;z-index:100}
+        .streak-display.active{display:block}
+        .streak-label{font-size:8px;color:rgba(255,215,0,0.8);text-transform:uppercase}
+        .streak-value{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#ffd700}
+        .streak-bonus{font-size:9px;color:#4caf50}
+        .swipe-hint{position:absolute;bottom:35%;left:50%;transform:translateX(-50%);padding:10px 20px;background:rgba(76,255,80,0.7);border-radius:10px;color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;opacity:0;pointer-events:none;display:none;text-align:center}
+        .swipe-hint.active{opacity:1;animation:hintPulse 0.8s ease-in-out infinite}
+        .swipe-hint.serve{background:rgba(255,215,0,0.8);color:#1a1a2e}
+        @keyframes hintPulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.1)}}
+        /* Court change overlay */
+        .court-change{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;justify-content:center;align-items:center;z-index:500;flex-direction:column;gap:15px}
+        .court-change.active{display:flex;animation:fadeInChange 0.5s ease}
+        @keyframes fadeInChange{from{opacity:0}to{opacity:1}}
+        .court-change-text{font-family:'Bebas Neue',sans-serif;font-size:48px;color:#ffd700;text-align:center}
+        .court-change-sub{font-size:14px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:3px}
+        /* Out/Fault callout */
+        .call-overlay{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);font-family:'Bebas Neue',sans-serif;font-size:64px;color:#f44336;text-shadow:0 4px 20px rgba(0,0,0,0.8);opacity:0;pointer-events:none;z-index:200}
+        .call-overlay.active{animation:callPop 0.8s ease-out forwards}
+        .call-overlay.in{color:#4caf50}
+        @keyframes callPop{0%{opacity:0;transform:translate(-50%,-50%) scale(0.5)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+        .match-results{background:#000;justify-content:center;align-items:center;padding:20px;z-index:2000}
+        .results-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,15vw,64px);margin-bottom:10px}
+        .victory{background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .defeat{background:linear-gradient(135deg,#f44336,#e91e63);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .final-score{font-family:'Bebas Neue',sans-serif;font-size:42px;color:#fff;margin-bottom:25px}
+        .rewards-container{background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(255,237,78,0.05));border:2px solid rgba(255,215,0,0.3);border-radius:20px;padding:20px;margin-bottom:25px;width:100%;max-width:320px}
+        .rewards-title{font-size:13px;text-transform:uppercase;letter-spacing:3px;color:rgba(255,215,0,0.8);margin-bottom:15px;text-align:center}
+        .reward-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,215,0,0.1)}
+        .reward-item:last-child{border-bottom:none}
+        .reward-label{font-size:13px;color:rgba(255,255,255,0.8);text-transform:uppercase}
+        .reward-value{font-family:'Bebas Neue',sans-serif;font-size:28px;background:linear-gradient(135deg,#4caf50,#8bc34a);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .continue-btn{padding:18px 50px;background:linear-gradient(135deg,#ffd700,#ffed4e);border:none;border-radius:25px;color:#1a1a2e;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
+
+        /* Daily Challenge System */
+        .challenge-banner{background:linear-gradient(135deg,#9b59b6,#8e44ad);border:2px solid rgba(155,89,182,0.5);border-radius:12px;margin:10px 0;padding:12px;color:#fff}
+        .challenge-title{font-family:'Bebas Neue',sans-serif;font-size:18px;color:#e8d5ff;margin-bottom:5px}
+        .challenge-desc{font-size:11px;color:rgba(255,255,255,0.8);margin-bottom:8px}
+        .challenge-progress{display:flex;justify-content:space-between;align-items:center}
+        .challenge-bar{flex:1;height:6px;background:rgba(0,0,0,0.3);border-radius:3px;margin-right:10px;overflow:hidden}
+        .challenge-fill{height:100%;background:linear-gradient(90deg,#4caf50,#8bc34a);transition:width 0.3s}
+        .challenge-reward{font-size:10px;color:#ffd700;font-weight:700}
+        .progress-toast{position:fixed;top:-80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ffd700,#ffed4e);padding:12px 25px;border-radius:25px;color:#1a1a2e;font-weight:700;z-index:3000;transition:top 0.4s ease}
+        .progress-toast.show{top:40px}
+        .shop-screen{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:12px;overflow-y:auto;z-index:1100;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+        /* ARCADE STYLE CHARACTER SELECT */
+        .char-select{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:10px 10px 80px;overflow-y:auto;z-index:1100;flex-direction:column;position:relative;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+        .char-select::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.1) 2px,rgba(0,0,0,0.1) 4px);pointer-events:none;z-index:9999}
+        .char-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow-y:scroll;touch-action:pan-y;-webkit-overflow-scrolling:touch;flex:1;padding:10px;background:linear-gradient(135deg,#2a3a5a 0%,#1a2a4a 100%);border:3px solid #4a6a9a;border-radius:8px;box-shadow:inset 0 2px 4px rgba(0,0,0,0.5),0 4px 8px rgba(0,0,0,0.3);max-height:calc(100vh - 280px)}
+        .char-select-btn{position:fixed;bottom:15px;left:15px;right:15px;z-index:1101;background:linear-gradient(180deg,#ffd700 0%,#cc9900 50%,#aa7700 100%)!important;border:3px solid!important;border-color:#ffed4e #886600 #886600 #ffed4e!important;color:#000!important;text-shadow:none!important;box-shadow:3px 3px 0 #0a1a2a!important;font-size:16px!important;letter-spacing:3px!important}
+        .char-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:8px 12px;background:linear-gradient(180deg,#4a6a9a 0%,#3a5a8a 50%,#2a4a7a 100%);border:2px solid #6a8aba;border-radius:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 2px 4px rgba(0,0,0,0.3)}
+        .char-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;text-shadow:2px 2px 0 #000,0 0 10px rgba(100,200,255,0.5);letter-spacing:3px}
+        .char-card{background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 50%,#1a2a4a 100%);border:3px solid;border-color:#6a8aba #2a3a5a #2a3a5a #6a8aba;border-radius:4px;padding:6px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:2px 2px 0 #0a1a2a}
+        .char-card:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #0a1a2a}
+        .char-card.selected{border-color:#ffd700 #aa8800 #aa8800 #ffd700;background:linear-gradient(180deg,#4a5a7a 0%,#3a4a6a 50%,#2a3a5a 100%);box-shadow:2px 2px 0 #0a1a2a,0 0 15px rgba(255,215,0,0.4)}
+        .char-card.locked{opacity:0.6;filter:grayscale(0.5) brightness(0.7)}
+        .char-preview{width:64px;height:77px;margin:0 auto 4px;background-size:512px 77px;background-repeat:no-repeat;background-position:0 0;image-rendering:pixelated;border:2px solid #1a2a4a;background-color:#0a0a1a}
+        .char-name{font-size:9px;color:#8ac;font-weight:700;text-transform:uppercase;text-shadow:1px 1px 0 #000;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .char-stats{font-size:8px;color:#6a8aba;margin-top:2px;font-family:monospace}
+        .char-stat-bars{margin-top:4px}
+        .stat-bar-row{display:flex;align-items:center;gap:2px;margin:2px 0}
+        .stat-lbl{font-size:7px;color:#6a8aba;width:8px;text-align:center}
+        .stat-bar{flex:1;height:4px;background:#1a2a4a;border-radius:2px;overflow:hidden}
+        .stat-fill{height:100%;border-radius:2px}
+        .stat-fill.pwr{background:linear-gradient(90deg,#ff6b6b,#ff4757)}
+        .stat-fill.spd{background:linear-gradient(90deg,#4ecdc4,#26de81)}
+        .stat-fill.ctl{background:linear-gradient(90deg,#45aaf2,#2d98da)}
+        .char-lock{font-size:16px;margin-bottom:3px;filter:drop-shadow(0 0 3px #000)}
+        .char-detail{background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 100%);border:3px solid;border-color:#6a8aba #2a3a5a #2a3a5a #6a8aba;border-radius:6px;padding:12px;margin-bottom:10px;box-shadow:3px 3px 0 #0a1a2a}
+        .char-detail-preview{width:72px;height:86px;margin:0 auto 8px;background-size:576px 86px;background-repeat:no-repeat;image-rendering:pixelated;border:2px solid #1a2a4a;background-color:#0a0a1a}
+        .char-detail-preview.animating{animation:charPreview 1.2s steps(7) infinite}
+        @keyframes charPreview{0%{background-position:0 0}100%{background-position:-504px 0}}
+        .char-detail-name{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#ffd700;text-align:center;text-shadow:2px 2px 0 #000;letter-spacing:2px}
+        .char-detail-stats{display:flex;justify-content:center;gap:15px;margin-top:8px}
+        .char-stat{text-align:center}
+        .char-stat-label{font-size:8px;color:#6a8aba;text-transform:uppercase;letter-spacing:1px}
+        .char-stat-value{font-family:'Bebas Neue',sans-serif;font-size:18px;color:#8cf;text-shadow:1px 1px 0 #000}
+        .shop-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:8px 12px;background:linear-gradient(180deg,#4a6a9a 0%,#3a5a8a 50%,#2a4a7a 100%);border:2px solid #6a8aba;border-radius:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 2px 4px rgba(0,0,0,0.3)}
+        .shop-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;text-shadow:2px 2px 0 #000,0 0 10px rgba(100,200,255,0.5);letter-spacing:3px}
+        .back-btn{padding:8px 16px;background:linear-gradient(180deg,#5a6a8a 0%,#4a5a7a 50%,#3a4a6a 100%);border:2px solid;border-color:#8a9aba #3a4a6a #3a4a6a #8a9aba;border-radius:4px;color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;cursor:pointer;text-shadow:1px 1px 0 #000;box-shadow:2px 2px 0 #0a1a2a}
+        .back-btn:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #0a1a2a}
+        .shop-tabs{display:flex;gap:4px;margin-bottom:12px;background:linear-gradient(180deg,#2a3a5a 0%,#1a2a4a 100%);padding:6px;border:2px solid #4a6a9a;border-radius:6px;flex-wrap:wrap}
+        .shop-tab{flex:1;padding:8px 6px;background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 100%);border:2px solid;border-color:#5a7a9a #1a2a4a #1a2a4a #5a7a9a;border-radius:4px;color:#8ac;font-size:9px;font-weight:700;text-transform:uppercase;cursor:pointer;min-width:55px;text-shadow:1px 1px 0 #000}
+        .shop-tab.active{background:linear-gradient(180deg,#ffd700 0%,#cc9900 100%);border-color:#ffed4e #886600 #886600 #ffed4e;color:#000;text-shadow:none}
+        .shop-items{display:grid;gap:8px;padding-bottom:20px;overflow-y:auto;max-height:calc(100vh - 180px);touch-action:pan-y;-webkit-overflow-scrolling:touch}
+        .shop-item{background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 100%);border:2px solid;border-color:#5a7a9a #1a2a4a #1a2a4a #5a7a9a;border-radius:6px;padding:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:2px 2px 0 rgba(0,0,0,0.3)}
+        .shop-item.owned{border-color:#4caf50 #2a6a2a #2a6a2a #4caf50}
+        .item-info{flex:1;max-width:55%}
+        .item-name{font-size:12px;font-weight:700;color:#ffd700;margin-bottom:2px;text-shadow:1px 1px 0 #000}
+        .item-desc{font-size:9px;color:#8ac;margin-bottom:4px}
+        .item-stats{display:flex;gap:6px;flex-wrap:wrap}
+        .item-stat{font-size:8px;color:#4caf50;font-weight:600;background:rgba(76,175,80,0.2);padding:2px 5px;border-radius:4px}
+        .item-purchase{display:flex;flex-direction:column;align-items:center;gap:6px}
+        .price-tag{display:flex;align-items:center;gap:5px;padding:5px 8px;background:rgba(0,0,0,0.4);border-radius:6px;font-family:'Bebas Neue',sans-serif;font-size:18px;color:#fff}
+        .buy-btn{padding:7px 14px;background:linear-gradient(135deg,#4caf50,#8bc34a);border:none;border-radius:6px;color:#fff;font-size:9px;font-weight:700;text-transform:uppercase;cursor:pointer}
+        .buy-btn:disabled{background:#555;opacity:0.5}
+        .equip-btn{padding:7px 14px;background:linear-gradient(135deg,#2196f3,#03a9f4);border:none;border-radius:6px;color:#fff;font-size:9px;font-weight:700;text-transform:uppercase;cursor:pointer}
+        .equipped-badge{padding:7px 14px;background:linear-gradient(135deg,#ffd700,#ffed4e);border:none;border-radius:6px;color:#1a1a2e;font-size:9px;font-weight:700;text-transform:uppercase}
+        .tutorial-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.92);display:none;justify-content:center;align-items:center;z-index:3000;padding:20px}
+        .tutorial-overlay.active{display:flex}
+        .tutorial-content{background:#000;border:2px solid rgba(187,134,252,0.4);border-radius:20px;padding:25px;max-width:360px;text-align:center}
+        .tutorial-title{font-family:'Bebas Neue',sans-serif;font-size:32px;background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:15px}
+        .tutorial-text{color:rgba(255,255,255,0.8);font-size:13px;line-height:1.5;margin-bottom:20px}
+        .tutorial-btn{padding:14px 35px;background:linear-gradient(135deg,#4caf50,#8bc34a);border:none;border-radius:20px;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer}
+
+/* Performance optimizations */
+.performance-mode .particle-effect,
+.performance-mode .ball-trail {
+    display: none !important;
+}
+
+.performance-mode .court-animation,
+.performance-mode .screen-shake {
+    animation: none !important;
+    transform: none !important;
+}
+
+.low-performance .complex-gradient {
+    background: #1a1a2e !important;
+}
+
+.low-performance .text-shadow,
+.low-performance .box-shadow {
+    text-shadow: none !important;
+    box-shadow: none !important;
+}
+
+</style>
+    <script src="https://www.youtube.com/iframe_api"></script>
+</head>
+<body>
+    <div class="screen loading-screen active" id="loadingScreen">
+        <div style="display:flex;flex-direction:column;align-items:center;margin-top:-60px;">
+            <div class="hero-image">
+                <img src="hero_player.jpg" alt="Tennis Player" class="hero-player">
+                <img src="hero_player.jpg" alt="Tennis Ball" class="hero-ball">
+            </div>
+            <div class="loading-content" id="loadingContent">
+                <div class="loading-logo">CENTRE COURT</div>
+                <div class="loading-subtitle">Championship Edition</div>
+                <button class="play-button" onclick="startGame()">PLAY NOW</button>
+            </div>
+        </div>
+    </div>
+    <div class="screen main-menu" id="mainMenu">
+        <div><h1 class="game-logo">CENTRE COURT</h1><p class="tagline">Championship Edition</p></div>
+        <div class="player-card">
+            <div class="player-level">
+                <div class="level-badge">NTRP <span id="playerNTRP">2.5</span></div>
+                <div class="currency-display">
+                    <div class="currency-item"><div class="currency-icon coins">💰</div><div class="currency-amount" id="coinAmount">500</div></div>
+                    <div class="currency-item"><div class="currency-icon gems">💎</div><div class="currency-amount" id="gemAmount">20</div></div>
+                </div>
+            </div>
+            <div class="skill-progress">
+                <div class="skill-label">Skill Points: <span id="skillPoints">0</span> / <span id="skillNeeded">300</span></div>
+                <div class="skill-bar"><div class="skill-fill" id="skillFill"></div></div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item"><div class="stat-label">Power</div><div class="stat-value" id="statPower">10</div></div>
+                <div class="stat-item"><div class="stat-label">Speed</div><div class="stat-value" id="statSpeed">10</div></div>
+                <div class="stat-item"><div class="stat-label">Control</div><div class="stat-value" id="statControl">10</div></div>
+                <div class="stat-item"><div class="stat-label">Serve</div><div class="stat-value" id="statServe">10</div></div>
+            </div>
+        </div>
+        <div class="difficulty-section">
+            <div class="difficulty-title">Select Difficulty</div>
+            <div class="difficulty-buttons">
+                <button class="difficulty-btn diff-rookie selected" onclick="selectDifficulty('rookie')">Rookie<span class="difficulty-reward">1x Rewards</span></button>
+                <button class="difficulty-btn diff-pro" onclick="selectDifficulty('pro')">Pro<span class="difficulty-reward">2x Rewards</span></button>
+                <button class="difficulty-btn diff-legend" onclick="selectDifficulty('legend')">Legend<span class="difficulty-reward">3x Rewards</span></button>
+            </div>
+        </div>
+        <div class="difficulty-section">
+            <div class="difficulty-title">Match Length</div>
+            <div class="difficulty-buttons">
+                <button class="difficulty-btn selected" onclick="selectMatchType('quick')" id="matchQuick">Quick<span class="difficulty-reward">First to 6</span></button>
+                <button class="difficulty-btn" onclick="selectMatchType('standard')" id="matchStandard">Standard<span class="difficulty-reward">Best of 3</span></button>
+                <button class="difficulty-btn" onclick="selectMatchType('timed')" id="matchTimed">Timed<span class="difficulty-reward">Best of Time</span></button>
+            </div>
+        </div>
+        <!-- Daily Challenge -->
+        <div class="challenge-banner" id="dailyChallenge">
+            <div class="challenge-title" id="challengeTitle">Daily Challenge: Ace Master</div>
+            <div class="challenge-desc" id="challengeDesc">Score 3 aces in a single match</div>
+            <div class="challenge-progress">
+                <div class="challenge-bar"><div class="challenge-fill" id="challengeFill" style="width:0%"></div></div>
+                <div class="challenge-reward" id="challengeReward">+100💰 +2💎</div>
+            </div>
+        </div>
+
+        <div class="menu-buttons">
+            <button class="menu-btn primary" onclick="startMatch()">PLAY MATCH</button>
+            <button class="menu-btn" onclick="showCharSelect()">SELECT PLAYER</button>
+            <button class="menu-btn" onclick="showShop()">PRO SHOP</button>
+            <button class="menu-btn" onclick="showTutorial()">HOW TO PLAY</button>
+        </div>
+    </div>
+    <div class="screen shop-screen" id="shopScreen">
+        <div class="shop-header"><h2 class="shop-title">PRO SHOP</h2><button class="back-btn" onclick="closeShop()">BACK</button></div>
+        <div class="shop-tabs">
+            <button class="shop-tab active" onclick="switchTab('training',this)">Training</button>
+            <button class="shop-tab" onclick="switchTab('serve',this)">Serve</button>
+            <button class="shop-tab" onclick="switchTab('rackets',this)">Rackets</button>
+            <button class="shop-tab" onclick="switchTab('shoes',this)">Shoes</button>
+            <button class="shop-tab" onclick="switchTab('special',this)">Special</button>
+        </div>
+        <div class="shop-items" id="shopItems"></div>
+    </div>
+    <div class="screen char-select" id="charSelect">
+        <div class="char-header"><h2 class="char-title">SELECT PLAYER</h2><button class="back-btn" onclick="closeCharSelect()">BACK</button></div>
+        <div class="char-detail" id="charDetail">
+            <div class="char-detail-preview animating" id="charDetailPreview"></div>
+            <div class="char-detail-name" id="charDetailName">ROGER FEDORA</div>
+            <div class="char-detail-stats">
+                <div class="char-stat"><div class="char-stat-label">Power</div><div class="char-stat-value" id="charPower">50</div></div>
+                <div class="char-stat"><div class="char-stat-label">Speed</div><div class="char-stat-value" id="charSpeed">50</div></div>
+                <div class="char-stat"><div class="char-stat-label">Control</div><div class="char-stat-value" id="charControl">50</div></div>
+            </div>
+        </div>
+        <div class="char-grid" id="charGrid"></div>
+        <button class="menu-btn primary char-select-btn" onclick="confirmCharacter()">SELECT</button>
+    </div>
+    <div class="video-intro" id="videoIntro">
+        <div id="videoPlayer"></div>
+        <button class="skip-btn" onclick="transitionToCourt()">SKIP ▶</button>
+    </div>
+    <div class="game-hud" id="gameHUD">
+        <div class="match-info">
+            <div class="player-info">
+                <div class="player-name">YOU</div>
+                <div class="player-points" id="playerPoints">0</div>
+                <div class="player-games">Games: <span id="playerGames">0</span></div>
+                <div class="player-sets" id="playerSets"></div>
+            </div>
+            <div class="match-center">
+                <div class="match-timer" id="matchTimer">2:00</div>
+                <div class="rally-counter">Rally: <span id="rallyCount">0</span></div>
+                <div class="serve-indicator" id="serveIndicator">1ST SERVE</div>
+                <div class="serve-speed" id="serveSpeed"></div>
+                <div class="tiebreak-indicator" id="tiebreakIndicator"></div>
+            </div>
+            <div class="player-info">
+                <div class="player-name">CPU</div>
+                <div class="player-points" id="opponentPoints">0</div>
+                <div class="player-games">Games: <span id="opponentGames">0</span></div>
+                <div class="player-sets" id="opponentSets"></div>
+            </div>
+        </div>
+    </div>
+    <div class="game-court" id="gameCourt">
+        <div class="court">
+            <div class="court-lines">
+                <div class="line sideline-left"></div><div class="line sideline-right"></div>
+                <div class="line baseline-top"></div><div class="line baseline-bottom"></div>
+                <div class="line service-top"></div><div class="line service-bottom"></div>
+                <div class="line center-service"></div><div class="line net"></div>
+                <div class="net-cord" id="netCord"></div>
+            </div>
+            <!-- Service boxes -->
+            <div class="service-box deuce" id="serviceBoxDeuce"></div>
+            <div class="service-box ad" id="serviceBoxAd"></div>
+            <div class="hit-zone" id="hitZone"></div>
+            <div class="opponent" id="opponent">
+                <div class="player-sprite opponent-sprite">
+                    <div class="sprite-inner" id="opponentSprite"></div>
+                </div>
+            </div>
+            <div class="player-paddle" id="playerPaddle">
+                <div class="player-sprite player-sprite-active near">
+                    <div class="sprite-inner" id="playerSprite"></div>
+                </div>
+            </div>
+            <div class="ball-shadow" id="ballShadow"></div>
+            <div class="ball" id="ball"></div>
+            <!-- Serve aim indicator -->
+            <div class="serve-aim" id="serveAim"><div class="serve-aim-dot"></div></div>
+            <div class="serve-target-line" id="serveTargetLine"></div>
+            <div class="swipe-hint" id="swipeHint">SWIPE UP!</div>
+            <!-- Serve power meter -->
+            <div class="serve-power" id="servePower">
+                <div class="serve-power-label">PULL DOWN FOR POWER</div>
+                <div class="serve-power-bar"><div class="serve-power-fill" id="servePowerFill"></div></div>
+                <div class="serve-power-zones"><span>SOFT</span><span>MEDIUM</span><span>POWER</span></div>
+            </div>
+            <div class="power-bar"><div class="power-fill" id="powerFill"></div></div>
+            <div class="hit-effect" id="hitEffect"></div>
+            <div class="gem-drop" id="gemDrop">💎<div class="gem-timer" id="gemTimer"></div><div class="gem-multiplier" id="gemMultiplier">x1</div></div>
+            <div class="call-overlay" id="callOverlay">OUT</div>
+        </div>
+    </div>
+    <!-- Court change overlay -->
+    <div class="court-change" id="courtChange">
+        <div class="court-change-text" id="courtChangeText">CHANGEOVER</div>
+        <div class="court-change-sub" id="courtChangeSub">Switching sides</div>
+    </div>
+    <!-- Streak display -->
+    <div class="streak-display" id="streakDisplay">
+        <div class="streak-label">STREAK</div>
+        <div class="streak-value" id="streakValue">0</div>
+        <div class="streak-bonus" id="streakBonus">+0% gems</div>
+    </div>
+    <div class="screen match-results" id="matchResults">
+        <h2 class="results-title" id="resultsTitle">VICTORY</h2>
+        <div class="final-score" id="finalScore">7 - 3</div>
+        <div class="rewards-container">
+            <div class="rewards-title">Match Rewards</div>
+            <div class="reward-item"><span class="reward-label">Coins</span><span class="reward-value" id="coinsEarned">+50</span></div>
+            <div class="reward-item"><span class="reward-label">Skill Points</span><span class="reward-value" id="skillGained">+100</span></div>
+            <div class="reward-item"><span class="reward-label">Gems</span><span class="reward-value" id="gemsEarned">+0</span></div>
+        </div>
+        <div class="rewards-container" style="margin-top:-10px">
+            <div class="rewards-title">Match Statistics</div>
+            <div class="reward-item"><span class="reward-label">Aces</span><span class="reward-value" id="acesCount">0</span></div>
+            <div class="reward-item"><span class="reward-label">Winners</span><span class="reward-value" id="winnersCount">0</span></div>
+            <div class="reward-item"><span class="reward-label">Double Faults</span><span class="reward-value" id="doubleFaultsCount">0</span></div>
+            <div class="reward-item"><span class="reward-label">Best Streak</span><span class="reward-value" id="bestStreakCount">0</span></div>
+        </div>
+        <div class="rewards-container" style="margin-top:-10px">
+            <div class="rewards-title">Rally Analysis</div>
+            <div class="reward-item"><span class="reward-label">Longest Rally</span><span class="reward-value" id="longestRally">0</span></div>
+            <div class="reward-item"><span class="reward-label">Avg Rally</span><span class="reward-value" id="avgRally">0</span></div>
+            <div class="reward-item"><span class="reward-label">Total Points</span><span class="reward-value" id="totalPoints">0</span></div>
+            <div class="reward-item"><span class="reward-label">Match Time</span><span class="reward-value" id="matchDuration">0:00</span></div>
+        </div>
+        <button class="continue-btn" onclick="returnToMenu()">CONTINUE</button>
+    </div>
+    <div class="tutorial-overlay" id="tutorialOverlay">
+        <div class="tutorial-content">
+            <h2 class="tutorial-title">HOW TO PLAY</h2>
+            <p class="tutorial-text">
+                <strong>🎾 SERVING:</strong><br>
+                When it's your serve, PULL DOWN to charge power, then RELEASE and swipe toward the service box!<br><br>
+                <strong>⚡ RETURNING:</strong><br>
+                Watch for the GREEN GLOW - swipe up to hit!<br><br>
+                <strong>📍 COURT:</strong><br>
+                • Serve to deuce court (right) on even points<br>
+                • Serve to ad court (left) on odd points<br>
+                • Double fault = point lost!<br><br>
+                <strong>💎 GEMS:</strong><br>
+                Collect gems before they disappear! Build streaks for bonus gems!
+            </p>
+            <button class="tutorial-btn" onclick="closeTutorial()">GOT IT!</button>
+        </div>
+    </div>
+    <div class="progress-toast" id="progressToast"></div>
+<script>
+
+// Enhanced loading state management
+const LoadingManager = {
+    states: {
+        INITIALIZING: 'initializing',
+        LOADING_SPRITES: 'loading-sprites',
+        LOADING_AUDIO: 'loading-audio',
+        READY: 'ready',
+        ERROR: 'error'
+    },
+    currentState: 'initializing',
+
+    setState(newState) {
+        this.currentState = newState;
+        this.updateUI();
+    },
+
+    updateUI() {
+        const loader = safeGetElement('loadingContent');
+        if (!loader) return;
+
+        const messages = {
+            'initializing': 'Preparing court...',
+            'loading-sprites': 'Loading players...',
+            'loading-audio': 'Tuning audio...',
+            'ready': 'Ready to serve!',
+            'error': 'Game error - please refresh'
+        };
+
+        const subtitle = loader.querySelector('.loading-subtitle');
+        if (subtitle) {
+            subtitle.textContent = messages[this.currentState] || 'Loading...';
+        }
+    }
+};
+
+
+
+// Progressive audio enhancement
+const AudioManager = {
+    supported: false,
+    context: null,
+
+    init() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.context = new AudioContext();
+            this.supported = true;
+            console.log('✅ Audio context initialized');
+        } catch (error) {
+            console.warn('⚠️ Audio not supported or blocked:', error);
+            this.supported = false;
+        }
+    },
+
+    playEnhanced(frequency, duration, volume) {
+        if (!this.supported || !this.context) {
+            return; // Graceful fallback to silence
+        }
+
+        try {
+            playTone(frequency, duration, volume);
+        } catch (error) {
+            console.warn('Audio playback failed:', error);
+        }
+    }
+};
+
+// Error recovery system
+const ErrorRecovery = {
+    retryCount: 0,
+    maxRetries: 3,
+
+    handleCriticalError(error, context) {
+        console.error(`❌ Critical error in ${context}:`, error);
+
+        if (this.retryCount < this.maxRetries) {
+            this.retryCount++;
+            console.log(`🔄 Attempting recovery (${this.retryCount}/${this.maxRetries})...`);
+
+            setTimeout(() => {
+                try {
+                    this.resetGameState();
+                    this.retryInitialization();
+                } catch (recoveryError) {
+                    console.error('❌ Recovery failed:', recoveryError);
+                    this.showErrorScreen();
+                }
+            }, 1000);
+        } else {
+            this.showErrorScreen();
+        }
+    },
+
+    resetGameState() {
+        for (let i = 1; i < 99999; i++) {
+            clearTimeout(i);
+            clearInterval(i);
+        }
+
+        if (window.domCache) {
+            domCache.clear();
+        }
+    },
+
+    retryInitialization() {
+        if (typeof initSprites === 'function') {
+            initSprites();
+        }
+    },
+
+    showErrorScreen() {
+        const body = document.body;
+        body.innerHTML = `
+            <div style="
+                position: fixed; inset: 0;
+                background: linear-gradient(135deg, #1a1a2e, #0f0f1e);
+                display: flex; flex-direction: column;
+                justify-content: center; align-items: center;
+                color: white; text-align: center; padding: 20px;
+            ">
+                <h1 style="font-size: 2em; margin-bottom: 20px;">🎾</h1>
+                <h2 style="margin-bottom: 20px;">Game Error</h2>
+                <p style="margin-bottom: 30px; opacity: 0.8;">
+                    Something went wrong. Please refresh the page to continue playing.
+                </p>
+                <button onclick="location.reload()" style="
+                    padding: 15px 30px; background: #ffd700; border: none;
+                    border-radius: 25px; color: #1a1a2e; font-weight: bold;
+                    font-size: 16px; cursor: pointer;
+                ">Refresh Game</button>
+            </div>
+        `;
+    }
+};
+
+// Performance optimizations
+const PerformanceOptimizer = {
+    frameSkipping: false,
+
+    init() {
+        this.monitorPerformance();
+    },
+
+    monitorPerformance() {
+        let frameCount = 0;
+        let lastCheck = performance.now();
+
+        const checkPerformance = () => {
+            frameCount++;
+            const now = performance.now();
+
+            if (now - lastCheck >= 1000) {
+                const fps = frameCount * 1000 / (now - lastCheck);
+
+                if (fps < 25) {
+                    this.enableFrameSkipping();
+                } else if (fps > 50 && this.frameSkipping) {
+                    this.disableFrameSkipping();
+                }
+
+                frameCount = 0;
+                lastCheck = now;
+            }
+
+            requestAnimationFrame(checkPerformance);
+        };
+
+        requestAnimationFrame(checkPerformance);
+    },
+
+    enableFrameSkipping() {
+        if (!this.frameSkipping) {
+            console.log('🚀 Enabling performance optimizations');
+            this.frameSkipping = true;
+            document.body.classList.add('performance-mode');
+        }
+    },
+
+    disableFrameSkipping() {
+        if (this.frameSkipping) {
+            console.log('✨ Disabling performance optimizations');
+            this.frameSkipping = false;
+            document.body.classList.remove('performance-mode');
+        }
+    }
+};
+
+
+// Production Hardening Utilities
+const domCache = new Map();
+
+function safeGetElement(id) {
+    if (!domCache.has(id)) {
+        const element = document.getElementById(id);
+        if (!element) {
+            console.warn(`⚠️ Element not found: ${id}`);
+            return null;
+        }
+        domCache.set(id, element);
+    }
+    return domCache.get(id);
+}
+
+let cachedCourt = null;
+function getCourtElement() {
+    if(!cachedCourt){
+        cachedCourt = document.querySelector('.court');
+    }
+    return cachedCourt;
+}
+
+function isPerformanceMode(){
+    return document.body.classList.contains('performance-mode') || document.body.classList.contains('low-performance');
+}
+
+function safeRandomIndex(array) {
+    if (!array || array.length === 0) return 0;
+    return Math.floor(Math.random() * array.length);
+}
+
+function withErrorHandling(fn, context = 'Unknown') {
+    return function(...args) {
+        try {
+            return fn.apply(this, args);
+        } catch (error) {
+            console.error(`❌ Error in ${context}:`, error);
+            return null;
+        }
+    };
+}
+
+
+// Enhanced mobile experience
+const MobileEnhancer = {
+    init() {
+        // Better touch handling
+        this.preventZoom();
+        this.optimizeForMobile();
+        this.addHapticFeedback();
+    },
+
+    preventZoom() {
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+    },
+
+    optimizeForMobile() {
+        // Reduce animations on lower-end devices
+        if (navigator.hardwareConcurrency <= 4) {
+            document.body.classList.add('low-performance');
+        }
+    },
+
+    addHapticFeedback() {
+        if ('vibrate' in navigator) {
+            window.mobileVibrate = (pattern) => navigator.vibrate(pattern);
+        } else {
+            window.mobileVibrate = () => {}; // No-op for non-supporting devices
+        }
+    }
+};
+
+
+// Enhanced sprite loading with retry mechanism
+async function loadSpriteWithRetry(src, maxRetries = 2) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            await new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = src;
+            });
+            return true;
+        } catch (error) {
+            if (attempt === maxRetries) {
+                console.error(`❌ Failed to load sprite after ${maxRetries} attempts: ${src}`);
+                return false;
+            }
+            console.warn(`⚠️ Sprite load attempt ${attempt} failed, retrying: ${src}`);
+            await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+        }
+    }
+    return false;
+}
+
+const G={coins:500,gems:20,level:1,xp:0,ntrp:2.5,skillPoints:0,stats:{power:10,speed:10,control:10,serve:10},equipment:{racket:null,shoes:null,special:null,serveGear:null},owned:[],difficulty:'rookie',matchType:'quick',trainingCompleted:[],dailyChallenge:null};
+
+// Daily Challenge System
+const DAILY_CHALLENGES = [
+    {id:'ace_master',name:'Ace Master',desc:'Score 3 aces in a single match',target:3,type:'aces',reward:{coins:100,gems:2}},
+    {id:'winner_streak',name:'Winner Machine',desc:'Hit 5 winners in a match',target:5,type:'winners',reward:{coins:80,gems:1}},
+    {id:'rally_king',name:'Rally King',desc:'Win a 10+ shot rally',target:10,type:'longestRally',reward:{coins:120,gems:2}},
+    {id:'perfect_serve',name:'Perfect Server',desc:'No double faults in a match',target:0,type:'doubleFaults',reward:{coins:60,gems:1}},
+    {id:'quick_win',name:'Speed Demon',desc:'Win a match in under 5 minutes',target:300,type:'matchTime',reward:{coins:150,gems:3}},
+    {id:'streak_master',name:'Streak Master',desc:'Get a 8+ point streak',target:8,type:'streak',reward:{coins:90,gems:2}}
+];
+
+function initDailyChallenge() {
+    const today = new Date().toDateString();
+
+    // Check if challenge is from today
+    if(!G.dailyChallenge || G.dailyChallenge.date !== today) {
+        // Generate new challenge
+        const challenge = DAILY_CHALLENGES[Math.floor(Math.random() * DAILY_CHALLENGES.length)];
+        G.dailyChallenge = {
+            ...challenge,
+            date: today,
+            progress: 0,
+            completed: false
+        };
+    }
+
+    updateChallengeDisplay();
+}
+
+function updateChallengeDisplay() {
+    const challenge = G.dailyChallenge;
+    if(!challenge) return;
+
+    safeGetElement('challengeTitle')?.textContent = `Daily Challenge: ${challenge.name}`;
+    safeGetElement('challengeDesc')?.textContent = challenge.desc;
+
+    const progress = Math.min(100, (challenge.progress / challenge.target) * 100);
+    safeGetElement('challengeFill')?.style.width = progress + '%';
+
+    const reward = `+${challenge.reward.coins}💰 +${challenge.reward.gems}💎`;
+    safeGetElement('challengeReward')?.textContent = challenge.completed ? 'COMPLETED!' : reward;
+
+    // Change banner color if completed
+    const banner = safeGetElement('dailyChallenge');
+    if(challenge.completed) {
+        banner.style.background = 'linear-gradient(135deg,#4caf50,#45a049)';
+    }
+}
+
+function checkChallengeProgress(type, value) {
+    const challenge = G.dailyChallenge;
+    if(!challenge || challenge.completed || challenge.type !== type) return;
+
+    if(type === 'doubleFaults' || type === 'matchTime') {
+        // For inverted challenges (less is better)
+        if(value <= challenge.target) {
+            challenge.progress = challenge.target;
+        }
+    } else {
+        // For normal challenges (more is better)
+        challenge.progress = Math.max(challenge.progress, value);
+    }
+
+    // Check if completed
+    if(challenge.progress >= challenge.target) {
+        challenge.completed = true;
+        G.coins += challenge.reward.coins;
+        G.gems += challenge.reward.gems;
+        toast(`🏆 Daily Challenge Complete! +${challenge.reward.coins}💰 +${challenge.reward.gems}💎`);
+        sounds.winner();
+    }
+
+    updateChallengeDisplay();
+}
+
+// Enhanced shop with serve equipment
+const SHOP={
+    rackets:[
+        {id:'r1',name:'Starter Racket',desc:'Basic frame for beginners',stats:{power:5,control:5},price:100,currency:'coins'},
+        {id:'r2',name:'Power Driver',desc:'Heavy head for devastating shots',stats:{power:20,control:5},price:500,currency:'coins'},
+        {id:'r3',name:'Precision Pro',desc:'Perfect balance for control',stats:{power:10,control:25,speed:5},price:750,currency:'coins'},
+        {id:'r4',name:'Champions Blade',desc:'Used by touring pros',stats:{power:25,control:25,speed:10},price:100,currency:'gems'},
+        {id:'r5',name:'Graphite Pro',desc:'Lightweight power frame',stats:{power:15,speed:8,control:15},price:1200,currency:'coins'},
+        {id:'r6',name:'Legend Series',desc:'Tournament champion gear',stats:{power:30,speed:5,control:30},price:200,currency:'gems'}
+    ],
+    shoes:[
+        {id:'s1',name:'Court Runners',desc:'Standard court shoes',stats:{speed:10,control:5},price:150,currency:'coins'},
+        {id:'s2',name:'Lightning Sprints',desc:'Ultra-light for speed',stats:{speed:30,control:10},price:600,currency:'coins'},
+        {id:'s3',name:'Pro Tour Elite',desc:'Professional grade comfort',stats:{power:5,speed:20,control:15},price:1000,currency:'coins'},
+        {id:'s4',name:'Rocket Boosters',desc:'Experimental tech shoes',stats:{power:10,speed:40,control:20},price:75,currency:'gems'},
+        {id:'s5',name:'Clay Masters',desc:'Grip on any surface',stats:{speed:25,control:20},price:1500,currency:'coins'},
+        {id:'s6',name:'Grand Slam Edition',desc:'Worn by champions',stats:{power:8,speed:35,control:25},price:120,currency:'gems'}
+    ],
+    serve:[
+        {id:'sv1',name:'Serve Basics',desc:'Learn proper toss technique',stats:{serve:10,skillPoints:50},price:200,currency:'coins',repeatable:true},
+        {id:'sv2',name:'Power Serve Training',desc:'Add MPH to your first serve',stats:{serve:15,power:5},price:400,currency:'coins'},
+        {id:'sv3',name:'Kick Serve Clinic',desc:'Master the topspin serve',stats:{serve:20,control:10},price:600,currency:'coins'},
+        {id:'sv4',name:'Ace Machine',desc:'Premium serve accuracy boost',stats:{serve:30,control:15},price:80,currency:'gems'},
+        {id:'sv5',name:'Serve & Volley Pack',desc:'Complete approach game',stats:{serve:25,speed:15,power:10},price:1000,currency:'coins'},
+        {id:'sv6',name:'Pro Serve Masterclass',desc:'Tour-level serving',stats:{serve:40,power:15,control:20},price:150,currency:'gems'}
+    ],
+    special:[
+        {id:'x1',name:'Lucky Charm',desc:'2x coin rewards',stats:{bonus:'2x Coins'},price:150,currency:'gems'},
+        {id:'x2',name:'Power Band',desc:'Massive power boost',stats:{power:40},price:50,currency:'gems'},
+        {id:'x3',name:'Focus Lens',desc:'Larger hit window',stats:{control:50},price:200,currency:'gems'},
+        {id:'x4',name:'Energy Drink',desc:'Faster court coverage',stats:{speed:25},price:30,currency:'gems'},
+        {id:'x5',name:'Sweatband Pro',desc:'Balanced improvement',stats:{power:10,speed:10,control:10,serve:10},price:80,currency:'gems'},
+        {id:'x6',name:'Tournament Trophy',desc:'Prestige item - all stats',stats:{power:20,speed:20,control:20,serve:20},price:300,currency:'gems'},
+        {id:'x7',name:'Gem Magnet',desc:'Gems last 50% longer',stats:{bonus:'Gem Duration+'},price:100,currency:'gems'},
+        {id:'x8',name:'Streak Master',desc:'Streaks give 2x bonus',stats:{bonus:'2x Streak'},price:120,currency:'gems'}
+    ],
+    training:[
+        {id:'t1',name:'Private Coaching',desc:'1-on-1 with a pro coach',stats:{skillPoints:100,power:3,control:3},price:250,currency:'coins',repeatable:true},
+        {id:'t2',name:'Group Clinic',desc:'Learn with other players',stats:{skillPoints:50,power:2,speed:1},price:100,currency:'coins',repeatable:true},
+        {id:'t3',name:'Ball Machine',desc:'Perfect your groundstrokes',stats:{skillPoints:75,control:4,speed:1},price:150,currency:'coins',repeatable:true},
+        {id:'t4',name:'Hit with a Friend',desc:'Casual practice session',stats:{skillPoints:30,power:1,speed:1,control:1},price:50,currency:'coins',repeatable:true},
+        {id:'t5',name:'Flex League',desc:'Competitive match play',stats:{skillPoints:200,power:5,speed:3,control:5},price:500,currency:'coins',repeatable:true},
+        {id:'t6',name:'Elite Camp',desc:'Intensive weekend program',stats:{skillPoints:500,power:10,speed:10,control:10,serve:5},price:150,currency:'gems',repeatable:true},
+        {id:'t7',name:'Video Analysis',desc:'Study your technique',stats:{skillPoints:150,control:8,power:4},price:350,currency:'coins',repeatable:true},
+        {id:'t8',name:'Fitness Bootcamp',desc:'Build court endurance',stats:{skillPoints:120,speed:7,power:5},price:300,currency:'coins',repeatable:true}
+    ]
+};
+
+// Difficulty settings with serve parameters
+const DIFF={
+    rookie:{speed:1.1,oppSpeed:0.07,hitWindow:0.38,oppAcc:0.65,mult:1,time:120,serveFaultChance:0.15,oppServeSpeed:0.8},
+    pro:{speed:1.5,oppSpeed:0.11,hitWindow:0.28,oppAcc:0.8,mult:2,time:150,serveFaultChance:0.25,oppServeSpeed:1.0},
+    legend:{speed:2,oppSpeed:0.16,hitWindow:0.18,oppAcc:0.92,mult:3,time:180,serveFaultChance:0.35,oppServeSpeed:1.2}
+};
+
+// Match state with proper tennis rules
+let M={
+    active:false,
+    // Scoring
+    pPoints:0,oPoints:0,  // Points in current game (0,1,2,3 = 0,15,30,40)
+    pGames:0,oGames:0,    // Games in current set
+    pSets:0,oSets:0,      // Sets (optional for longer matches)
+    time:120,
+    isTiebreak:false,     // Special scoring in tiebreak
+    tiebreakServer:'player', // Who serves first in tiebreak
+    // Serve state
+    isServing:true,       // Is player serving this game?
+    serveNum:1,           // 1 = first serve, 2 = second serve
+    serveSide:'deuce',    // 'deuce' (right) or 'ad' (left)
+    isPlayerServe:false,  // True when player needs to serve
+    servingPlayer:'opp',  // 'player' or 'opp' - who is serving this game
+    servePhase:'none',    // 'none', 'ready', 'toss', 'swing', 'flight'
+    servePower:0,
+    serveAimX:50,
+    serveAimY:25,
+    serveStartY:null,
+    lastServeSpeed:0,     // MPH for display
+    // Ball state
+    rally:0,
+    ballActive:false,
+    ballPos:{x:50,y:10},
+    ballVel:{x:0,y:0,z:0},
+    ballH:100,
+    ballBounces:0,
+    ballSpin:0,           // Spin effect
+    canHit:false,
+    combo:0,
+    streak:0,             // Consecutive points won
+    // Positions
+    oppPos:50,
+    playerPos:50,
+    // Gems
+    gemActive:false,
+    gemPos:{x:50,y:70},
+    gemTimer:0,
+    gemMultiplier:1,
+    // Stats
+    aces:0,
+    doubleFaults:0,
+    winners:0,
+    longestRally:0,
+    totalRallies:0,
+    pointsPlayed:0,
+    // Settings
+    settings:null
+};
+
+let audio,sounds={};
+
+function initAudio(){
+    audio=new(window.AudioContext||window.webkitAudioContext)();
+
+    // Enhanced layered hit sounds for more impact
+    sounds.hit=()=>{
+        playTone(80,0.08,0.45);
+        setTimeout(()=>playTone(220,0.04,0.35),15);
+        setTimeout(()=>playTone(600,0.03,0.2),30);
+        setTimeout(()=>playTone(140,0.02,0.15),5); // Extra thump
+    };
+
+    sounds.powerHit=()=>{
+        playTone(60,0.12,0.55);
+        setTimeout(()=>playTone(280,0.05,0.4),20);
+        setTimeout(()=>playTone(900,0.04,0.25),35);
+        setTimeout(()=>playTone(45,0.08,0.3),10); // Deep power rumble
+        setTimeout(()=>playTone(1500,0.02,0.2),50); // Sharp crack
+    };
+
+    // Enhanced bounce sounds with variety
+    sounds.bounce=()=>playTone(120,0.03,0.35);
+    sounds.powerBounce=()=>{
+        playTone(90,0.05,0.4);
+        setTimeout(()=>playTone(180,0.03,0.3),20);
+    };
+    sounds.softBounce=()=>playTone(140,0.025,0.25);
+
+    // Crowd reactions for atmosphere
+    sounds.crowdCheer=()=>{
+        for(let i=0;i<5;i++){
+            setTimeout(()=>playTone(800+Math.floor(Math.random() * 400),0.1,0.1),i*50);
+        }
+    };
+    sounds.crowdOoh=()=>{
+        playTone(200,0.2,0.08);
+        setTimeout(()=>playTone(180,0.15,0.06),100);
+    };
+
+    // Point celebration sounds
+    sounds.pointWon=()=>{
+        playTone(440,0.1,0.5);
+        setTimeout(()=>playTone(550,0.08,0.4),80);
+        setTimeout(()=>playTone(660,0.06,0.3),150);
+    };
+
+    sounds.pointLost=()=>{
+        playTone(220,0.08,0.4);
+        setTimeout(()=>playTone(160,0.06,0.3),60);
+    };
+
+    // Rally tension system - crowd gets louder with rally length
+    sounds.rallyTension=(rallyLength)=>{
+        if(rallyLength < 3) return; // No crowd noise for short rallies
+
+        const volume = Math.min(0.15 + (rallyLength - 3) * 0.03, 0.4);
+        const intensity = Math.min(rallyLength - 2, 8);
+
+        for(let i = 0; i < intensity; i++){
+            setTimeout(() => {
+                playTone(400 + Math.floor(Math.random() * 600), 0.05 + Math.floor(Math.random() * 0).05, volume);
+            }, i * 30 + Math.floor(Math.random() * 50));
+        }
+    };
+
+    // Enhanced point celebrations
+    sounds.point=()=>{
+        playTone(440,0.1,0.35);
+        setTimeout(()=>playTone(660,0.1,0.35),80);
+        setTimeout(()=>playTone(880,0.15,0.35),160);
+        setTimeout(()=>sounds.crowdCheer(),200);
+    };
+
+    sounds.miss=()=>{
+        playTone(80,0.2,0.2);
+        setTimeout(()=>sounds.crowdOoh(),100);
+    };
+
+    sounds.coin=()=>{playTone(1200,0.05,0.25);setTimeout(()=>playTone(1600,0.05,0.25),40)};
+    sounds.gem=()=>{playTone(1800,0.08,0.3);setTimeout(()=>playTone(2200,0.08,0.3),50)};
+
+    // Enhanced serve sounds
+    sounds.serve=()=>{
+        playTone(100,0.06,0.5);
+        setTimeout(()=>playTone(250,0.05,0.45),25);
+        setTimeout(()=>playTone(500,0.04,0.35),50);
+        setTimeout(()=>playTone(80,0.03,0.2),10); // Woosh
+    };
+
+    sounds.fault=()=>{playTone(150,0.15,0.3);setTimeout(()=>playTone(100,0.2,0.25),100)};
+
+    sounds.ace=()=>{
+        playTone(600,0.1,0.4);
+        setTimeout(()=>playTone(900,0.1,0.4),80);
+        setTimeout(()=>playTone(1200,0.15,0.4),160);
+        setTimeout(()=>sounds.crowdCheer(),250);
+    };
+
+    sounds.let=()=>{playTone(300,0.1,0.3);setTimeout(()=>playTone(300,0.1,0.3),150)};
+    sounds.changeover=()=>{playTone(400,0.15,0.25);setTimeout(()=>playTone(500,0.15,0.25),100);setTimeout(()=>playTone(600,0.2,0.25),200)};
+
+    sounds.winner=()=>{
+        playTone(800,0.1,0.35);
+        setTimeout(()=>playTone(1000,0.1,0.35),80);
+        setTimeout(()=>playTone(1200,0.15,0.35),160);
+        setTimeout(()=>sounds.crowdCheer(),200);
+    };
+
+    // Victory sounds
+    sounds.victory=()=>{
+        playTone(523,0.15,0.4); // C
+        setTimeout(()=>playTone(659,0.15,0.4),150); // E
+        setTimeout(()=>playTone(784,0.15,0.4),300); // G
+        setTimeout(()=>playTone(1047,0.3,0.5),450); // C octave
+        setTimeout(()=>sounds.crowdCheer(),600);
+    };
+
+    sounds.defeat=()=>{
+        playTone(220,0.2,0.3); // A
+        setTimeout(()=>playTone(196,0.2,0.3),200); // G
+        setTimeout(()=>playTone(174,0.3,0.3),400); // F
+        setTimeout(()=>sounds.crowdOoh(),600);
+    };
+}
+
+function playTone(f,d,v){
+    if(!audio)return;
+    const o=audio.createOscillator(),g=audio.createGain();
+    o.frequency.value=f;
+    o.connect(g);
+    g.connect(audio.destination);
+    g.gain.setValueAtTime(v,audio.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01,audio.currentTime+d);
+    o.start();
+    o.stop(audio.currentTime+d);
+}
+
+// ========== GEM SYSTEM ==========
+
+function spawnGem(){
+    if(!M.active||M.gemActive)return;
+
+    // Calculate multiplier based on streak
+    const streakBonus = G.owned.includes('x8') ? 2 : 1;
+    M.gemMultiplier = Math.min(5, 1 + Math.floor(M.streak / 2) * streakBonus);
+
+    M.gemActive=true;
+    M.gemPos={x:20+Math.floor(Math.random() * 60),y:55+Math.floor(Math.random() * 30)};
+
+    // Gem duration - base 8 seconds, +50% with Gem Magnet
+    const baseDuration = 8;
+    M.gemTimer = G.owned.includes('x7') ? Math.floor(baseDuration * 1.5) : baseDuration;
+
+    const gem=safeGetElement('gemDrop');
+    const timerEl=safeGetElement('gemTimer');
+    const multEl=safeGetElement('gemMultiplier');
+
+    gem.classList.add('active');
+    gem.classList.remove('urgent');
+    gem.style.left=M.gemPos.x+'%';
+    gem.style.top=M.gemPos.y+'%';
+
+    multEl.textContent = 'x' + M.gemMultiplier;
+    multEl.style.display = M.gemMultiplier > 1 ? 'block' : 'none';
+
+    updateGemTimer();
+
+    const interval=setInterval(()=>{
+        M.gemTimer--;
+        updateGemTimer();
+
+        // Urgent animation when < 3 seconds
+        if(M.gemTimer <= 3 && M.gemTimer > 0){
+            gem.classList.add('urgent');
+        }
+
+        if(M.gemTimer<=0||!M.active){
+            clearInterval(interval);
+            hideGem();
+        }
+    },1000);
+}
+
+function updateGemTimer(){
+    const timerEl=safeGetElement('gemTimer');
+    timerEl.textContent = M.gemTimer + 's';
+}
+
+function hideGem(){
+    M.gemActive=false;
+    const gem=safeGetElement('gemDrop');
+    gem.classList.remove('active','urgent');
+}
+
+function collectGem(){
+    if(!M.gemActive)return;
+
+    const baseGems = Math.floor(Math.floor(Math.random() * 3))+1;
+    const totalGems = baseGems * M.gemMultiplier;
+
+    G.gems+=totalGems;
+
+    // Create burst particles
+    const gem = safeGetElement('gemDrop');
+    if(!gem) return;
+    if(!isPerformanceMode()){
+        const rect = gem.getBoundingClientRect();
+        const court = getCourtElement();
+        if(court){
+            const courtRect = court.getBoundingClientRect();
+
+            for(let i = 0; i < 8; i++){
+                const particle = document.createElement('div');
+                particle.className = 'gem-particle';
+                const angle = (i / 8) * Math.PI * 2;
+                const dist = 40 + Math.floor(Math.random() * 30);
+                particle.style.cssText = `
+                    left: ${((rect.left + rect.width/2 - courtRect.left) / courtRect.width) * 100}%;
+                    top: ${((rect.top + rect.height/2 - courtRect.top) / courtRect.height) * 100}%;
+                    --tx: ${Math.cos(angle) * dist}px;
+                    --ty: ${Math.sin(angle) * dist}px;
+                    animation: gemBurst 0.5s ease-out forwards;
+                `;
+                court.appendChild(particle);
+                setTimeout(() => particle.remove(), 500);
+            }
+        }
+    }
+
+    M.gemActive=false;
+    gem.classList.remove('active','urgent');
+    sounds.gem();
+
+    if(M.gemMultiplier > 1){
+        toast(`+${totalGems} 💎 (x${M.gemMultiplier})`);
+    } else {
+        toast(`+${totalGems} 💎`);
+    }
+
+    save();
+    updateUI();
+}
+
+function updateStreakDisplay(){
+    const display = safeGetElement('streakDisplay');
+    const valueEl = safeGetElement('streakValue');
+    const bonusEl = safeGetElement('streakBonus');
+
+    if(M.streak > M.bestStreak){
+        M.bestStreak = M.streak;
+    }
+
+    if(M.streak >= 2){
+        display.classList.add('active');
+        valueEl.textContent = M.streak;
+        const bonusPercent = Math.min(200, M.streak * 25);
+        bonusEl.textContent = `+${bonusPercent}% gems`;
+    } else {
+        display.classList.remove('active');
+    }
+}
+
+// ========== SERVE SYSTEM ==========
+
+function getServeSide(){
+    // In tennis: deuce court (right) on even points, ad court (left) on odd points
+    const totalPoints = M.pPoints + M.oPoints;
+    return totalPoints % 2 === 0 ? 'deuce' : 'ad';
+}
+
+function getTiebreakServer(){
+    // In tiebreak: first server serves 1 point, then alternate every 2 points
+    const totalPoints = M.pPoints + M.oPoints;
+    if(totalPoints === 0) return M.tiebreakServer;
+    // After first point, switch every 2 points
+    const adjustedPoints = totalPoints - 1;
+    const switches = Math.floor(adjustedPoints / 2) + 1;
+    return switches % 2 === 0 ? M.tiebreakServer : (M.tiebreakServer === 'player' ? 'opp' : 'player');
+}
+
+function showNetCordEffect(){
+    const netCord = safeGetElement('netCord');
+    netCord.classList.remove('active');
+    void netCord.offsetWidth;
+    netCord.classList.add('active');
+    setTimeout(() => netCord.classList.remove('active'), 400);
+}
+
+function showCallOverlay(text, isGood){
+    const overlay = safeGetElement('callOverlay');
+    overlay.textContent = text;
+    overlay.classList.remove('active', 'in');
+    void overlay.offsetWidth;
+    if(isGood) overlay.classList.add('in');
+    overlay.classList.add('active');
+    setTimeout(() => overlay.classList.remove('active', 'in'), 800);
+}
+
+function showCourtChange(message, sub){
+    return new Promise(resolve => {
+        const overlay = safeGetElement('courtChange');
+        safeGetElement('courtChangeText')?.textContent = message;
+        safeGetElement('courtChangeSub')?.textContent = sub || '';
+        overlay.classList.add('active');
+        sounds.changeover();
+        setTimeout(() => {
+            overlay.classList.remove('active');
+            resolve();
+        }, 2000);
+    });
+}
+
+function shouldChangeover(){
+    // In tennis, players change sides after every odd game (1, 3, 5, etc.)
+    const totalGames = M.pGames + M.oGames;
+    return totalGames > 0 && totalGames % 2 === 1;
+}
+
+function updateServeIndicator(){
+    const ind = safeGetElement('serveIndicator');
+    if(M.serveNum === 1){
+        ind.textContent = '1ST SERVE';
+        ind.classList.remove('fault');
+    } else {
+        ind.textContent = '2ND SERVE';
+        ind.classList.add('fault');
+    }
+}
+
+function highlightServiceBox(){
+    const deuce = safeGetElement('serviceBoxDeuce');
+    const ad = safeGetElement('serviceBoxAd');
+
+    deuce.classList.remove('active');
+    ad.classList.remove('active');
+
+    M.serveSide = getServeSide();
+
+    if(M.serveSide === 'deuce'){
+        deuce.classList.add('active');
+    } else {
+        ad.classList.add('active');
+    }
+}
+
+function clearServiceBoxHighlight(){
+    safeGetElement('serviceBoxDeuce')?.classList.remove('active');
+    safeGetElement('serviceBoxAd')?.classList.remove('active');
+}
+
+function startPlayerServe(){
+    M.isPlayerServe = true;
+    M.servePhase = 'ready';
+    M.servePower = 0;
+    M.serveStartY = null;
+    M.serveStartX = null;
+    M.serveAimX = M.serveSide === 'deuce' ? 68 : 32; // Default aim to box center
+
+    // Position player at baseline center
+    M.playerPos = 50;
+    safeGetElement('playerPaddle')?.style.left = '50%';
+    safeGetElement('playerPaddle')?.classList.add('serving');
+
+    // Show serve UI
+    highlightServiceBox();
+    updateServeIndicator();
+
+    const hint = safeGetElement('swipeHint');
+    hint.textContent = 'PULL DOWN TO SERVE';
+    hint.classList.add('active','serve');
+
+    // Position ball with player
+    const ball = safeGetElement('ball');
+    ball.classList.add('active');
+    ball.style.left = '50%';
+    ball.style.top = '88%';
+
+    safeGetElement('ballShadow')?.classList.add('active');
+    safeGetElement('ballShadow')?.style.left = '50%';
+    safeGetElement('ballShadow')?.style.top = '92%';
+}
+
+function chargingServe(clientY, clientX){
+    if(M.servePhase !== 'ready' && M.servePhase !== 'charging') return;
+
+    if(M.serveStartY === null){
+        M.serveStartY = clientY;
+        M.serveStartX = clientX;
+        M.servePhase = 'charging';
+        safeGetElement('servePower')?.classList.add('active');
+        safeGetElement('serveAim')?.classList.add('active');
+        safeGetElement('serveTargetLine')?.classList.add('active');
+    }
+
+    // Calculate power based on pull-down distance
+    const pullDist = clientY - M.serveStartY;
+    M.servePower = Math.min(1, Math.max(0, pullDist / 150));
+
+    safeGetElement('servePowerFill')?.style.width = (M.servePower * 100) + '%';
+
+    // Update aim indicator position based on horizontal movement
+    const court = getCourtElement();
+    if(court && clientX){
+        const rect = court.getBoundingClientRect();
+        const relX = ((clientX - rect.left) / rect.width) * 100;
+
+        // Calculate target position in service box
+        const isDeuce = M.serveSide === 'deuce';
+        const boxLeft = isDeuce ? 52 : 15;
+        const boxRight = isDeuce ? 85 : 48;
+        const boxCenter = (boxLeft + boxRight) / 2;
+
+        // Aim influenced by finger position
+        const aimOffset = (relX - 50) * 0.4;
+        const targetX = Math.max(boxLeft, Math.min(boxRight, boxCenter + aimOffset));
+
+        M.serveAimX = targetX;
+
+        // Position aim indicator
+        const aimEl = safeGetElement('serveAim');
+        aimEl.style.left = targetX + '%';
+        aimEl.style.top = '35%';
+
+        // Position target line from player to aim
+        const lineEl = safeGetElement('serveTargetLine');
+        lineEl.style.left = '50%';
+        lineEl.style.bottom = '10%';
+        lineEl.style.height = '50%';
+        const angle = Math.atan2(targetX - 50, 50) * (180 / Math.PI);
+        lineEl.style.transform = `rotate(${angle}deg)`;
+    }
+}
+
+function releaseServe(endX, endY){
+    if(M.servePhase !== 'charging') return;
+
+    M.servePhase = 'swing';
+
+    // Hide charging UI
+    safeGetElement('servePower')?.classList.remove('active');
+    safeGetElement('swipeHint')?.classList.remove('active','serve');
+    safeGetElement('playerPaddle')?.classList.remove('serving');
+    safeGetElement('serveAim')?.classList.remove('active');
+    safeGetElement('serveTargetLine')?.classList.remove('active');
+
+    // Use the aim target position we've been tracking
+    const aimX = M.serveAimX || 50;
+
+    // Execute serve with power and aim
+    executePlayerServe(M.servePower, aimX);
+}
+
+function executePlayerServe(power, aimX){
+    const st = getStats();
+    M.lastHitBy = 'player'; // Track who hit last
+
+    // Ball toss animation
+    const ball = safeGetElement('ball');
+    ball.classList.add('toss');
+
+    sounds.serve();
+
+    // Play serve animation with new system
+    setPlayerSwinging();
+
+    setTimeout(() => {
+        ball.classList.remove('toss');
+
+        // Determine target service box
+        const isDeuceCourt = M.serveSide === 'deuce';
+        const boxCenterX = isDeuceCourt ? 65 : 35;
+        const boxLeft = isDeuceCourt ? 50 : 12;
+        const boxRight = isDeuceCourt ? 88 : 50;
+
+        // Calculate serve trajectory
+        // Aim target is where player was aiming (tracked in M.serveAimX)
+        const serveAccuracy = st.serve / 100;
+        const aimTarget = aimX; // This is the aim position player targeted
+
+        // Minimal random spread - ball should mostly follow aim line
+        // At low serve stat, max ±2% deviation; at high stat, max ±0.5%
+        const maxSpread = 2 - serveAccuracy * 1.5;
+        const randomSpread = (Math.random() - 0.5) * maxSpread * 2;
+
+        // Ball goes very close to where player aimed
+        let targetX = aimTarget + randomSpread;
+
+        // Power affects speed and fault chance
+        const baseSpeed = 1.5 + power * 1.5;
+        const serveSpeed = baseSpeed * (1 + st.serve * 0.005) * M.settings.speed * 0.7;
+
+        // Fault detection
+        const faultChance = M.settings.serveFaultChance * (1 - serveAccuracy * 0.5) * (power > 0.8 ? 1.3 : 1);
+        const isNetFault = power < 0.2 || Math.random() < faultChance * 0.3;
+        const isOutFault = targetX < boxLeft - 5 || targetX > boxRight + 5 || Math.random() < faultChance * 0.4;
+
+        // Calculate serve speed for display (80-140 MPH range based on power and serve stat)
+        const baseServeSpeed = 80 + power * 40 + st.serve * 0.2;
+        M.lastServeSpeed = Math.round(baseServeSpeed + (Math.random() - 0.5) * 10);
+        safeGetElement('serveSpeed')?.textContent = M.lastServeSpeed + ' MPH';
+
+        // Let serve (hits net but goes over - replay)
+        const isLet = !isNetFault && Math.random() < 0.05;
+
+        if(isLet){
+            sounds.let();
+            showNetCordEffect();
+            toast('LET! Serve again');
+            M.servePhase = 'none';
+            setTimeout(startPlayerServe, 1000);
+            return;
+        }
+
+        if(isNetFault){
+            handleServeFault('net');
+            return;
+        }
+
+        if(isOutFault){
+            // Commit to serve but it goes out
+            M.ballActive = true;
+            M.ballPos = {x: 50, y: 90};
+            M.ballH = 40;
+            M.ballBounces = 0;
+            targetX = targetX < boxCenterX ? boxLeft - 10 : boxRight + 10;
+            M.ballVel = {
+                x: (targetX - M.ballPos.x) / 80,
+                y: -serveSpeed,
+                z: 2.0
+            };
+            animateServeBall('out');
+            return;
+        }
+
+        // Good serve!
+        M.ballActive = true;
+        M.ballPos = {x: 50, y: 88};
+        M.ballH = 60;
+        M.ballBounces = 0;
+        M.isPlayerServe = false;
+        M.servePhase = 'flight';
+
+        clearServiceBoxHighlight();
+
+        M.ballVel = {
+            x: (targetX - M.ballPos.x) / 70,
+            y: -serveSpeed,
+            z: 2.2
+        };
+
+        // Check if it's an ace (opponent can't reach)
+        const aceChance = power * serveAccuracy * 0.15;
+        M.pendingAce = Math.random() < aceChance;
+
+        animateServeBall('good');
+
+    }, 400); // Delay for toss animation
+}
+
+function animateServeBall(result){
+    if(!M.ballActive) return;
+
+    M.ballPos.x += M.ballVel.x;
+    M.ballPos.y += M.ballVel.y;
+    M.ballH += M.ballVel.z;
+    M.ballVel.z -= 0.14;
+
+    // Ground bounce
+    if(M.ballH <= 0 && M.ballVel.z < 0){
+        M.ballH = 0;
+        M.ballVel.z = -M.ballVel.z * 0.72;
+        sounds.bounce();
+        M.ballBounces++;
+
+        // BULLETPROOF service box detection
+        if(M.ballBounces === 1){
+            const isDeuce = M.serveSide === 'deuce';
+
+            // PRECISE service box coordinates (matching court lines exactly)
+            // Court dimensions: sidelines at 12%-88%, service lines at 27%-73%, net at 50%
+            // Service boxes are 27%-50% depth (from net to service line)
+            // Deuce court: right side (50%-88% width), Ad court: left side (12%-50% width)
+            const boxLeft = isDeuce ? 50.5 : 12;   // Slight overlap with center line
+            const boxRight = isDeuce ? 88 : 49.5;
+            const boxTop = 27;                      // Service line
+            const boxBottom = 50;                   // Net line
+
+            // Minimal tolerance for pixel-perfect detection
+            const tolerance = 0.3;
+            const inBox = M.ballPos.x >= (boxLeft - tolerance) &&
+                         M.ballPos.x <= (boxRight + tolerance) &&
+                         M.ballPos.y >= (boxTop - tolerance) &&
+                         M.ballPos.y <= (boxBottom + tolerance);
+
+            // Debug logging for precision tuning
+            if(!inBox) {
+                console.log(`❌ FAULT: Ball at (${M.ballPos.x.toFixed(2)}, ${M.ballPos.y.toFixed(2)}) missed ${M.serveSide} box (${boxLeft}-${boxRight}, ${boxTop}-${boxBottom})`);
+            } else {
+                console.log(`✅ GOOD: Ball at (${M.ballPos.x.toFixed(2)}, ${M.ballPos.y.toFixed(2)}) landed in ${M.serveSide} service box`);
+                showCallOverlay('GOOD SERVE', true);
+            }
+
+            if(!inBox){
+                handleServeFault('out');
+                return;
+            }
+
+            // Ball in play after valid bounce in service box
+            M.servePhase = 'none';
+        }
+    }
+
+    const ball = safeGetElement('ball');
+    const shadow = safeGetElement('ballShadow');
+    ball.style.left = M.ballPos.x + '%';
+    ball.style.top = (M.ballPos.y - M.ballH/10) + '%';
+    shadow.style.left = M.ballPos.x + '%';
+    shadow.style.top = M.ballPos.y + '%';
+
+    // Ball crossed net - opponent's turn
+    if(M.ballPos.y < 45 && M.servePhase === 'flight'){
+        // Opponent tries to return
+        if(M.pendingAce){
+            // ACE!
+            M.ballActive = false;
+            resetBallUI();
+            M.aces++;
+            sounds.ace();
+            showCallOverlay('ACE!', true);
+            M.streak++;
+            updateStreakDisplay();
+            if(!scorePoint('p')) setTimeout(startNextPoint, 2000);
+            return;
+        }
+
+        // Opponent returns - transition to normal rally
+        M.servePhase = 'none';
+        opponentReturn();
+        return;
+    }
+
+    // Ball out of bounds
+    if(M.ballPos.y < 5 || M.ballPos.x < 5 || M.ballPos.x > 95){
+        if(result === 'out'){
+            handleServeFault('out');
+        } else {
+            // Opponent missed - point for player
+            M.ballActive = false;
+            resetBallUI();
+            sounds.point();
+            M.streak++;
+            updateStreakDisplay();
+            if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
+        }
+        return;
+    }
+
+    updateOpp();
+    requestAnimationFrame(() => animateServeBall(result));
+}
+
+function handleServeFault(type){
+    M.ballActive = false;
+    resetBallUI();
+    clearServiceBoxHighlight();
+    sounds.fault();
+
+    if(M.serveNum === 1){
+        // First serve fault - get second serve
+        M.serveNum = 2;
+        showCallOverlay('FAULT', false);
+        setTimeout(startPlayerServe, 1500);
+    } else {
+        // Double fault - lose point
+        M.serveNum = 1;
+        M.doubleFaults++;
+        showCallOverlay('DOUBLE FAULT', false);
+        M.streak = 0;
+        updateStreakDisplay();
+        if(!scorePoint('o')) setTimeout(startNextPoint, 2000);
+    }
+}
+
+function opponentReturn(){
+    // Opponent hits the ball back
+    M.lastHitBy = 'opp'; // Track who hit last
+    const st = getStats();
+    M.rally++;
+
+    // Rally tension - crowd gets louder as rally continues
+    sounds.rallyTension(M.rally);
+
+    updateMatchUI();
+
+    const oppDist = Math.abs(M.ballPos.x - M.oppPos);
+    const canReach = oppDist < 35;
+
+    if(!canReach){
+        // Opponent can't reach - point for player (might be from ace-like serve)
+        M.ballActive = false;
+        resetBallUI();
+        sounds.point();
+        M.streak++;
+        updateStreakDisplay();
+        if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
+        return;
+    }
+
+    // Opponent hits back
+    M.oppPos = M.ballPos.x;
+    safeGetElement('opponent')?.style.left = M.oppPos + '%';
+    safeGetElement('opponent')?.classList.add('hitting');
+    setOppSwinging();
+    setTimeout(() => safeGetElement('opponent')?.classList.remove('hitting'), 250);
+    sounds.hit();
+
+    M.ballBounces = 0;
+    M.ballH = 50;
+
+    const targetX = M.playerPos + (Math.random() - 0.5) * 40;
+    M.ballVel = {
+        x: (targetX - M.ballPos.x) / 90,
+        y: M.settings.speed * 0.55,
+        z: 1.8
+    };
+
+    // Now normal rally begins
+    animateBall();
+}
+
+// ========== OPPONENT SERVE ==========
+
+function opponentServe(){
+    if (!validateCriticalState()) { console.error("❌ Invalid state for opponentServe"); return; }
+    try {
+    if(!M.active) return;
+
+    highlightServiceBox();
+    updateServeIndicator();
+
+    // Opponent prepares to serve
+    const oppServeDelay = 800;
+
+    setTimeout(() => {
+        if(!M.active) return;
+
+        // Opponent can fault too! (slightly better than player)
+        const faultChance = M.settings.serveFaultChance * 0.5;
+        const isFault = Math.random() < faultChance;
+
+        if(isFault){
+            if(M.serveNum === 1){
+                M.serveNum = 2;
+                sounds.fault();
+                showCallOverlay('FAULT', false);
+                updateServeIndicator();
+                setTimeout(opponentServe, 1500);
+                return;
+            } else {
+                M.serveNum = 1;
+                sounds.fault();
+                showCallOverlay('DOUBLE FAULT', true);
+                M.streak++;
+                updateStreakDisplay();
+                clearServiceBoxHighlight();
+                if(!scorePoint('p')) setTimeout(startNextPoint, 2000);
+                return;
+            }
+        }
+
+        clearServiceBoxHighlight();
+
+        M.ballActive = true;
+        M.lastHitBy = 'opp'; // Track who hit last
+        M.ballPos = {x: M.oppPos, y: 10};
+        M.ballH = 80;
+        M.ballBounces = 0;
+
+        const st = getStats();
+        const isDeuceCourt = M.serveSide === 'deuce';
+        const targetX = isDeuceCourt ? 55 + Math.floor(Math.random() * 20) : 25 + Math.floor(Math.random() * 20);
+
+        // Opponent serve speed
+        const serveSpd = M.settings.speed * M.settings.oppServeSpeed * 0.65;
+
+        // Display opponent serve speed (slightly faster than player typically)
+        const oppServeSpeed = Math.round(90 + M.settings.oppServeSpeed * 30 + Math.floor(Math.random() * 15));
+        M.lastServeSpeed = oppServeSpeed;
+        safeGetElement('serveSpeed')?.textContent = oppServeSpeed + ' MPH';
+
+        M.ballVel = {
+            x: (targetX - M.ballPos.x) / 100 * 1.1,
+            y: serveSpd,
+            z: 1.2
+        };
+
+        const ball = safeGetElement('ball');
+        const shadow = safeGetElement('ballShadow');
+        ball.classList.add('active');
+        shadow.classList.add('active');
+
+        safeGetElement('opponent')?.classList.add('hitting');
+        setOppSwinging();
+        setTimeout(() => safeGetElement('opponent')?.classList.remove('hitting'), 250);
+        sounds.serve();
+
+        animateBall();
+    }, oppServeDelay);
+}
+
+// ========== CORE GAME FUNCTIONS ==========
+
+function startGame(){
+    if(!audio) initAudio();
+    safeGetElement('loadingScreen')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
+    load();
+    updateUI();
+}
+
+function load(){
+    const s = localStorage.getItem('tennisGame');
+    if(s){
+        const saved = JSON.parse(s);
+        Object.assign(G, saved);
+        // Ensure new stats exist
+        if(!G.stats.serve) G.stats.serve = 10;
+        if(!G.equipment.serveGear) G.equipment.serveGear = null;
+    }
+
+    // Initialize daily challenges
+    initDailyChallenge();
+}
+
+function save(){
+    localStorage.setItem('tennisGame', JSON.stringify(G));
+}
+
+function getStats(){
+    const s = {...G.stats};
+    Object.values(SHOP).flat().forEach(i => {
+        if(G.owned.includes(i.id) && Object.values(G.equipment).includes(i.id)){
+            if(i.stats.power) s.power += i.stats.power;
+            if(i.stats.speed) s.speed += i.stats.speed;
+            if(i.stats.control) s.control += i.stats.control;
+            if(i.stats.serve) s.serve += i.stats.serve;
+        }
+    });
+    // Also add stats from non-equipment owned items (like serve training)
+    SHOP.serve.forEach(i => {
+        if(G.owned.includes(i.id) && !i.repeatable){
+            if(i.stats.serve) s.serve += i.stats.serve;
+            if(i.stats.power) s.power += i.stats.power;
+            if(i.stats.control) s.control += i.stats.control;
+        }
+    });
+    return s;
+}
+
+const NTRP_LEVELS=[
+    {rating:2.5,points:0},
+    {rating:3.0,points:300},
+    {rating:3.5,points:800},
+    {rating:4.0,points:1500},
+    {rating:4.5,points:2500},
+    {rating:5.0,points:4000},
+    {rating:5.5,points:6000}
+];
+
+function getNTRP(){
+    for(let i=NTRP_LEVELS.length-1;i>=0;i--){
+        if(G.skillPoints>=NTRP_LEVELS[i].points) return NTRP_LEVELS[i].rating;
+    }
+    return 2.5;
+}
+
+function getNextNTRP(){
+    const current = getNTRP();
+    const idx = NTRP_LEVELS.findIndex(l => l.rating === current);
+    if(idx < NTRP_LEVELS.length - 1) return NTRP_LEVELS[idx + 1];
+    return null;
+}
+
+function updateUI(){
+    const ntrp = getNTRP();
+    const next = getNextNTRP();
+    G.ntrp = ntrp;
+
+    safeGetElement('playerNTRP')?.textContent = ntrp.toFixed(1);
+    safeGetElement('coinAmount')?.textContent = G.coins;
+    safeGetElement('gemAmount')?.textContent = G.gems;
+    safeGetElement('skillPoints')?.textContent = G.skillPoints;
+
+    if(next){
+        safeGetElement('skillNeeded')?.textContent = next.points;
+        const progress = (G.skillPoints / next.points) * 100;
+        safeGetElement('skillFill')?.style.width = progress + '%';
+    } else {
+        safeGetElement('skillNeeded')?.textContent = 'MAX';
+        safeGetElement('skillFill')?.style.width = '100%';
+    }
+
+    const s = getStats();
+    safeGetElement('statPower')?.textContent = s.power;
+    safeGetElement('statSpeed')?.textContent = s.speed;
+    safeGetElement('statControl')?.textContent = s.control;
+    safeGetElement('statServe')?.textContent = s.serve;
+}
+
+function selectDifficulty(d){
+    G.difficulty = d;
+    document.querySelectorAll('.diff-rookie,.diff-pro,.diff-legend').forEach(b => b.classList.remove('selected'));
+    document.querySelector('.diff-' + d).classList.add('selected');
+}
+
+function selectMatchType(type){
+    G.matchType = type;
+    safeGetElement('matchQuick')?.classList.remove('selected');
+    safeGetElement('matchStandard')?.classList.remove('selected');
+    safeGetElement('matchTimed')?.classList.remove('selected');
+    safeGetElement('match' + type.charAt(0).toUpperCase() + type.slice(1))?.classList.add('selected');
+}
+
+function showShop(){
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('shopScreen')?.classList.add('active');
+    renderShop('training');
+}
+
+function closeShop(){
+    safeGetElement('shopScreen')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
+    updateUI();
+}
+
+// Character system - must be before showCharSelect
+const V = '?v=31';
+
+window.CHARACTERS = [
+    {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
+    {id:'player4', name:'Steffi Gaffe', power:45, speed:60, control:45, unlocked:true},
+    {id:'player5', name:'Rafa Noddle', power:65, speed:40, control:45, unlocked:false, cost:500},
+    {id:'player6', name:'Martina N.T.O.', power:40, speed:55, control:55, unlocked:false, cost:500},
+    {id:'player7', name:'Bjorn Bored', power:45, speed:45, control:60, unlocked:false, cost:750},
+    {id:'player8', name:'Venus Will-yams', power:50, speed:55, control:45, unlocked:false, cost:750},
+    {id:'player9', name:'Boris Bonkers', power:60, speed:35, control:55, unlocked:false, cost:1000},
+    {id:'player10', name:'Chris Ev-hurt', power:45, speed:50, control:55, unlocked:false, cost:1000},
+    {id:'player11', name:'Andre A-gassy', power:50, speed:60, control:40, unlocked:false, cost:1250},
+    {id:'player12', name:'Naomi Oh-saka', power:40, speed:55, control:55, unlocked:false, cost:1250},
+    {id:'punk', name:'John Mac-n-Throw', power:70, speed:50, control:30, unlocked:false, cost:2000, special:true},
+    {id:'chubby', name:'Jimmy Con-ers', power:75, speed:30, control:45, unlocked:false, cost:2000, special:true},
+    {id:'beach', name:'Maria Shara-Pova', power:40, speed:65, control:45, unlocked:false, cost:2000, special:true},
+    {id:'goth', name:'Monica Slay-less', power:55, speed:45, control:50, unlocked:false, cost:2500, special:true},
+    {id:'anime', name:'Nick Curious', power:55, speed:65, control:30, unlocked:false, cost:3000, special:true},
+    {id:'latino', name:'Carlos All-Crazz', power:60, speed:55, control:35, unlocked:false, cost:3000, special:true},
+    {id:'redhead', name:'Billie Jean Queen', power:50, speed:55, control:45, unlocked:false, cost:3000, special:true}
+];
+
+var selectedChar = window.CHARACTERS[0];
+var opponentChar = null; // Selected randomly, different from player
+
+function selectRandomOpponent(){
+    // BULLETPROOF: Opponent must ALWAYS be different from player
+    let available = window.CHARACTERS.filter(c => c.unlocked && c.id !== selectedChar.id);
+
+    // If no unlocked characters different from player, unlock all characters temporarily for opponent selection
+    if(available.length === 0){
+        available = window.CHARACTERS.filter(c => c.id !== selectedChar.id);
+        if(available.length === 0){
+            // Emergency fallback - ensure we have at least 2 characters
+            available = window.CHARACTERS.slice(0, 2).filter(c => c.id !== selectedChar.id);
+        }
+    }
+
+    // Guarantee opponent is different
+    if(available.length > 0){
+        opponentChar = available[Math.floor(Math.random() * available.length)];
+    } else {
+        // Ultimate fallback - pick first character that's not player
+        opponentChar = window.CHARACTERS.find(c => c.id !== selectedChar.id) || window.CHARACTERS[0];
+    }
+
+    // Double-check: If somehow opponent equals player, force different
+    if(!opponentChar || opponentChar.id === selectedChar.id){
+        const allChars = window.CHARACTERS;
+        opponentChar = allChars[selectedChar === allChars[0] ? 1 : 0];
+    }
+
+    console.log(`🎾 Player: ${selectedChar.name} vs Opponent: ${opponentChar.name}`);
+    return opponentChar;
+}
+
+function getPlayerSprites(char){
+    // Get sprites for player (back view)
+    if(char.id === 'player1'){
+        return {
+            swing: 'player-retro-backswing.png' + V,
+            run: 'player-retro-run.png' + V,
+            idle: 'player-idle-v2.png' + V,
+            idleIsSheet: false  // player1 has a dedicated single-frame idle
+        };
+    }
+    const base = 'sprites-v2/characters/' + char.id + '-';
+    return {
+        swing: base + 'back-swing.png' + V,
+        run: base + 'back-run.png' + V,
+        idle: base + 'back-swing.png' + V,
+        idleIsSheet: true  // other characters use swing sheet for idle (show frame 1)
+    };
+}
+
+function getOpponentSprites(char){
+    // Get sprites for opponent (front view)
+    if(char.id === 'player1'){
+        return {
+            swing: 'opponent-retro-frontswing.png' + V,
+            run: 'opponent-retro-run.png' + V,
+            idle: 'opponent-idle-v2.png' + V,
+            idleIsSheet: false  // player1 has a dedicated single-frame idle
+        };
+    }
+    const base = 'sprites-v2/characters/' + char.id + '-';
+    return {
+        swing: base + 'front-swing.png' + V,
+        run: base + 'front-run.png' + V,
+        idle: base + 'front-swing.png' + V,
+        idleIsSheet: true  // other characters use swing sheet for idle (show frame 1)
+    };
+}
+
+function getCharSprites(char){
+    // Combined sprites object for compatibility
+    const p = getPlayerSprites(char);
+    const opp = opponentChar ? getOpponentSprites(opponentChar) : getOpponentSprites(window.CHARACTERS[1] || char);
+    return {
+        playerSwing: p.swing,
+        playerRun: p.run,
+        playerIdle: p.idle,
+        playerIdleIsSheet: p.idleIsSheet || false,
+        oppSwing: opp.swing,
+        oppRun: opp.run,
+        oppIdle: opp.idle,
+        oppIdleIsSheet: opp.idleIsSheet || false
+    };
+}
+
+const SPRITES = getCharSprites(selectedChar);
+
+function updateSprites(){
+    const s = getCharSprites(selectedChar);
+    Object.assign(SPRITES, s);
+}
+
+function showCharSelect(){
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('charSelect')?.classList.add('active');
+    renderCharGrid();
+    if(selectedChar) selectCharacter(selectedChar);
+}
+
+function closeCharSelect(){
+    safeGetElement('charSelect')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
+}
+
+function renderCharGrid(){
+    var grid = safeGetElement('charGrid');
+    if(!grid) return;
+    var chars = window.CHARACTERS;
+    if(!chars || !chars.length) return;
+    var html = '';
+    var V = '?v=31';
+    for(var i = 0; i < chars.length; i++){
+        var c = chars[i];
+        var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
+        var spriteUrl = c.id === 'player1' ? 'player-retro-backswing.png' + V : 'sprites-v2/characters/' + c.id + '-back-swing.png' + V;
+        var isSelected = selectedChar && selectedChar.id === c.id;
+        html += '<div class="char-card' + (isSelected ? ' selected' : '') + (unlocked ? '' : ' locked') + '" ';
+        html += 'onclick="' + (unlocked ? 'selectCharacter(window.CHARACTERS[' + i + '])' : 'tryUnlock(\'' + c.id + '\')') + '">';
+        html += '<div class="char-preview" style="background-image:url(' + spriteUrl + ')"></div>';
+        if(unlocked){
+            html += '<div class="char-name">' + c.name + '</div>';
+            html += '<div class="char-stat-bars">';
+            html += '<div class="stat-bar-row"><span class="stat-lbl">P</span><div class="stat-bar"><div class="stat-fill pwr" style="width:' + c.power + '%"></div></div></div>';
+            html += '<div class="stat-bar-row"><span class="stat-lbl">S</span><div class="stat-bar"><div class="stat-fill spd" style="width:' + c.speed + '%"></div></div></div>';
+            html += '<div class="stat-bar-row"><span class="stat-lbl">C</span><div class="stat-bar"><div class="stat-fill ctl" style="width:' + c.control + '%"></div></div></div>';
+            html += '</div>';
+        } else {
+            html += '<div class="char-lock">🔒</div>';
+            html += '<div class="char-name">' + c.cost + '💰</div>';
+        }
+        html += '</div>';
+    }
+    grid.innerHTML = html;
+}
+
+function selectCharacter(char){
+    selectedChar = char;
+    document.querySelectorAll('.char-card').forEach((el,i) =>
+        el.classList.toggle('selected', window.CHARACTERS[i].id === char.id));
+    const sprites = getCharSprites(char);
+    safeGetElement('charDetailPreview')?.style.backgroundImage = `url(${sprites.playerSwing})`;
+    safeGetElement('charDetailName')?.textContent = char.name.toUpperCase();
+    safeGetElement('charPower')?.textContent = char.power;
+    safeGetElement('charSpeed')?.textContent = char.speed;
+    safeGetElement('charControl')?.textContent = char.control;
+}
+
+function confirmCharacter(){
+    updateSprites();
+    closeCharSelect();
+    toast(`${selectedChar.name} selected!`);
+}
+
+function tryUnlock(id){
+    var char = window.CHARACTERS.find(function(c) { return c.id === id; });
+    if(G.coins >= char.cost){
+        G.coins -= char.cost;
+        G.unlockedChars = G.unlockedChars || [];
+        G.unlockedChars.push(id);
+        save();
+        renderCharGrid();
+        selectCharacter(char);
+        toast(`${char.name} unlocked!`);
+    } else {
+        toast('Not enough coins!');
+    }
+}
+
+function switchTab(cat, btn){
+    document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    renderShop(cat);
+}
+
+function renderShop(cat){
+    const c = safeGetElement('shopItems');
+    c.innerHTML = '';
+
+    const items = SHOP[cat] || [];
+
+    items.forEach(item => {
+        const owned = G.owned.includes(item.id);
+        const equipped = Object.values(G.equipment).includes(item.id);
+        const canBuy = (item.currency === 'gems' ? G.gems : G.coins) >= item.price;
+        const isTraining = cat === 'training' || (cat === 'serve' && item.repeatable);
+        const isServeEquip = cat === 'serve' && !item.repeatable;
+
+        let statsHTML = '';
+        if(item.stats.skillPoints) statsHTML += `<span class="item-stat">+${item.stats.skillPoints} Skill</span>`;
+        if(item.stats.power) statsHTML += `<span class="item-stat">+${item.stats.power} PWR</span>`;
+        if(item.stats.speed) statsHTML += `<span class="item-stat">+${item.stats.speed} SPD</span>`;
+        if(item.stats.control) statsHTML += `<span class="item-stat">+${item.stats.control} CTL</span>`;
+        if(item.stats.serve) statsHTML += `<span class="item-stat">+${item.stats.serve} SRV</span>`;
+        if(item.stats.bonus) statsHTML += `<span class="item-stat">${item.stats.bonus}</span>`;
+
+        const d = document.createElement('div');
+        d.className = 'shop-item' + (owned && !isTraining ? ' owned' : '');
+
+        let purchaseHTML;
+        if(isTraining){
+            purchaseHTML = `
+                <div class="price-tag">${item.currency === 'gems' ? '💎' : '💰'}${item.price}</div>
+                <button class="buy-btn" ${canBuy ? `onclick="buyItem('${cat}','${item.id}')"` : 'disabled'}>
+                    ${item.repeatable ? 'START' : 'BUY'}
+                </button>`;
+        } else if(!owned){
+            purchaseHTML = `
+                <div class="price-tag">${item.currency === 'gems' ? '💎' : '💰'}${item.price}</div>
+                <button class="buy-btn" ${canBuy ? `onclick="buyItem('${cat}','${item.id}')"` : 'disabled'}>BUY</button>`;
+        } else if(equipped){
+            purchaseHTML = '<div class="equipped-badge">EQUIPPED</div>';
+        } else {
+            purchaseHTML = `<button class="equip-btn" onclick="equipItem('${cat}','${item.id}')">EQUIP</button>`;
+        }
+
+        d.innerHTML = `
+            <div class="item-info">
+                <div class="item-name">${item.name}</div>
+                <div class="item-desc">${item.desc}</div>
+                <div class="item-stats">${statsHTML}</div>
+            </div>
+            <div class="item-purchase">${purchaseHTML}</div>`;
+        c.appendChild(d);
+    });
+}
+
+function buyItem(cat, id){
+    const item = SHOP[cat]?.find(i => i.id === id);
+    if(!item) return;
+
+    const curr = item.currency === 'gems' ? 'gems' : 'coins';
+    if(G[curr] < item.price) return;
+
+    G[curr] -= item.price;
+
+    if(item.repeatable){
+        // Training-style items
+        if(item.stats.skillPoints){
+            const oldNTRP = getNTRP();
+            G.skillPoints += item.stats.skillPoints;
+            const newNTRP = getNTRP();
+            if(newNTRP > oldNTRP){
+                toast(`NTRP UPGRADED to ${newNTRP.toFixed(1)}!`);
+                sounds.point();
+            }
+        }
+        if(item.stats.power) G.stats.power += item.stats.power;
+        if(item.stats.speed) G.stats.speed += item.stats.speed;
+        if(item.stats.control) G.stats.control += item.stats.control;
+        if(item.stats.serve) G.stats.serve += item.stats.serve;
+        G.trainingCompleted.push(id);
+        toast(item.name + ' completed!');
+    } else {
+        // Equipment items
+        G.owned.push(id);
+
+        // Auto-equip if slot is empty
+        let slot = cat.slice(0, -1); // 'rackets' -> 'racket'
+        if(cat === 'serve') slot = 'serveGear';
+        if(cat === 'special') slot = 'special';
+
+        if(!G.equipment[slot]) G.equipment[slot] = id;
+        toast(item.name + ' purchased!');
+    }
+
+    save();
+    renderShop(cat);
+    updateUI();
+}
+
+function equipItem(cat, id){
+    let slot = cat.slice(0, -1);
+    if(cat === 'serve') slot = 'serveGear';
+    G.equipment[slot] = id;
+    save();
+    renderShop(cat);
+    toast('Equipped!');
+}
+
+function showTutorial(){
+    safeGetElement('tutorialOverlay')?.classList.add('active');
+}
+
+function closeTutorial(){
+    safeGetElement('tutorialOverlay')?.classList.remove('active');
+}
+
+function toast(msg){
+    const t = safeGetElement('progressToast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ========== VIDEO & MATCH START ==========
+
+let ytPlayer;
+
+function onYouTubeIframeAPIReady(){
+    ytPlayer = new YT.Player('videoPlayer', {
+        height: '100%',
+        width: '100%',
+        videoId: 'dy1tT2lsISs',
+        playerVars: {autoplay:0, controls:0, modestbranding:1, rel:0, showinfo:0, fs:0, playsinline:1},
+        events: {onStateChange: onPlayerStateChange}
+    });
+}
+
+function onPlayerStateChange(event){
+    if(event.data === YT.PlayerState.ENDED) transitionToCourt();
+}
+
+function transitionToCourt(){
+    if(videoTimeout) { clearTimeout(videoTimeout); videoTimeout = null; }
+    if(ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
+    const videoIntro = safeGetElement('videoIntro');
+    videoIntro.classList.add('fade-out');
+    setTimeout(() => {
+        videoIntro.classList.remove('active', 'fade-out');
+        actuallyStartMatch();
+    }, 500);
+}
+
+function actuallyStartMatch(){
+    const s = DIFF[G.difficulty];
+
+    // Select random opponent (different from player)
+    selectRandomOpponent();
+    updateSprites();
+
+    // Adjust time based on match type
+    let matchTime = s.time;
+    if(G.matchType === 'quick') matchTime = 180;  // 3 minutes for quick match
+    else if(G.matchType === 'timed') matchTime = 300; // 5 minutes for timed
+
+    // Randomly decide who serves first
+    const playerServesFirst = Math.random() < 0.5;
+
+    M = {
+        active: true,
+        startTime: Date.now(), // Track match start for duration calculation
+        pPoints: 0, oPoints: 0,
+        pGames: 0, oGames: 0,
+        pSets: 0, oSets: 0,
+        time: matchTime,
+        matchLimit: G.matchType === 'timed' ? matchTime : null,
+        timeExpired: false,
+        isTiebreak: false,
+        tiebreakServer: 'player',
+        servingPlayer: playerServesFirst ? 'player' : 'opp',
+        serveNum: 1,
+        serveSide: 'deuce',
+        isPlayerServe: false,
+        servePhase: 'none',
+        servePower: 0,
+        serveAimX: 50,
+        serveAimY: 25,
+        serveStartY: null,
+        serveStartX: null,
+        lastServeSpeed: 0,
+        rally: 0,
+        ballActive: false,
+        ballPos: {x:50, y:10},
+        ballVel: {x:0, y:0, z:0},
+        ballH: 100,
+        ballBounces: 0,
+        ballSpin: 0,
+        lastHitBy: 'player', // Track who hit the ball last ('player' or 'opp')
+        canHit: false,
+        combo: 0,
+        pendingCombo: false,  // Don't show combo until shot is confirmed successful
+        streak: 0,
+        bestStreak: 0,
+        oppPos: 50,
+        playerPos: 70,
+        gemActive: false,
+        gemPos: {x:50, y:70},
+        gemTimer: 0,
+        gemMultiplier: 1,
+        aces: 0,
+        doubleFaults: 0,
+        winners: 0,
+        longestRally: 0,
+        totalRallies: 0,
+        pointsPlayed: 0,
+        pendingAce: false,
+        settings: s
+    };
+
+    initSprites();
+
+    safeGetElement('gameHUD')?.classList.add('active');
+    safeGetElement('gameCourt')?.classList.add('active');
+    safeGetElement('playerPaddle')?.style.left = '70%';
+    safeGetElement('streakDisplay')?.classList.remove('active');
+
+    updateMatchUI();
+    startTimer();
+
+    // Start first point
+    setTimeout(startNextPoint, 1200);
+}
+
+function startNextPoint(){
+    if(!M.active) return;
+
+    M.serveNum = 1;
+    M.serveSide = getServeSide();
+    M.rally = 0;
+    M.canHit = false;
+
+    // Clear serve speed display
+    safeGetElement('serveSpeed')?.textContent = '';
+
+    // In tiebreak, recalculate server each point
+    if(M.isTiebreak){
+        M.servingPlayer = getTiebreakServer();
+    }
+
+    updateMatchUI();
+
+    if(M.servingPlayer === 'player'){
+        startPlayerServe();
+    } else {
+        opponentServe();
+    }
+}
+
+let videoTimeout = null;
+
+function validateCriticalState() {
+    const issues = [];
+
+    if (!M) issues.push('Match object missing');
+    if (!G) issues.push('Game state missing');
+    if (!SPRITES) issues.push('Sprites missing');
+    if (!selectedChar) issues.push('Selected character missing');
+
+    if (issues.length > 0) {
+        console.error('❌ Critical state validation failed:', issues);
+        return false;
+    }
+
+    return true;
+}
+
+
+function startMatch(){
+    if (!validateCriticalState()) { console.error("❌ Invalid state for startMatch"); return; }
+    try {
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('charSelect')?.classList.remove('active');
+    safeGetElement('shopScreen')?.classList.remove('active');
+    safeGetElement('videoIntro')?.classList.add('active');
+
+    // Auto-skip after 8 seconds if video fails
+    if(videoTimeout) clearTimeout(videoTimeout);
+    videoTimeout = setTimeout(() => {
+        if(safeGetElement('videoIntro')?.classList.contains('active')) {
+            transitionToCourt();
+        }
+    }, 8000);
+
+    if(ytPlayer && ytPlayer.playVideo){
+        ytPlayer.seekTo(0);
+        ytPlayer.playVideo();
+    } else {
+        setTimeout(() => {
+            if(ytPlayer && ytPlayer.playVideo){
+                ytPlayer.seekTo(0);
+                ytPlayer.playVideo();
+            }
+        }, 1000);
+    }
+    } catch (error) {
+        ErrorRecovery.handleCriticalError(error, 'startMatch');
+    }
+}
+
+function startTimer(){
+    // Timer counts up, but timed matches use a limit
+    M.time = 0;
+    const timerEl = safeGetElement('matchTimer');
+    if(!timerEl) return;
+    const isTimed = G.matchType === 'timed' && M.matchLimit;
+    const renderTime = (seconds) => {
+        const safeSeconds = Math.max(0, seconds);
+        timerEl.textContent = Math.floor(safeSeconds / 60) + ':' + (safeSeconds % 60).toString().padStart(2, '0');
+    };
+    renderTime(isTimed ? M.matchLimit : 0);
+
+    const int = setInterval(() => {
+        if(!M.active){
+            clearInterval(int);
+            return;
+        }
+        M.time++;
+        renderTime(isTimed ? (M.matchLimit - M.time) : M.time);
+
+        if(isTimed && M.time >= M.matchLimit){
+            clearInterval(int);
+            handleTimeExpired();
+        }
+    }, 1000);
+}
+
+function handleTimeExpired(){
+    if(!M.active || G.matchType !== 'timed') return;
+    const gameDiff = M.pGames - M.oGames;
+    const pointDiff = M.pPoints - M.oPoints;
+
+    if(gameDiff !== 0 || pointDiff !== 0){
+        endTimedMatch();
+        return;
+    }
+
+    M.timeExpired = true;
+    toast('TIME! NEXT POINT WINS');
+}
+
+function endTimedMatch(){
+    if(!M.active) return;
+    const gameDiff = M.pGames - M.oGames;
+    const pointDiff = M.pPoints - M.oPoints;
+    const playerWins = gameDiff > 0 || (gameDiff === 0 && pointDiff > 0);
+
+    M.pSets = playerWins ? 1 : 0;
+    M.oSets = playerWins ? 0 : 1;
+    endMatch();
+}
+
+// ========== SCORING ==========
+
+function getTennisScore(pPoints, oPoints){
+    // Tiebreak uses simple numbers
+    if(M.isTiebreak){
+        return {p: String(pPoints), o: String(oPoints), tiebreak: true};
+    }
+
+    const scores = ['0','15','30','40'];
+
+    // Both under 4 points - normal scoring
+    if(pPoints < 4 && oPoints < 4){
+        return {p: scores[pPoints], o: scores[oPoints]};
+    }
+
+    // Deuce situation
+    if(pPoints === oPoints){
+        return {p:'40', o:'40', deuce:true};
+    }
+
+    // Advantage
+    if(pPoints > oPoints){
+        return {p:'AD', o:'40'};
+    }
+    return {p:'40', o:'AD'};
+}
+
+function updateMatchUI(){
+    if (!validateCriticalState()) { console.error("❌ Invalid state for updateMatchUI"); return; }
+    try {
+    const score = getTennisScore(M.pPoints, M.oPoints);
+
+    safeGetElement('playerPoints')?.textContent = score.deuce ? 'DEUCE' : score.p;
+    safeGetElement('opponentPoints')?.textContent = score.deuce ? 'DEUCE' : score.o;
+    safeGetElement('playerGames')?.textContent = M.pGames;
+    safeGetElement('opponentGames')?.textContent = M.oGames;
+    safeGetElement('rallyCount')?.textContent = M.rally;
+
+    // Show sets if any
+    if(M.pSets > 0 || M.oSets > 0){
+        safeGetElement('playerSets')?.textContent = `Sets: ${M.pSets}`;
+        safeGetElement('opponentSets')?.textContent = `Sets: ${M.oSets}`;
+    }
+
+    // Show tiebreak indicator
+    const tbInd = safeGetElement('tiebreakIndicator');
+    if(M.isTiebreak){
+        tbInd.textContent = 'TIEBREAK';
+    } else {
+        tbInd.textContent = '';
+    }
+
+    updateServeIndicator();
+}
+
+function celebratePoint(isAce){
+    // Screen flash
+    const flash = document.createElement('div');
+    flash.style.cssText = 'position:fixed;inset:0;background:'+(isAce?'rgba(255,215,0,0.35)':'rgba(76,255,80,0.25)')+';pointer-events:none;z-index:999;animation:flashFade 0.3s ease-out forwards;';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 300);
+    // Haptic feedback
+    if(navigator.vibrate) navigator.vibrate(isAce ? [50,30,50] : 40);
+}
+
+function scorePoint(player){
+    // Point celebration effects
+    if(player === 'p'){
+        sounds.pointWon();
+        // Flash effect for player point
+        const flash = document.createElement('div');
+        flash.style.cssText = 'position:fixed;inset:0;background:rgba(76,255,80,0.3);z-index:1000;pointer-events:none;animation:flashFade 0.4s ease-out';
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 400);
+        // Enhanced haptic feedback
+        if(navigator.vibrate) navigator.vibrate([80, 50, 80]);
+    } else {
+        sounds.pointLost();
+        // Flash effect for opponent point
+        const flash = document.createElement('div');
+        flash.style.cssText = 'position:fixed;inset:0;background:rgba(244,67,54,0.3);z-index:1000;pointer-events:none;animation:flashFade 0.4s ease-out';
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 400);
+        // Gentle haptic feedback
+        if(navigator.vibrate) navigator.vibrate(60);
+    }
+
+    // Track statistics
+    M.pointsPlayed++;
+    M.totalRallies += M.rally;
+    if(M.rally > M.longestRally) M.longestRally = M.rally;
+
+    if(player === 'p'){
+        M.pPoints++;
+        celebratePoint(false);
+    } else {
+        M.oPoints++;
+        M.streak = 0;
+        updateStreakDisplay();
+    }
+
+    const diff = M.pPoints - M.oPoints;
+
+    // Tiebreak scoring: first to 7, win by 2
+    if(M.isTiebreak){
+        if((M.pPoints >= 7 || M.oPoints >= 7) && Math.abs(diff) >= 2){
+            // Tiebreak won!
+            if(M.pPoints > M.oPoints){
+                M.pGames++;
+                M.pSets++;
+                toast('TIEBREAK WON! You take the set!');
+            } else {
+                M.oGames++;
+                M.oSets++;
+                toast('TIEBREAK LOST! Opponent takes the set');
+            }
+
+            // Reset for new set
+            M.pPoints = 0;
+            M.oPoints = 0;
+            M.pGames = 0;
+            M.oGames = 0;
+            M.isTiebreak = false;
+            M.serveNum = 1;
+
+            // Whoever received in tiebreak serves first next set
+            M.servingPlayer = M.tiebreakServer === 'player' ? 'opp' : 'player';
+
+            sounds.point();
+            updateMatchUI();
+            if(checkEnd()) return true;
+            return false;
+        }
+
+        // In tiebreak, server changes after first point, then every 2 points
+        M.servingPlayer = getTiebreakServer();
+        M.serveNum = 1;
+        updateMatchUI();
+        return false;
+    }
+
+    // Regular game scoring: need to be at 4+ and 2 ahead
+    if((M.pPoints >= 4 || M.oPoints >= 4) && Math.abs(diff) >= 2){
+        if(M.pPoints > M.oPoints){
+            M.pGames++;
+            toast('GAME! You won the game!');
+        } else {
+            M.oGames++;
+            toast('GAME! Opponent won');
+        }
+
+        M.pPoints = 0;
+        M.oPoints = 0;
+
+        // Switch server after each game
+        M.servingPlayer = M.servingPlayer === 'player' ? 'opp' : 'player';
+        M.serveNum = 1;
+
+        sounds.point();
+
+        // Check for set/match win
+        if(checkSetWin()){
+            return true;
+        }
+
+        // Changeover after odd games
+        if(shouldChangeover()){
+            setTimeout(async () => {
+                await showCourtChange('CHANGEOVER', `${M.pGames}-${M.oGames}`);
+                startNextPoint();
+            }, 500);
+            updateMatchUI();
+            return true; // Prevent normal startNextPoint
+        }
+    }
+
+    updateMatchUI();
+
+    if(G.matchType === 'timed' && M.timeExpired){
+        endTimedMatch();
+        return true;
+    }
+
+    if(checkEnd()) return true;
+    return false;
+}
+
+function checkSetWin(){
+    const pGames = M.pGames;
+    const oGames = M.oGames;
+    const diff = Math.abs(pGames - oGames);
+
+    // Game target depends on match type (quick=6, standard/pro=6)
+    const winGames = G.matchType === 'quick' ? 6 : 6;
+
+    // Set win: reach target games with 2 game lead
+    if((pGames >= winGames || oGames >= winGames) && diff >= 2 && !M.isTiebreak){
+        if(pGames > oGames){
+            M.pSets++;
+            toast('SET! You won the set!');
+        } else {
+            M.oSets++;
+            toast('SET! Opponent won the set');
+        }
+        M.pGames = 0;
+        M.oGames = 0;
+        M.isTiebreak = false;
+        return false; // Continue playing
+    }
+
+    // Tiebreak at tied game target (6-6 or 4-4 for quick)
+    if(pGames === winGames && oGames === winGames && !M.isTiebreak){
+        M.isTiebreak = true;
+        M.tiebreakServer = M.servingPlayer;
+        M.pPoints = 0;
+        M.oPoints = 0;
+        toast('TIEBREAK! First to 7 (win by 2)');
+        sounds.point();
+        return false;
+    }
+
+    return false;
+}
+
+// ========== BALL PHYSICS ==========
+
+function animateBall(){
+    if(!M.ballActive) return;
+    if(window.animationPaused){
+        requestAnimationFrame(animateBall);
+        return;
+    }
+
+    // Enhanced physics with momentum conservation
+    const speed = Math.sqrt(M.ballVel.x*M.ballVel.x + M.ballVel.y*M.ballVel.y);
+    const isHighSpeed = speed > 1.5;
+
+    M.ballPos.x += M.ballVel.x;
+    M.ballPos.y += M.ballVel.y;
+    M.ballH += M.ballVel.z;
+
+    // Enhanced gravity with speed-dependent effect
+    const gravity = 0.15 + (isHighSpeed ? 0.03 : 0);
+    M.ballVel.z -= gravity;
+
+    // Enhanced spin physics with Magnus effect
+    if(Math.abs(M.ballSpin) > 0.1){
+        M.ballVel.x += M.ballSpin * 0.025;
+        // Spin decay
+        M.ballSpin *= 0.998;
+    }
+
+    // Air resistance for realistic deceleration
+    const resistance = 0.9995;
+    M.ballVel.x *= resistance;
+    M.ballVel.y *= resistance;
+
+    // Enhanced ground bounce with energy transfer
+    if(M.ballH <= 0 && M.ballVel.z < 0){
+        M.ballH = 0;
+
+        // Bounce intensity based on impact velocity
+        const impactIntensity = Math.abs(M.ballVel.z);
+        const bounceEfficiency = 0.72 + (impactIntensity > 2 ? 0.08 : 0); // Higher bounces on hard hits
+
+        M.ballVel.z = -M.ballVel.z * bounceEfficiency;
+
+        // Lateral bounce effects from spin
+        if(Math.abs(M.ballSpin) > 0.1){
+            M.ballVel.x += M.ballSpin * 0.15; // Spin kick on bounce
+        }
+
+        // Enhanced sound based on impact
+        if(impactIntensity > 2.5){
+            sounds.powerBounce();
+        } else if(impactIntensity > 1.5){
+            sounds.bounce();
+        } else {
+            sounds.softBounce();
+        }
+
+        // Satisfying screen micro-shake on hard bounces
+        if(impactIntensity > 2.8){
+            microShake(50);
+        }
+
+        if(M.ballPos.y > 50) M.ballBounces++;
+
+        // Double bounce = point lost
+        if(M.ballBounces > 1){
+            ballMissed();
+            return;
+        }
+    }
+
+    // Out of bounds (sidelines) - whoever hit it last loses the point
+    if(M.ballPos.x < 10 || M.ballPos.x > 90){
+        M.ballActive = false;
+        M.canHit = false;
+        resetBallUI();
+        sounds.miss();
+
+        if(M.lastHitBy === 'player'){
+            // Player hit it out - opponent gets point
+            showCallOverlay('OUT!', false);
+            M.streak = 0;
+            updateStreakDisplay();
+            if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
+        } else {
+            // Opponent hit it out - player gets point
+            showCallOverlay('OUT!', true);
+            M.streak++;
+            updateStreakDisplay();
+            if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
+        }
+        return;
+    }
+
+    const ball = safeGetElement('ball');
+    const shadow = safeGetElement('ballShadow');
+    ball.style.left = M.ballPos.x + '%';
+    ball.style.top = (M.ballPos.y - M.ballH/10) + '%';
+    shadow.style.left = M.ballPos.x + '%';
+    shadow.style.top = M.ballPos.y + '%';
+
+    // Check if ball is in player's hit zone
+    const st = getStats();
+    const hzStart = Math.max(52, 100 - M.settings.hitWindow * 100 - st.control * 0.12);
+
+    if(M.ballPos.y > hzStart && M.ballPos.y < 90 && M.ballH < 50 && M.ballBounces <= 1 && !M.canHit){
+        M.canHit = true;
+        ball.classList.add('glowing');
+        safeGetElement('hitZone')?.classList.add('active');
+
+        const hint = safeGetElement('swipeHint');
+        hint.textContent = 'SWIPE UP!';
+        hint.classList.remove('serve');
+        hint.classList.add('active');
+
+        safeGetElement('playerPaddle')?.classList.add('can-hit');
+    }
+
+    // Ball passed hit zone
+    if(M.canHit && (M.ballH > 50 || M.ballBounces > 1)){
+        M.canHit = false;
+        ball.classList.remove('glowing');
+        safeGetElement('hitZone')?.classList.remove('active');
+        safeGetElement('swipeHint')?.classList.remove('active');
+        safeGetElement('playerPaddle')?.classList.remove('can-hit');
+    }
+
+    // Ball passed player - missed
+    if(M.ballPos.y > 93){
+        ballMissed();
+        return;
+    }
+
+    // Update opponent position when ball is on their side
+    if(M.ballPos.y < 50) updateOpp();
+
+    updatePlayerDirection();
+    requestAnimationFrame(animateBall);
+}
+
+function updateOpp(){
+    const diff = M.ballPos.x - M.oppPos;
+    const moving = Math.abs(diff) > 2;
+    setOppRunning(moving);
+    M.oppPos += diff * M.settings.oppSpeed;
+    safeGetElement('opponent')?.style.left = M.oppPos + '%';
+}
+
+function ballOut(reason){
+    M.ballActive = false;
+    M.canHit = false;
+    resetBallUI();
+    M.combo = 0;
+    M.pendingCombo = false;
+    M.rally = 0;
+    sounds.miss();
+    showCallOverlay('OUT!', false);
+
+    M.streak = 0;
+    updateStreakDisplay();
+
+    if(!scorePoint('o')) setTimeout(startNextPoint, 1500);
+}
+
+function ballMissed(){
+    M.ballActive = false;
+    M.canHit = false;
+    resetBallUI();
+    M.combo = 0;
+    M.pendingCombo = false;
+    M.rally = 0;
+    sounds.miss();
+
+    M.streak = 0;
+    updateStreakDisplay();
+
+    if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
+}
+
+function resetBallUI(){
+    const ball = safeGetElement('ball');
+    const shadow = safeGetElement('ballShadow');
+    ball.classList.remove('active', 'glowing', 'toss');
+    shadow.classList.remove('active');
+    safeGetElement('hitZone')?.classList.remove('active');
+    safeGetElement('swipeHint')?.classList.remove('active', 'serve');
+    safeGetElement('playerPaddle')?.classList.remove('can-hit', 'serving');
+    safeGetElement('servePower')?.classList.remove('active');
+    safeGetElement('serveAim')?.classList.remove('active');
+    safeGetElement('serveTargetLine')?.classList.remove('active');
+    clearServiceBoxHighlight();
+    ballTrailPositions = [];
+}
+
+// ========== HITTING ==========
+
+function hitBall(power, angle){
+    if(!M.canHit) return;
+
+    M.lastHitBy = 'player'; // Track who hit last
+    M.canHit = false;
+    const ball = safeGetElement('ball');
+    ball.classList.remove('glowing');
+    safeGetElement('hitZone')?.classList.remove('active');
+    safeGetElement('swipeHint')?.classList.remove('active');
+    safeGetElement('playerPaddle')?.classList.remove('can-hit');
+
+    // Show power feedback
+    const pf = safeGetElement('powerFill');
+    pf.style.width = (power * 100) + '%';
+    setTimeout(() => pf.style.width = '0%', 400);
+
+    const st = getStats();
+    const dist = Math.abs(M.ballPos.x - M.playerPos);
+    const acc = Math.max(0, 1 - dist/50);
+    const qual = power * acc * (1 + st.control/100);
+
+    showHitEffect(power);
+
+    // Enhanced player swing animation
+    setPlayerSwinging();
+
+    sounds.hit();
+
+    // Track quality but don't show combo yet - wait until we confirm shot was successful
+    if(qual > 0.55){
+        M.combo++;
+        M.pendingCombo = true;  // Will show combo when opponent fails to return or scrambles
+    } else {
+        M.combo = 0;
+        M.pendingCombo = false;
+    }
+
+    returnBall(qual, angle);
+}
+
+// ========== VISUAL EFFECTS SYSTEM ==========
+
+function microShake(duration = 100) {
+    const court = safeGetElement('gameCourt');
+    if(!court) return;
+    court.classList.remove('micro-shake');
+    void court.offsetWidth;
+    court.classList.add('micro-shake');
+    setTimeout(() => court.classList.remove('micro-shake'), duration);
+}
+
+function powerShake(duration = 200) {
+    const court = safeGetElement('gameCourt');
+    if(!court) return;
+    court.classList.remove('power-shake', 'shake');
+    void court.offsetWidth;
+    court.classList.add('power-shake');
+    setTimeout(() => court.classList.remove('power-shake'), duration);
+}
+
+// Hitstop effect - brief pause for impact
+function hitstop(duration = 150) {
+    const court = safeGetElement('gameCourt');
+    if(!court) return;
+
+    // Flash white for impact
+    court.style.filter = 'brightness(2) contrast(1.5)';
+    setTimeout(() => {
+        court.style.filter = '';
+    }, duration);
+
+    // Briefly pause ball animation (if in rally mode)
+    if(M.ballActive && window.animationPaused !== true) {
+        window.animationPaused = true;
+        setTimeout(() => {
+            window.animationPaused = false;
+        }, duration);
+    }
+}
+
+// Enhanced ball trail system
+let ballTrailPositions = [];
+function createBallTrail() {
+    if(!M.ballActive || window.animationPaused) return;
+    if(isPerformanceMode()) return;
+
+    const ball = safeGetElement('ball');
+    if(!ball || !ball.classList.contains('active')) return;
+
+    const ballRect = ball.getBoundingClientRect();
+    const court = getCourtElement();
+    if(!court) return;
+    const courtRect = court.getBoundingClientRect();
+
+    // Calculate relative position
+    const relX = ((ballRect.left + ballRect.width/2 - courtRect.left) / courtRect.width) * 100;
+    const relY = ((ballRect.top + ballRect.height/2 - courtRect.top) / courtRect.height) * 100;
+
+    // Store position for trail
+    ballTrailPositions.push({x: relX, y: relY, time: Date.now()});
+
+    // Limit trail length
+    if(ballTrailPositions.length > 8) {
+        ballTrailPositions.shift();
+    }
+
+    // Create trail elements
+    ballTrailPositions.forEach((pos, index) => {
+        const age = Date.now() - pos.time;
+        if(age > 300) return; // Remove old trails
+
+        const trail = document.createElement('div');
+        trail.className = 'ball-trail active';
+        trail.style.left = pos.x + '%';
+        trail.style.top = pos.y + '%';
+        trail.style.opacity = (1 - age / 300) * 0.6;
+        trail.style.transform = `translate(-50%, -50%) scale(${1 - age / 400})`;
+
+        court.appendChild(trail);
+
+        setTimeout(() => trail.remove(), 300 - age);
+    });
+}
+
+// Swipe trail visualization
+function createSwipeTrail(startX, startY, endX, endY) {
+    if(isPerformanceMode()) return;
+    const court = getCourtElement();
+    if(!court) return;
+    const courtRect = court.getBoundingClientRect();
+
+    // Convert screen coordinates to court relative
+    const startRelX = ((startX - courtRect.left) / courtRect.width) * 100;
+    const startRelY = ((startY - courtRect.top) / courtRect.height) * 100;
+    const endRelX = ((endX - courtRect.left) / courtRect.width) * 100;
+    const endRelY = ((endY - courtRect.top) / courtRect.height) * 100;
+
+    // Create trail segments
+    const segments = 12;
+    for(let i = 0; i < segments; i++) {
+        const progress = i / (segments - 1);
+        const x = startRelX + (endRelX - startRelX) * progress;
+        const y = startRelY + (endRelY - startRelY) * progress;
+
+        const segment = document.createElement('div');
+        segment.className = 'swipe-trail-segment';
+        segment.style.left = x + '%';
+        segment.style.top = y + '%';
+        segment.style.opacity = 1 - progress * 0.7;
+        segment.style.animationDelay = (i * 20) + 'ms';
+
+        const container = document.createElement('div');
+        container.className = 'swipe-trail active';
+        container.appendChild(segment);
+        court.appendChild(container);
+
+        setTimeout(() => container.remove(), 500 + i * 20);
+    }
+}
+
+function createHitParticles(x, y, power) {
+    if(isPerformanceMode()) return;
+    const court = getCourtElement();
+    if(!court) return;
+
+    const particleCount = Math.floor(3 + power * 8);
+    const colors = power > 0.8 ? ['#FFD700', '#FF6B47', '#FF4757'] : ['#4ECDC4', '#45AAF2', '#26DE81'];
+
+    for(let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        const angle = (Math.PI * 2 * i) / particleCount;
+        const velocity = 20 + power * 40;
+        const size = 3 + Math.floor(Math.random() * 4);
+
+        particle.style.cssText = `
+            position: absolute;
+            left: ${x}%;
+            top: ${y}%;
+            width: ${size}px;
+            height: ${size}px;
+            background: ${colors[Math.floor(Math.random() * colors.length)]};
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 200;
+            transform: translate(-50%, -50%);
+        `;
+
+        court.appendChild(particle);
+
+        // Animate particle
+        const tx = Math.cos(angle) * velocity;
+        const ty = Math.sin(angle) * velocity;
+
+        particle.animate([
+            { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+            { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(0)`, opacity: 0 }
+        ], {
+            duration: 400 + Math.floor(Math.random() * 200),
+            easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+        }).onfinish = () => particle.remove();
+    }
+}
+
+function showHitEffect(power){
+    const e = safeGetElement('hitEffect');
+    const b = safeGetElement('ball');
+
+    if(!e || !b) return;
+
+    const ballRect = b.getBoundingClientRect();
+    // Position effect at ball location
+    e.style.left = b.style.left;
+    e.style.top = b.style.top;
+    e.classList.add('active');
+    setTimeout(() => e.classList.remove('active'), 600);
+
+    // Create hit particles
+    const ballX = parseFloat(b.style.left);
+    const ballY = parseFloat(b.style.top);
+    createHitParticles(ballX, ballY, power);
+
+    // Enhanced screen shake based on power
+    if(power > 0.9){
+        powerShake(250);
+        hitstop(120); // Brief pause for impact
+        sounds.powerHit();
+    } else if(power > 0.7){
+        const court = safeGetElement('gameCourt');
+        court.classList.remove('shake');
+        void court.offsetWidth;
+        court.classList.add('shake');
+        setTimeout(() => court.classList.remove('shake'), 150);
+        sounds.hit();
+    } else {
+        sounds.hit();
+    }
+
+    // Haptic feedback for mobile
+    if(navigator.vibrate && power > 0.6) {
+        const intensity = Math.floor(power * 100);
+        navigator.vibrate(intensity);
+    }
+}
+
+function showCombo(){
+    const texts = ['NICE!', 'GREAT!', 'PERFECT!', 'AMAZING!', 'INCREDIBLE!'];
+    const el = document.createElement('div');
+    el.className = 'combo-text';
+    el.textContent = texts[Math.min(M.combo - 1, 4)];
+    el.style.left = '50%';
+    el.style.top = '50%';
+    el.style.animation = 'comboFloat 0.9s ease-out forwards';
+    const court = getCourtElement();
+    if(!court) return;
+    court.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+}
+
+function returnBall(qual, angle){
+    M.ballActive = true;
+    M.ballBounces = 0;
+    M.rally++;
+
+    // Rally tension - crowd gets louder as rally continues
+    sounds.rallyTension(M.rally);
+
+    // Gem spawn chance increases with rally length
+    const gemChance = 0.05 + M.rally * 0.02;
+    if(Math.random() < gemChance && !M.gemActive) spawnGem();
+
+    const st = getStats();
+    const spd = 1 + st.power * 0.012;
+    const ctrl = 1 + st.control * 0.008;
+    const off = M.playerPos - M.ballPos.x;
+    const ang = Math.sin(angle) * 1.1 * ctrl;
+    const pos = off * 0.018;
+
+    // Add spin based on angle
+    M.ballSpin = Math.sin(angle) * 0.5;
+
+    M.ballH = 30;
+    M.ballVel = {
+        x: Math.max(-1.3, Math.min(1.3, (ang + pos) * 0.75)),
+        y: -1.6 * spd * qual * 0.65,
+        z: 2.5 * qual
+    };
+
+    animateReturn();
+}
+
+function animateReturn(){
+    if(!M.ballActive) return;
+    if(window.animationPaused){
+        requestAnimationFrame(animateReturn);
+        return;
+    }
+
+    M.ballPos.x += M.ballVel.x;
+    M.ballPos.y += M.ballVel.y;
+    M.ballH += M.ballVel.z;
+    M.ballVel.z -= 0.15;
+
+    // Spin effect
+    if(M.ballSpin !== 0){
+        M.ballVel.x += M.ballSpin * 0.025;
+    }
+
+    // Ground bounce
+    if(M.ballH <= 0 && M.ballVel.z < 0){
+        M.ballH = 0;
+        M.ballVel.z = -M.ballVel.z * 0.72;
+        sounds.bounce();
+    }
+
+    // Out wide - whoever hit it last loses the point
+    if(M.ballPos.x < 10 || M.ballPos.x > 90){
+        M.ballActive = false;
+        resetBallUI();
+        M.combo = 0;
+        M.pendingCombo = false;  // Clear - don't show combo for shot that went out
+        M.rally = 0;
+        sounds.miss();
+
+        if(M.lastHitBy === 'player'){
+            // Player hit it out - opponent gets point
+            showCallOverlay('OUT!', false);
+            M.streak = 0;
+            if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
+        } else {
+            // Opponent hit it out - player gets point
+            showCallOverlay('OUT!', true);
+            M.streak++;
+            updateStreakDisplay();
+            if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
+        }
+        return;
+    }
+
+    const ball = safeGetElement('ball');
+    const shadow = safeGetElement('ballShadow');
+    ball.style.left = M.ballPos.x + '%';
+    ball.style.top = (M.ballPos.y - M.ballH/10) + '%';
+    shadow.style.left = M.ballPos.x + '%';
+    shadow.style.top = M.ballPos.y + '%';
+
+    // Ball reached opponent's side
+    if(M.ballPos.y < 12){
+        M.ballActive = false;
+
+        const st = getStats();
+        const dist = Math.abs(M.ballPos.x - M.oppPos);
+        const reach = dist < 28;
+        const hq = Math.max(0, 1 - dist * 0.025);
+        const prob = reach ? (M.settings.oppAcc * hq - st.power * 0.002) : 0;
+
+        // Check for net cord as ball crosses net zone (43-57%)
+        if(M.ballPos.y > 43 && M.ballPos.y < 57 && Math.random() < 0.08){
+            showNetCordEffect();
+            sounds.let();
+        }
+
+        if(Math.random() < prob){
+            // Opponent returns - clear pending combo (shot wasn't a winner)
+            M.pendingCombo = false;
+            M.rally++;
+            M.ballBounces = 0;
+
+            // Rally tension - crowd gets louder as rally continues
+            sounds.rallyTension(M.rally);
+
+            updateMatchUI();
+
+            M.ballPos = {x: M.oppPos, y: 12};
+            M.ballH = 60;
+
+            const tx = M.playerPos > 50 ? 25 + Math.floor(Math.random() * 25) : 50 + Math.floor(Math.random() * 25);
+            M.ballVel = {
+                x: (tx - M.ballPos.x) / 100 * 1.8,
+                y: M.settings.speed * 0.6,
+                z: 1.5
+            };
+            M.ballSpin = (Math.random() - 0.5) * 0.3;
+
+            safeGetElement('opponent')?.classList.add('hitting');
+            setOppSwinging();
+            setTimeout(() => safeGetElement('opponent')?.classList.remove('hitting'), 250);
+            sounds.hit();
+
+            M.ballActive = true;
+            M.canHit = false;
+            ball.classList.add('active');
+            ball.classList.remove('glowing');
+            shadow.classList.add('active');
+
+            animateBall();
+        } else {
+            // Opponent missed - point for player! (Winner!)
+            resetBallUI();
+            M.rally = 0;
+            M.winners++;
+
+            let reward = 10 + M.combo * 5;
+            if(G.equipment.special === 'x1') reward *= 2;
+            G.coins += reward;
+
+            M.streak++;
+            updateStreakDisplay();
+
+            // NOW show combo - shot was successful!
+            if(M.pendingCombo && M.combo >= 1){
+                showCombo();
+                M.pendingCombo = false;
+            }
+
+            // Show winner call for clean winners
+            if(M.combo >= 2 || Math.random() < 0.25){
+                showCallOverlay('WINNER!', true);
+                sounds.winner();
+            } else {
+                sounds.coin();
+            }
+
+            toast('+' + reward + ' 💰');
+
+            if(!scorePoint('p')) setTimeout(startNextPoint, 1500);
+        }
+        return;
+    }
+
+    if(M.ballPos.y < 50) updateOpp();
+    updatePlayerDirection();
+
+    // Create ball trail for visual feedback
+    createBallTrail();
+
+    requestAnimationFrame(animateReturn);
+}
+
+function checkEnd(){
+    // Check if match is over based on sets won
+    // Quick/Standard: 1 set to win
+    // Pro: Best of 3 sets (first to 2)
+    const setsToWin = G.matchType === 'standard' ? 2 : 1;
+
+    if(M.pSets >= setsToWin){
+        endMatch();
+        return true;
+    }
+    if(M.oSets >= setsToWin){
+        endMatch();
+        return true;
+    }
+
+    return false;
+}
+
+function endMatch(){
+    M.active = false;
+
+    const won = M.pSets > M.oSets || (M.pSets === M.oSets && M.pGames > M.oGames);
+
+    // Enhanced reward calculation
+    let coins = won ? 100 : 35;
+
+    // Performance bonuses
+    if(won) {
+        if(M.aces >= 5) coins += 50; // Ace bonus
+        if(M.winners >= 10) coins += 40; // Winner bonus
+        if(M.doubleFaults <= 1) coins += 30; // Consistency bonus
+        if(M.longestRally >= 8) coins += 25; // Rally bonus
+        if(M.streak >= 5) coins += M.streak * 5; // Streak bonus
+    }
+
+    coins = Math.floor(coins * M.settings.mult);
+    if(G.equipment.special === 'x1') coins *= 2;
+
+    const skill = Math.floor((won ? 35 : 15) * M.settings.mult + M.aces * 3 + M.winners * 2);
+
+    let gems = 0;
+    if(won) {
+        gems = Math.floor(Math.floor(Math.random() * 3)) + 1;
+        if(M.aces >= 3) gems += 1;
+        if(M.winners >= 8) gems += 1;
+        gems += Math.floor(M.streak / 3);
+    }
+
+    // Update career stats
+    if(!G.careerStats) {
+        G.careerStats = {
+            matchesPlayed: 0,
+            matchesWon: 0,
+            totalAces: 0,
+            totalWinners: 0,
+            totalCoins: 0,
+            bestStreak: 0,
+            longestRally: 0
+        };
+    }
+
+    G.careerStats.matchesPlayed++;
+    if(won) G.careerStats.matchesWon++;
+    G.careerStats.totalAces += M.aces;
+    G.careerStats.totalWinners += M.winners;
+    G.careerStats.totalCoins += coins;
+    if(M.streak > G.careerStats.bestStreak) G.careerStats.bestStreak = M.streak;
+    if(M.longestRally > G.careerStats.longestRally) G.careerStats.longestRally = M.longestRally;
+
+    const oldNTRP = getNTRP();
+    G.coins += coins;
+    G.skillPoints += skill;
+    G.gems += gems;
+    const newNTRP = getNTRP();
+
+    save();
+
+    // Enhanced victory/defeat presentation
+    safeGetElement('gameHUD')?.classList.remove('active');
+    safeGetElement('gameCourt')?.classList.remove('active');
+    safeGetElement('streakDisplay')?.classList.remove('active');
+
+    const rt = safeGetElement('resultsTitle');
+    rt.textContent = won ? 'VICTORY!' : 'DEFEAT';
+    rt.className = 'results-title ' + (won ? 'victory' : 'defeat');
+
+    // Enhanced score display
+    let scoreText;
+    if(M.pSets > 0 || M.oSets > 0) {
+        scoreText = `${M.pSets}-${M.oSets} (${M.pGames}-${M.oGames})`;
+    } else {
+        scoreText = `${M.pGames}-${M.oGames}`;
+    }
+
+    safeGetElement('finalScore')?.textContent = scoreText;
+    safeGetElement('coinsEarned')?.textContent = '+' + coins;
+    safeGetElement('skillGained')?.textContent = '+' + skill;
+    safeGetElement('gemsEarned')?.textContent = '+' + gems;
+    // Enhanced match statistics
+    safeGetElement('acesCount')?.textContent = M.aces;
+    safeGetElement('winnersCount')?.textContent = M.winners;
+    safeGetElement('doubleFaultsCount')?.textContent = M.doubleFaults || 0;
+    safeGetElement('bestStreakCount')?.textContent = M.bestStreak || M.streak;
+    safeGetElement('longestRally')?.textContent = M.longestRally;
+    safeGetElement('totalPoints')?.textContent = M.pointsPlayed || 0;
+
+    const avgRally = M.pointsPlayed > 0 ? (M.totalRallies / M.pointsPlayed).toFixed(1) : '0';
+    safeGetElement('avgRally')?.textContent = avgRally;
+
+    // Calculate match duration
+    const matchDuration = M.startTime ? Math.floor((Date.now() - M.startTime) / 1000) : 0;
+    const minutes = Math.floor(matchDuration / 60);
+    const seconds = matchDuration % 60;
+    safeGetElement('matchDuration')?.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    // Check daily challenge progress
+    if(won) {
+        checkChallengeProgress('aces', M.aces || 0);
+        checkChallengeProgress('winners', M.winners || 0);
+        checkChallengeProgress('longestRally', M.longestRally || 0);
+        checkChallengeProgress('doubleFaults', M.doubleFaults || 0);
+        checkChallengeProgress('matchTime', matchDuration);
+        checkChallengeProgress('streak', M.bestStreak || M.streak || 0);
+    }
+
+    // Show match performance
+    if(won) {
+        if(M.aces >= 5 || M.winners >= 10 || M.streak >= 5) {
+            setTimeout(() => toast('🏆 OUTSTANDING PERFORMANCE!'), 1000);
+        }
+        setTimeout(() => sounds.victory(), 500);
+    } else {
+        setTimeout(() => sounds.defeat(), 500);
+    }
+
+    if(newNTRP > oldNTRP){
+        setTimeout(() => {
+            toast(`🎾 NTRP UPGRADED to ${newNTRP.toFixed(1)}!`);
+            sounds.point();
+        }, won ? 2000 : 1500);
+    }
+
+    safeGetElement('matchResults')?.classList.add('active');
+}
+
+function returnToMenu(){
+    safeGetElement('matchResults')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
+    resetBallUI();
+    updateUI();
+}
+
+// ========== INPUT HANDLING ==========
+
+let touchY = null, touchX = null, touchT = null;
+
+document.addEventListener('touchstart', e => {
+    if(!M.active) return;
+
+    const t = e.touches[0];
+    touchY = t.clientY;
+    touchX = t.clientX;
+    touchT = Date.now();
+
+    // Handle serve charging
+    if(M.isPlayerServe && M.servePhase === 'ready'){
+        chargingServe(t.clientY, t.clientX);
+        return;
+    }
+
+    updatePlayerPos(t.clientX);
+    setPlayerRunning(true);
+});
+
+document.addEventListener('touchmove', e => {
+    if(!M.active) return;
+    e.preventDefault();
+
+    const t = e.touches[0];
+
+    // Continue charging serve
+    if(M.servePhase === 'charging'){
+        chargingServe(t.clientY, t.clientX);
+        return;
+    }
+
+    updatePlayerPos(t.clientX);
+}, {passive: false});
+
+document.addEventListener('touchend', e => {
+    setPlayerRunning(false);
+
+    if(!M.active) return;
+
+    const t = e.changedTouches[0];
+
+    // Release serve
+    if(M.servePhase === 'charging'){
+        releaseServe(t.clientX, t.clientY);
+        touchY = touchX = null;
+        return;
+    }
+
+    // Normal hit
+    if(!M.canHit || !touchY) return;
+
+    const dy = touchY - t.clientY;
+    const dx = t.clientX - touchX;
+    const dt = Date.now() - touchT;
+
+    if(dy > 8 || (dt < 180 && Math.abs(dy) < 8)){
+        const pwr = Math.min(1, Math.max(0.3, dy/90));
+        const ang = Math.atan2(dx, Math.max(1, dy));
+
+        // Create swipe trail for visual feedback
+        createSwipeTrail(touchX, touchY, t.clientX, t.clientY);
+
+        hitBall(pwr, ang);
+    }
+
+    touchY = touchX = null;
+});
+
+// Mouse support
+document.addEventListener('mousedown', e => {
+    if(!M.active) return;
+
+    touchY = e.clientY;
+    touchX = e.clientX;
+    touchT = Date.now();
+
+    if(M.isPlayerServe && M.servePhase === 'ready'){
+        chargingServe(e.clientY, e.clientX);
+        return;
+    }
+
+    updatePlayerPos(e.clientX);
+    setPlayerRunning(true);
+});
+
+document.addEventListener('mousemove', e => {
+    if(!M.active) return;
+
+    if(M.servePhase === 'charging'){
+        chargingServe(e.clientY, e.clientX);
+        return;
+    }
+
+    updatePlayerPos(e.clientX);
+});
+
+document.addEventListener('mouseup', e => {
+    setPlayerRunning(false);
+
+    if(!M.active) return;
+
+    if(M.servePhase === 'charging'){
+        releaseServe(e.clientX, e.clientY);
+        touchY = touchX = null;
+        return;
+    }
+
+    if(!M.canHit || !touchY) return;
+
+    const dy = touchY - e.clientY;
+    const dx = e.clientX - touchX;
+
+    if(dy > 8 || Date.now() - touchT < 180){
+        const pwr = Math.min(1, Math.max(0.3, dy/90));
+        const ang = Math.atan2(dx, Math.max(1, dy));
+
+        // Create swipe trail for visual feedback
+        createSwipeTrail(touchX, touchY, e.clientX, e.clientY);
+
+        hitBall(pwr, ang);
+    }
+
+    touchY = touchX = null;
+});
+
+function updatePlayerPos(x){
+    if(M.isPlayerServe) return; // Don't move during serve
+
+    const court = getCourtElement();
+    if(!court) return;
+
+    const r = court.getBoundingClientRect();
+    const rel = ((x - r.left) / r.width) * 100;
+    M.playerPos = Math.max(12, Math.min(88, rel));
+    safeGetElement('playerPaddle')?.style.left = M.playerPos + '%';
+    updatePlayerDirection();
+}
+
+function updatePlayerDirection(){
+    if(!M.ballActive) return;
+
+    const playerSprite = document.querySelector('.player-sprite-active');
+    if(!playerSprite) return;
+
+    if(M.ballPos.x < M.playerPos){
+        playerSprite.classList.add('flipped');
+    } else {
+        playerSprite.classList.remove('flipped');
+    }
+}
+
+// Gem collection
+safeGetElement('gemDrop')?.addEventListener('click', collectGem);
+safeGetElement('gemDrop')?.addEventListener('touchstart', e => {
+    e.stopPropagation();
+    collectGem();
+});
+
+window.addEventListener('load', () => {
+    // Only prevent touchmove during active gameplay, not on menus
+    document.body.addEventListener('touchmove', e => {
+        // Only prevent default on game screen to allow menu scrolling
+        const gameScreen = safeGetElement('gameCourt');
+        if(gameScreen && gameScreen.classList.contains('active')) {
+            e.preventDefault();
+        }
+    }, {passive: false});
+    initSprites();
+});
+
+// ========== ENHANCED SPRITE SYSTEM - NO MORE FLICKERING ==========
+
+// Sprite state management - bulletproof against flicker
+const SpriteStates = {
+    IDLE: 'idle',
+    RUNNING: 'running',
+    SWINGING: 'swinging',
+    TRANSITIONING: 'transitioning'
+};
+
+let playerState = {
+    current: SpriteStates.IDLE,
+    transitioning: false,
+    lastChange: 0
+};
+
+let oppState = {
+    current: SpriteStates.IDLE,
+    transitioning: false,
+    lastChange: 0,
+    timers: {
+        start: null,
+        stop: null,
+        swing: null
+    }
+};
+
+function initSprites(){
+    const opp = safeGetElement('opponentSprite');
+    const player = safeGetElement('playerSprite');
+
+    // Create image preloader with proper error handling
+    const preloadImages = [SPRITES.playerRun, SPRITES.playerSwing, SPRITES.oppRun, SPRITES.oppSwing, SPRITES.playerIdle, SPRITES.oppIdle];
+    LoadingManager.setState(LoadingManager.states.LOADING_SPRITES);
+    Promise.all(preloadImages.map(src => loadSpriteWithRetry(src, 2))).then((results) => {
+        const failed = preloadImages.filter((_, idx) => !results[idx]);
+        if(failed.length > 0){
+            console.warn('⚠️ Some sprites failed to preload:', failed);
+        } else {
+            console.log('✅ All sprites preloaded successfully');
+        }
+        LoadingManager.setState(LoadingManager.states.READY);
+    });
+
+    // Initialize with stable state
+    if(opp && player) {
+        setOpponentSprite(SpriteStates.IDLE, true);
+        setPlayerSprite(SpriteStates.IDLE, true);
+    }
+}
+
+function setPlayerSprite(newState, force = false) {
+    const now = Date.now();
+    if(!force && (playerState.transitioning || (now - playerState.lastChange < 50))) return;
+    if(newState === playerState.current && !force) return;
+
+    playerState.transitioning = true;
+    playerState.lastChange = now;
+
+    const sprite = safeGetElement('playerSprite');
+    if(!sprite) return;
+
+    // Clear any existing animations
+    sprite.classList.remove('cycling', 'playing-4', 'playing-5', 'playing-7', 'playing-8');
+
+    switch(newState) {
+        case SpriteStates.RUNNING:
+            sprite.style.backgroundImage = `url(${SPRITES.playerRun})`;
+            sprite.style.backgroundSize = '640px 96px';
+            sprite.style.backgroundPosition = '0 0';
+            sprite.classList.add('cycling');
+            break;
+
+        case SpriteStates.SWINGING:
+            sprite.style.backgroundImage = `url(${SPRITES.playerSwing})`;
+            sprite.style.backgroundSize = '640px 96px';
+            sprite.style.backgroundPosition = '0 0';
+            playSprite('playerSprite', 8);
+            // Auto-return to idle after swing
+            setTimeout(() => setPlayerSprite(SpriteStates.IDLE), 500);
+            break;
+
+        case SpriteStates.IDLE:
+        default:
+            sprite.style.backgroundImage = `url(${SPRITES.playerIdle})`;
+            // If idle is a sprite sheet (8 frames), show just frame 1
+            if(SPRITES.playerIdleIsSheet) {
+                sprite.style.backgroundSize = '640px 96px';
+                sprite.style.backgroundPosition = '0 0';
+            } else {
+                sprite.style.backgroundSize = '80px 96px';
+                sprite.style.backgroundPosition = '0 0';
+            }
+            break;
+    }
+
+    playerState.current = newState;
+    playerState.transitioning = false;
+}
+
+function setOpponentSprite(newState, force = false) {
+    const now = Date.now();
+    if(!force && (oppState.transitioning || (now - oppState.lastChange < 80))) return;
+    if(newState === oppState.current && !force) return;
+
+    // Clear existing timers to prevent conflicts
+    Object.values(oppState.timers).forEach(timer => {
+        if(timer) clearTimeout(timer);
+    });
+    oppState.timers = { start: null, stop: null, swing: null };
+
+    oppState.transitioning = true;
+    oppState.lastChange = now;
+
+    const sprite = safeGetElement('opponentSprite');
+    if(!sprite) return;
+
+    // Clear animations
+    sprite.classList.remove('cycling', 'playing-4', 'playing-5', 'playing-7', 'playing-8');
+
+    switch(newState) {
+        case SpriteStates.RUNNING:
+            sprite.style.backgroundImage = `url(${SPRITES.oppRun})`;
+            sprite.style.backgroundSize = '640px 96px';
+            sprite.style.backgroundPosition = '0 0';
+            sprite.classList.add('cycling');
+            break;
+
+        case SpriteStates.SWINGING:
+            sprite.style.backgroundImage = `url(${SPRITES.oppSwing})`;
+            sprite.style.backgroundSize = '640px 96px';
+            sprite.style.backgroundPosition = '0 0';
+            playSprite('opponentSprite', 8);
+            // Auto-return to idle after swing
+            oppState.timers.swing = setTimeout(() => {
+                setOpponentSprite(SpriteStates.IDLE, true);
+            }, 500);
+            break;
+
+        case SpriteStates.IDLE:
+        default:
+            sprite.style.backgroundImage = `url(${SPRITES.oppIdle})`;
+            // If idle is a sprite sheet (8 frames), show just frame 1
+            if(SPRITES.oppIdleIsSheet) {
+                sprite.style.backgroundSize = '640px 96px';
+                sprite.style.backgroundPosition = '0 0';
+            } else {
+                sprite.style.backgroundSize = '80px 96px';
+                sprite.style.backgroundPosition = '0 0';
+            }
+            break;
+    }
+
+    oppState.current = newState;
+    oppState.transitioning = false;
+}
+
+function playSprite(spriteId, frames){
+    const sprite = document.getElementById(spriteId);
+    if(!sprite) return;
+
+    // Remove all animation classes
+    sprite.classList.remove('playing-4', 'playing-5', 'playing-7', 'playing-8');
+
+    // Force reflow to ensure clean state
+    void sprite.offsetWidth;
+
+    // Add appropriate animation class
+    const animClass = frames === 8 ? 'playing-8' :
+                      frames === 7 ? 'playing-7' :
+                      frames === 4 ? 'playing-4' : 'playing-5';
+    sprite.classList.add(animClass);
+}
+
+// Simplified, bulletproof wrapper functions
+function setPlayerRunning(running) {
+    setPlayerSprite(running ? SpriteStates.RUNNING : SpriteStates.IDLE);
+}
+
+function setOppRunning(running) {
+    // Only change if not currently swinging
+    if(oppState.current !== SpriteStates.SWINGING) {
+        setOpponentSprite(running ? SpriteStates.RUNNING : SpriteStates.IDLE);
+    }
+}
+
+function setOppSwinging() {
+    setOpponentSprite(SpriteStates.SWINGING, true);
+}
+
+function setPlayerSwinging() {
+    setPlayerSprite(SpriteStates.SWINGING, true);
+}
+
+// Enhanced initialization
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        console.log('🎾 Initializing Championship Tennis...');
+
+        LoadingManager.setState(LoadingManager.states.INITIALIZING);
+        MobileEnhancer.init();
+        AudioManager.init();
+        PerformanceOptimizer.init();
+
+        LoadingManager.setState(LoadingManager.states.READY);
+        console.log('✅ Game initialized successfully');
+
+    } catch (error) {
+        ErrorRecovery.handleCriticalError(error, 'initialization');
+    }
+});
+
+</script>
+</body>
+</html>
+<!-- v7 Refinement: Serving, Tennis Rules, Gems, Polish - Sat Feb 7 2026 -->

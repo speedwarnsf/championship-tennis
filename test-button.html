@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Button Test</title>
+</head>
+<body>
+    <button onclick="startGame()">Test PLAY NOW Button</button>
+    <div id="loadingScreen" class="active" style="background: red; padding: 20px;">Loading Screen</div>
+    <div id="mainMenu" style="background: green; padding: 20px; display: none;">Main Menu</div>
+    
+    <script>
+    function safeGetElement(id) {
+        const element = document.getElementById(id);
+        if (!element) {
+            console.warn(`⚠️ Element not found: ${id}`);
+            return null;
+        }
+        return element;
+    }
+    
+    let audio = false;
+    
+    function initAudio() {
+        audio = true;
+        console.log('Audio initialized');
+    }
+    
+    function load() {
+        console.log('Load function called');
+    }
+    
+    function updateUI() {
+        console.log('UpdateUI function called');
+    }
+    
+    function startGame(){
+        console.log('StartGame function called!');
+        if(!audio) initAudio();
+        safeGetElement('loadingScreen')?.classList.remove('active');
+        safeGetElement('mainMenu')?.classList.add('active');
+        load();
+        updateUI();
+        
+        // Show/hide manually for test
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('mainMenu').style.display = 'block';
+    }
+    </script>
+</body>
+</html>
