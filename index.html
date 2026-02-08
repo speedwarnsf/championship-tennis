@@ -101,15 +101,17 @@
         .net-cord{position:absolute;top:50%;left:-2%;right:-2%;height:6px;z-index:21;transform:translateY(-50%);pointer-events:none;opacity:0}
         .net-cord.active{animation:netCordFlash 0.4s ease-out}
         @keyframes netCordFlash{0%{opacity:1;box-shadow:0 0 20px rgba(255,215,0,0.8),0 0 40px rgba(255,215,0,0.5)}100%{opacity:0;box-shadow:none}}
-        .ball{position:absolute;width:14px;height:14px;background:radial-gradient(circle at 30% 30%,#fcf836,#c9d11a);border-radius:50%;transform:translate(-50%,-50%);z-index:40;display:none;box-shadow:0 2px 4px rgba(0,0,0,0.4)}
+        .ball{position:absolute;width:20px;height:20px;background:radial-gradient(circle at 30% 30%,#fcf836,#c9d11a);border-radius:50%;transform:translate(-50%,-50%);z-index:40;display:none;box-shadow:0 2px 4px rgba(0,0,0,0.4)}
+        .ball.fast{box-shadow:0 2px 4px rgba(0,0,0,0.4),-8px 0 12px rgba(252,248,54,0.3)}
         .ball.active{display:block}
         .ball.glowing{box-shadow:0 0 30px rgba(76,255,80,1),0 0 50px rgba(76,255,80,0.5);animation:ballGlow 0.4s ease-in-out infinite}
         .ball.toss{animation:ballToss 0.6s ease-out}
         @keyframes ballToss{0%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-150%) scale(1.2)}100%{transform:translate(-50%,-50%) scale(1)}}
         @keyframes ballGlow{0%,100%{transform:translate(-50%,-50%) scale(1.3)}50%{transform:translate(-50%,-50%) scale(1.6)}}
+        @keyframes flashFade{0%{opacity:1}100%{opacity:0}}
         /* Ball trail effect */
         .ball-trail{position:absolute;width:10px;height:10px;background:rgba(252,248,54,0.4);border-radius:50%;transform:translate(-50%,-50%);z-index:38;pointer-events:none;opacity:0;transition:opacity 0.1s}
-        .ball-shadow{position:absolute;width:20px;height:8px;background:radial-gradient(ellipse at center,rgba(0,0,0,0.4),transparent 70%);border-radius:50%;transform:translate(-50%,0);z-index:25;display:none}
+        .ball-shadow{position:absolute;width:26px;height:10px;background:radial-gradient(ellipse at center,rgba(0,0,0,0.4),transparent 70%);border-radius:50%;transform:translate(-50%,0);z-index:25;display:none}
         .ball-shadow.active{display:block}
         .opponent{position:absolute;top:5%;left:50%;transform:translateX(-50%);width:80px;height:96px;display:flex;align-items:center;justify-content:center;z-index:30;transition:left 0.2s ease-out}
         .opponent.hitting{animation:opponentHit 0.3s ease}
@@ -578,13 +580,15 @@ let audio,sounds={};
 
 function initAudio(){
     audio=new(window.AudioContext||window.webkitAudioContext)();
-    sounds.hit=()=>playTone(150,0.03,0.4);
-    sounds.bounce=()=>playTone(100,0.02,0.3);
-    sounds.point=()=>{playTone(440,0.1,0.3);setTimeout(()=>playTone(880,0.15,0.3),100)};
+    // Layered hit sound for more satisfying impact
+    sounds.hit=()=>{playTone(80,0.08,0.45);setTimeout(()=>playTone(220,0.04,0.35),15);setTimeout(()=>playTone(600,0.03,0.2),30)};
+    sounds.powerHit=()=>{playTone(60,0.12,0.55);setTimeout(()=>playTone(280,0.05,0.4),20);setTimeout(()=>playTone(900,0.04,0.25),35)};
+    sounds.bounce=()=>playTone(120,0.03,0.35);
+    sounds.point=()=>{playTone(440,0.1,0.35);setTimeout(()=>playTone(660,0.1,0.35),80);setTimeout(()=>playTone(880,0.15,0.35),160)};
     sounds.miss=()=>playTone(80,0.2,0.2);
     sounds.coin=()=>{playTone(1200,0.05,0.25);setTimeout(()=>playTone(1600,0.05,0.25),40)};
     sounds.gem=()=>{playTone(1800,0.08,0.3);setTimeout(()=>playTone(2200,0.08,0.3),50)};
-    sounds.serve=()=>{playTone(200,0.04,0.5);setTimeout(()=>playTone(400,0.06,0.4),30)};
+    sounds.serve=()=>{playTone(100,0.06,0.5);setTimeout(()=>playTone(250,0.05,0.45),25);setTimeout(()=>playTone(500,0.04,0.35),50)};
     sounds.fault=()=>{playTone(150,0.15,0.3);setTimeout(()=>playTone(100,0.2,0.25),100)};
     sounds.ace=()=>{playTone(600,0.1,0.4);setTimeout(()=>playTone(900,0.1,0.4),80);setTimeout(()=>playTone(1200,0.15,0.4),160)};
     sounds.let=()=>{playTone(300,0.1,0.3);setTimeout(()=>playTone(300,0.1,0.3),150)};
@@ -1025,7 +1029,7 @@ function animateServeBall(result){
     // Ground bounce
     if(M.ballH <= 0 && M.ballVel.z < 0){
         M.ballH = 0;
-        M.ballVel.z = -M.ballVel.z * 0.6;
+        M.ballVel.z = -M.ballVel.z * 0.68;
         sounds.bounce();
         M.ballBounces++;
         
@@ -1168,6 +1172,30 @@ function opponentServe(){
     
     setTimeout(() => {
         if(!M.active) return;
+        
+        // Opponent can fault too! (slightly better than player)
+        const faultChance = M.settings.serveFaultChance * 0.5;
+        const isFault = Math.random() < faultChance;
+        
+        if(isFault){
+            if(M.serveNum === 1){
+                M.serveNum = 2;
+                sounds.fault();
+                showCallOverlay('FAULT', false);
+                updateServeIndicator();
+                setTimeout(opponentServe, 1500);
+                return;
+            } else {
+                M.serveNum = 1;
+                sounds.fault();
+                showCallOverlay('DOUBLE FAULT', true);
+                M.streak++;
+                updateStreakDisplay();
+                clearServiceBoxHighlight();
+                if(!scorePoint('p')) setTimeout(startNextPoint, 2000);
+                return;
+            }
+        }
         
         clearServiceBoxHighlight();
         
@@ -1331,7 +1359,7 @@ function closeShop(){
 }
 
 // Character system - must be before showCharSelect
-const V = '?v=29';
+const V = '?v=30';
 
 window.CHARACTERS = [
     {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
@@ -1405,7 +1433,7 @@ function renderCharGrid(){
     var chars = window.CHARACTERS;
     if(!chars || !chars.length) return;
     var html = '';
-    var V = '?v=29';
+    var V = '?v=30';
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
@@ -1810,6 +1838,16 @@ function updateMatchUI(){
     updateServeIndicator();
 }
 
+function celebratePoint(isAce){
+    // Screen flash
+    const flash = document.createElement('div');
+    flash.style.cssText = 'position:fixed;inset:0;background:'+(isAce?'rgba(255,215,0,0.35)':'rgba(76,255,80,0.25)')+';pointer-events:none;z-index:999;animation:flashFade 0.3s ease-out forwards;';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 300);
+    // Haptic feedback
+    if(navigator.vibrate) navigator.vibrate(isAce ? [50,30,50] : 40);
+}
+
 function scorePoint(player){
     // Track statistics
     M.pointsPlayed++;
@@ -1818,6 +1856,7 @@ function scorePoint(player){
     
     if(player === 'p'){
         M.pPoints++;
+        celebratePoint(false);
     } else {
         M.oPoints++;
         M.streak = 0;
@@ -1910,8 +1949,11 @@ function checkSetWin(){
     const oGames = M.oGames;
     const diff = Math.abs(pGames - oGames);
     
-    // Standard set win: 6 games with 2 game lead
-    if((pGames >= 6 || oGames >= 6) && diff >= 2 && !M.isTiebreak){
+    // Game target depends on match type (quick=4, standard/pro=6)
+    const winGames = G.matchType === 'quick' ? 4 : 6;
+    
+    // Set win: reach target games with 2 game lead
+    if((pGames >= winGames || oGames >= winGames) && diff >= 2 && !M.isTiebreak){
         if(pGames > oGames){
             M.pSets++;
             toast('SET! You won the set!');
@@ -1925,8 +1967,8 @@ function checkSetWin(){
         return false; // Continue playing
     }
     
-    // Tiebreak at 6-6
-    if(pGames === 6 && oGames === 6 && !M.isTiebreak){
+    // Tiebreak at tied game target (6-6 or 4-4 for quick)
+    if(pGames === winGames && oGames === winGames && !M.isTiebreak){
         M.isTiebreak = true;
         M.tiebreakServer = M.servingPlayer;
         M.pPoints = 0;
@@ -1957,7 +1999,7 @@ function animateBall(){
     // Ground bounce
     if(M.ballH <= 0 && M.ballVel.z < 0){
         M.ballH = 0;
-        M.ballVel.z = -M.ballVel.z * 0.65; // Dampened bounce
+        M.ballVel.z = -M.ballVel.z * 0.72; // Realistic tennis bounce
         sounds.bounce();
         
         if(M.ballPos.y > 50) M.ballBounces++;
@@ -2188,7 +2230,7 @@ function animateReturn(){
     // Ground bounce
     if(M.ballH <= 0 && M.ballVel.z < 0){
         M.ballH = 0;
-        M.ballVel.z = -M.ballVel.z * 0.65;
+        M.ballVel.z = -M.ballVel.z * 0.72;
         sounds.bounce();
     }
     
