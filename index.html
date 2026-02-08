@@ -1379,6 +1379,7 @@ function updateSprites(){
 function showCharSelect(){
     document.getElementById('mainMenu').classList.remove('active');
     document.getElementById('charSelect').classList.add('active');
+    document.getElementById('charGrid').innerHTML = '<div style="color:lime;padding:20px;">showCharSelect reached try block (v19)</div>';
     try {
         renderCharGrid();
     } catch(e) {
