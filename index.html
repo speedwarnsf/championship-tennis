@@ -941,10 +941,11 @@ function executePlayerServe(power, aimX){
         // Aim target is where player was aiming (tracked in M.serveAimX)
         const serveAccuracy = st.serve / 100;
         const aimTarget = aimX; // This is the aim position player targeted
-        const randomSpread = (Math.random() - 0.5) * (30 - serveAccuracy * 25);
+        // Reduced spread so ball follows aim line more closely
+        const randomSpread = (Math.random() - 0.5) * (10 - serveAccuracy * 8);
         
         // Higher serve stat = closer to intended target
-        let targetX = aimTarget + randomSpread * (1 - serveAccuracy * 0.5);
+        let targetX = aimTarget + randomSpread * (1 - serveAccuracy * 0.7);
         
         // Power affects speed and fault chance
         const baseSpeed = 1.5 + power * 1.5;
@@ -1033,16 +1034,25 @@ function animateServeBall(result){
         sounds.bounce();
         M.ballBounces++;
         
-        // Check if ball landed in/out after first bounce
-        if(M.ballBounces === 1 && result === 'out'){
-            handleServeFault('out');
-            return;
-        }
-        
-        // Ball in play after bounce
-        if(M.ballBounces === 1 && result === 'good'){
+        // Check if serve landed in correct service box
+        if(M.ballBounces === 1){
+            const isDeuce = M.serveSide === 'deuce';
+            // Service boxes: deuce (right) x:50-88, y:27-50; ad (left) x:12-50, y:27-50
+            const boxLeft = isDeuce ? 50 : 12;
+            const boxRight = isDeuce ? 88 : 50;
+            const boxTop = 27;
+            const boxBottom = 50;
+            
+            const inBox = M.ballPos.x >= boxLeft && M.ballPos.x <= boxRight && 
+                         M.ballPos.y >= boxTop && M.ballPos.y <= boxBottom;
+            
+            if(!inBox){
+                handleServeFault('out');
+                return;
+            }
+            
+            // Ball in play after valid bounce in service box
             M.servePhase = 'none';
-            // Now it becomes a rally - opponent tries to return
         }
     }
     
@@ -1382,27 +1392,66 @@ window.CHARACTERS = [
 ];
 
 var selectedChar = window.CHARACTERS[0];
+var opponentChar = null; // Selected randomly, different from player
 
-function getCharSprites(char){
-    // Only player1 uses legacy sprites; everyone else has unique sprites in sprites-v2/characters/
+function selectRandomOpponent(){
+    // Pick a random unlocked character that's different from the player
+    const available = window.CHARACTERS.filter(c => c.unlocked && c.id !== selectedChar.id);
+    if(available.length === 0){
+        // Fallback: just pick any character different from player
+        const any = window.CHARACTERS.filter(c => c.id !== selectedChar.id);
+        opponentChar = any[Math.floor(Math.random() * any.length)] || window.CHARACTERS[0];
+    } else {
+        opponentChar = available[Math.floor(Math.random() * available.length)];
+    }
+    return opponentChar;
+}
+
+function getPlayerSprites(char){
+    // Get sprites for player (back view)
     if(char.id === 'player1'){
         return {
-            playerSwing: 'player-retro-backswing.png' + V,
-            playerRun: 'player-retro-run.png' + V,
-            playerIdle: 'player-idle-v2.png' + V,
-            oppSwing: 'opponent-retro-frontswing.png' + V,
-            oppRun: 'opponent-retro-run.png' + V,
-            oppIdle: 'opponent-idle-v2.png' + V
+            swing: 'player-retro-backswing.png' + V,
+            run: 'player-retro-run.png' + V,
+            idle: 'player-idle-v2.png' + V
         };
     }
     const base = 'sprites-v2/characters/' + char.id + '-';
     return {
-        playerSwing: base + 'back-swing.png' + V,
-        playerRun: base + 'back-run.png' + V,
-        playerIdle: base + 'back-swing.png' + V,
-        oppSwing: base + 'front-swing.png' + V,
-        oppRun: base + 'front-run.png' + V,
-        oppIdle: base + 'front-swing.png' + V
+        swing: base + 'back-swing.png' + V,
+        run: base + 'back-run.png' + V,
+        idle: base + 'back-swing.png' + V
+    };
+}
+
+function getOpponentSprites(char){
+    // Get sprites for opponent (front view)
+    if(char.id === 'player1'){
+        return {
+            swing: 'opponent-retro-frontswing.png' + V,
+            run: 'opponent-retro-run.png' + V,
+            idle: 'opponent-idle-v2.png' + V
+        };
+    }
+    const base = 'sprites-v2/characters/' + char.id + '-';
+    return {
+        swing: base + 'front-swing.png' + V,
+        run: base + 'front-run.png' + V,
+        idle: base + 'front-swing.png' + V
+    };
+}
+
+function getCharSprites(char){
+    // Combined sprites object for compatibility
+    const p = getPlayerSprites(char);
+    const opp = opponentChar ? getOpponentSprites(opponentChar) : getOpponentSprites(window.CHARACTERS[1] || char);
+    return {
+        playerSwing: p.swing,
+        playerRun: p.run,
+        playerIdle: p.idle,
+        oppSwing: opp.swing,
+        oppRun: opp.run,
+        oppIdle: opp.idle
     };
 }
 
@@ -1646,6 +1695,10 @@ function transitionToCourt(){
 
 function actuallyStartMatch(){
     const s = DIFF[G.difficulty];
+    
+    // Select random opponent (different from player)
+    selectRandomOpponent();
+    updateSprites();
     
     // Adjust time based on match type
     let matchTime = s.time;
@@ -2618,31 +2671,49 @@ function setPlayerRunning(running){
     }
 }
 
-let oppRunning = false, oppStopTimer = null;
+let oppRunning = false, oppStopTimer = null, oppStartTimer = null;
+let lastOppSpriteChange = 0;
 
 function setOppRunning(running){
+    const now = Date.now();
+    // Debounce rapid state changes - minimum 100ms between changes
+    if(now - lastOppSpriteChange < 100) return;
+    
     if(running){
         if(oppStopTimer){
             clearTimeout(oppStopTimer);
             oppStopTimer = null;
         }
         if(oppRunning) return;
-        oppRunning = true;
-        const opp = document.getElementById('opponentSprite');
-        opp.style.backgroundImage = `url(${SPRITES.oppRun})`;
-        opp.style.backgroundSize = '640px 96px';
-        opp.classList.add('cycling');
+        // Delay start of running animation to prevent flicker
+        if(oppStartTimer) return;
+        oppStartTimer = setTimeout(() => {
+            oppStartTimer = null;
+            if(!oppRunning){
+                oppRunning = true;
+                lastOppSpriteChange = Date.now();
+                const opp = document.getElementById('opponentSprite');
+                opp.style.backgroundImage = `url(${SPRITES.oppRun})`;
+                opp.style.backgroundSize = '640px 96px';
+                opp.classList.add('cycling');
+            }
+        }, 50);
     } else {
+        if(oppStartTimer){
+            clearTimeout(oppStartTimer);
+            oppStartTimer = null;
+        }
         if(!oppRunning || oppStopTimer) return;
         oppStopTimer = setTimeout(() => {
             oppRunning = false;
             oppStopTimer = null;
+            lastOppSpriteChange = Date.now();
             const opp = document.getElementById('opponentSprite');
             opp.classList.remove('cycling');
             opp.style.backgroundImage = `url(${SPRITES.oppIdle})`;
             opp.style.backgroundSize = '80px 96px';
             opp.style.backgroundPosition = '0 0';
-        }, 150);
+        }, 200);
     }
 }
 
