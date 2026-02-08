@@ -53,8 +53,9 @@
         .diff-legend{border-color:#f44336}
         .difficulty-reward{display:block;font-size:8px;color:rgba(255,255,255,0.6);margin-top:3px}
         .menu-buttons{display:flex;flex-direction:column;gap:12px}
-        .menu-btn{padding:15px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:12px;color:#fff;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer}
-        .menu-btn.primary{background:linear-gradient(135deg,#ffd700,#ffed4e);color:#1a1a2e;font-size:15px;padding:18px}
+        .menu-btn{padding:14px 20px;background:linear-gradient(180deg,#4a5a7a 0%,#3a4a6a 50%,#2a3a5a 100%);border:3px solid;border-color:#6a8aba #2a3a5a #2a3a5a #6a8aba;border-radius:6px;color:#fff;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;text-shadow:1px 1px 2px #000;box-shadow:3px 3px 0 rgba(0,0,0,0.4)}
+        .menu-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 rgba(0,0,0,0.4)}
+        .menu-btn.primary{background:linear-gradient(180deg,#ffd700 0%,#cc9900 50%,#aa7700 100%);border-color:#ffed4e #886600 #886600 #ffed4e;color:#000;font-size:15px;padding:16px 24px;text-shadow:none}
         .video-intro{position:fixed;inset:0;background:#000;display:none;z-index:5000;justify-content:center;align-items:center;opacity:1;transition:opacity 0.5s ease}
         .video-intro.active{display:flex}
         .video-intro.fade-out{opacity:0}
@@ -1322,7 +1323,7 @@ function closeShop(){
 }
 
 // Character system - must be before showCharSelect
-const V = '?v=23';
+const V = '?v=24';
 
 window.CHARACTERS = [
     {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
@@ -1398,7 +1399,7 @@ function renderCharGrid(){
     var chars = window.CHARACTERS;
     if(!chars || !chars.length) return;
     var html = '';
-    var V = '?v=23';
+    var V = '?v=24';
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
