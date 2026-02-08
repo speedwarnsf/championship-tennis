@@ -862,14 +862,14 @@ function updateChallengeDisplay() {
     const challenge = G.dailyChallenge;
     if(!challenge) return;
 
-    safeGetElement('challengeTitle')?.textContent = `Daily Challenge: ${challenge.name}`;
-    safeGetElement('challengeDesc')?.textContent = challenge.desc;
+    { const _el = safeGetElement('challengeTitle'); if(_el) _el.textContent = `Daily Challenge: ${challenge.name}`; }
+    { const _el = safeGetElement('challengeDesc'); if(_el) _el.textContent = challenge.desc; }
 
     const progress = Math.min(100, (challenge.progress / challenge.target) * 100);
-    safeGetElement('challengeFill')?.style.width = progress + '%';
+    { const _el = safeGetElement('challengeFill'); if(_el) _el.style.width = progress + '%'; }
 
     const reward = `+${challenge.reward.coins}💰 +${challenge.reward.gems}💎`;
-    safeGetElement('challengeReward')?.textContent = challenge.completed ? 'COMPLETED!' : reward;
+    { const _el = safeGetElement('challengeReward'); if(_el) _el.textContent = challenge.completed ? 'COMPLETED!' : reward; }
 
     // Change banner color if completed
     const banner = safeGetElement('dailyChallenge');
@@ -1072,7 +1072,7 @@ function initAudio(){
 
         for(let i = 0; i < intensity; i++){
             setTimeout(() => {
-                playTone(400 + Math.floor(Math.random() * 600), 0.05 + Math.floor(Math.random() * 0).05, volume);
+                playTone(400 + Math.floor(Math.random() * 600), 0.05 + Math.random() * 0.05, volume);
             }, i * 30 + Math.floor(Math.random() * 50));
         }
     };
@@ -1313,8 +1313,8 @@ function showCallOverlay(text, isGood){
 function showCourtChange(message, sub){
     return new Promise(resolve => {
         const overlay = safeGetElement('courtChange');
-        safeGetElement('courtChangeText')?.textContent = message;
-        safeGetElement('courtChangeSub')?.textContent = sub || '';
+        { const _el = safeGetElement('courtChangeText'); if(_el) _el.textContent = message; }
+        { const _el = safeGetElement('courtChangeSub'); if(_el) _el.textContent = sub || ''; }
         overlay.classList.add('active');
         sounds.changeover();
         setTimeout(() => {
@@ -1372,7 +1372,7 @@ function startPlayerServe(){
 
     // Position player at baseline center
     M.playerPos = 50;
-    safeGetElement('playerPaddle')?.style.left = '50%';
+    { const _el = safeGetElement('playerPaddle'); if(_el) _el.style.left = '50%'; }
     safeGetElement('playerPaddle')?.classList.add('serving');
 
     // Show serve UI
@@ -1390,8 +1390,8 @@ function startPlayerServe(){
     ball.style.top = '88%';
 
     safeGetElement('ballShadow')?.classList.add('active');
-    safeGetElement('ballShadow')?.style.left = '50%';
-    safeGetElement('ballShadow')?.style.top = '92%';
+    { const _el = safeGetElement('ballShadow'); if(_el) _el.style.left = '50%'; }
+    { const _el = safeGetElement('ballShadow'); if(_el) _el.style.top = '92%'; }
 }
 
 function chargingServe(clientY, clientX){
@@ -1410,7 +1410,7 @@ function chargingServe(clientY, clientX){
     const pullDist = clientY - M.serveStartY;
     M.servePower = Math.min(1, Math.max(0, pullDist / 150));
 
-    safeGetElement('servePowerFill')?.style.width = (M.servePower * 100) + '%';
+    { const _el = safeGetElement('servePowerFill'); if(_el) _el.style.width = (M.servePower * 100) + '%'; }
 
     // Update aim indicator position based on horizontal movement
     const court = getCourtElement();
@@ -1511,7 +1511,7 @@ function executePlayerServe(power, aimX){
         // Calculate serve speed for display (80-140 MPH range based on power and serve stat)
         const baseServeSpeed = 80 + power * 40 + st.serve * 0.2;
         M.lastServeSpeed = Math.round(baseServeSpeed + (Math.random() - 0.5) * 10);
-        safeGetElement('serveSpeed')?.textContent = M.lastServeSpeed + ' MPH';
+        { const _el = safeGetElement('serveSpeed'); if(_el) _el.textContent = M.lastServeSpeed + ' MPH'; }
 
         // Let serve (hits net but goes over - replay)
         const isLet = !isNetFault && Math.random() < 0.05;
@@ -1722,7 +1722,7 @@ function opponentReturn(){
 
     // Opponent hits back
     M.oppPos = M.ballPos.x;
-    safeGetElement('opponent')?.style.left = M.oppPos + '%';
+    { const _el = safeGetElement('opponent'); if(_el) _el.style.left = M.oppPos + '%'; }
     safeGetElement('opponent')?.classList.add('hitting');
     setOppSwinging();
     setTimeout(() => safeGetElement('opponent')?.classList.remove('hitting'), 250);
@@ -1746,7 +1746,6 @@ function opponentReturn(){
 
 function opponentServe(){
     if (!validateCriticalState()) { console.error("❌ Invalid state for opponentServe"); return; }
-    try {
     if(!M.active) return;
 
     highlightServiceBox();
@@ -1800,7 +1799,7 @@ function opponentServe(){
         // Display opponent serve speed (slightly faster than player typically)
         const oppServeSpeed = Math.round(90 + M.settings.oppServeSpeed * 30 + Math.floor(Math.random() * 15));
         M.lastServeSpeed = oppServeSpeed;
-        safeGetElement('serveSpeed')?.textContent = oppServeSpeed + ' MPH';
+        { const _el = safeGetElement('serveSpeed'); if(_el) _el.textContent = oppServeSpeed + ' MPH'; }
 
         M.ballVel = {
             x: (targetX - M.ballPos.x) / 100 * 1.1,
@@ -1900,25 +1899,25 @@ function updateUI(){
     const next = getNextNTRP();
     G.ntrp = ntrp;
 
-    safeGetElement('playerNTRP')?.textContent = ntrp.toFixed(1);
-    safeGetElement('coinAmount')?.textContent = G.coins;
-    safeGetElement('gemAmount')?.textContent = G.gems;
-    safeGetElement('skillPoints')?.textContent = G.skillPoints;
+    { const _el = safeGetElement('playerNTRP'); if(_el) _el.textContent = ntrp.toFixed(1); }
+    { const _el = safeGetElement('coinAmount'); if(_el) _el.textContent = G.coins; }
+    { const _el = safeGetElement('gemAmount'); if(_el) _el.textContent = G.gems; }
+    { const _el = safeGetElement('skillPoints'); if(_el) _el.textContent = G.skillPoints; }
 
     if(next){
-        safeGetElement('skillNeeded')?.textContent = next.points;
+        { const _el = safeGetElement('skillNeeded'); if(_el) _el.textContent = next.points; }
         const progress = (G.skillPoints / next.points) * 100;
-        safeGetElement('skillFill')?.style.width = progress + '%';
+        { const _el = safeGetElement('skillFill'); if(_el) _el.style.width = progress + '%'; }
     } else {
-        safeGetElement('skillNeeded')?.textContent = 'MAX';
-        safeGetElement('skillFill')?.style.width = '100%';
+        { const _el = safeGetElement('skillNeeded'); if(_el) _el.textContent = 'MAX'; }
+        { const _el = safeGetElement('skillFill'); if(_el) _el.style.width = '100%'; }
     }
 
     const s = getStats();
-    safeGetElement('statPower')?.textContent = s.power;
-    safeGetElement('statSpeed')?.textContent = s.speed;
-    safeGetElement('statControl')?.textContent = s.control;
-    safeGetElement('statServe')?.textContent = s.serve;
+    { const _el = safeGetElement('statPower'); if(_el) _el.textContent = s.power; }
+    { const _el = safeGetElement('statSpeed'); if(_el) _el.textContent = s.speed; }
+    { const _el = safeGetElement('statControl'); if(_el) _el.textContent = s.control; }
+    { const _el = safeGetElement('statServe'); if(_el) _el.textContent = s.serve; }
 }
 
 function selectDifficulty(d){
@@ -2113,11 +2112,11 @@ function selectCharacter(char){
     document.querySelectorAll('.char-card').forEach((el,i) =>
         el.classList.toggle('selected', window.CHARACTERS[i].id === char.id));
     const sprites = getCharSprites(char);
-    safeGetElement('charDetailPreview')?.style.backgroundImage = `url(${sprites.playerSwing})`;
-    safeGetElement('charDetailName')?.textContent = char.name.toUpperCase();
-    safeGetElement('charPower')?.textContent = char.power;
-    safeGetElement('charSpeed')?.textContent = char.speed;
-    safeGetElement('charControl')?.textContent = char.control;
+    { const _el = safeGetElement('charDetailPreview'); if(_el) _el.style.backgroundImage = `url(${sprites.playerSwing})`; }
+    { const _el = safeGetElement('charDetailName'); if(_el) _el.textContent = char.name.toUpperCase(); }
+    { const _el = safeGetElement('charPower'); if(_el) _el.textContent = char.power; }
+    { const _el = safeGetElement('charSpeed'); if(_el) _el.textContent = char.speed; }
+    { const _el = safeGetElement('charControl'); if(_el) _el.textContent = char.control; }
 }
 
 function confirmCharacter(){
@@ -2366,7 +2365,7 @@ function actuallyStartMatch(){
 
     safeGetElement('gameHUD')?.classList.add('active');
     safeGetElement('gameCourt')?.classList.add('active');
-    safeGetElement('playerPaddle')?.style.left = '70%';
+    { const _el = safeGetElement('playerPaddle'); if(_el) _el.style.left = '70%'; }
     safeGetElement('streakDisplay')?.classList.remove('active');
 
     updateMatchUI();
@@ -2385,7 +2384,7 @@ function startNextPoint(){
     M.canHit = false;
 
     // Clear serve speed display
-    safeGetElement('serveSpeed')?.textContent = '';
+    { const _el = safeGetElement('serveSpeed'); if(_el) _el.textContent = ''; }
 
     // In tiebreak, recalculate server each point
     if(M.isTiebreak){
@@ -2533,19 +2532,18 @@ function getTennisScore(pPoints, oPoints){
 
 function updateMatchUI(){
     if (!validateCriticalState()) { console.error("❌ Invalid state for updateMatchUI"); return; }
-    try {
     const score = getTennisScore(M.pPoints, M.oPoints);
 
-    safeGetElement('playerPoints')?.textContent = score.deuce ? 'DEUCE' : score.p;
-    safeGetElement('opponentPoints')?.textContent = score.deuce ? 'DEUCE' : score.o;
-    safeGetElement('playerGames')?.textContent = M.pGames;
-    safeGetElement('opponentGames')?.textContent = M.oGames;
-    safeGetElement('rallyCount')?.textContent = M.rally;
+    { const _el = safeGetElement('playerPoints'); if(_el) _el.textContent = score.deuce ? 'DEUCE' : score.p; }
+    { const _el = safeGetElement('opponentPoints'); if(_el) _el.textContent = score.deuce ? 'DEUCE' : score.o; }
+    { const _el = safeGetElement('playerGames'); if(_el) _el.textContent = M.pGames; }
+    { const _el = safeGetElement('opponentGames'); if(_el) _el.textContent = M.oGames; }
+    { const _el = safeGetElement('rallyCount'); if(_el) _el.textContent = M.rally; }
 
     // Show sets if any
     if(M.pSets > 0 || M.oSets > 0){
-        safeGetElement('playerSets')?.textContent = `Sets: ${M.pSets}`;
-        safeGetElement('opponentSets')?.textContent = `Sets: ${M.oSets}`;
+        { const _el = safeGetElement('playerSets'); if(_el) _el.textContent = `Sets: ${M.pSets}`; }
+        { const _el = safeGetElement('opponentSets'); if(_el) _el.textContent = `Sets: ${M.oSets}`; }
     }
 
     // Show tiebreak indicator
@@ -2873,7 +2871,7 @@ function updateOpp(){
     const moving = Math.abs(diff) > 2;
     setOppRunning(moving);
     M.oppPos += diff * M.settings.oppSpeed;
-    safeGetElement('opponent')?.style.left = M.oppPos + '%';
+    { const _el = safeGetElement('opponent'); if(_el) _el.style.left = M.oppPos + '%'; }
 }
 
 function ballOut(reason){
@@ -3456,26 +3454,26 @@ function endMatch(){
         scoreText = `${M.pGames}-${M.oGames}`;
     }
 
-    safeGetElement('finalScore')?.textContent = scoreText;
-    safeGetElement('coinsEarned')?.textContent = '+' + coins;
-    safeGetElement('skillGained')?.textContent = '+' + skill;
-    safeGetElement('gemsEarned')?.textContent = '+' + gems;
+    { const _el = safeGetElement('finalScore'); if(_el) _el.textContent = scoreText; }
+    { const _el = safeGetElement('coinsEarned'); if(_el) _el.textContent = '+' + coins; }
+    { const _el = safeGetElement('skillGained'); if(_el) _el.textContent = '+' + skill; }
+    { const _el = safeGetElement('gemsEarned'); if(_el) _el.textContent = '+' + gems; }
     // Enhanced match statistics
-    safeGetElement('acesCount')?.textContent = M.aces;
-    safeGetElement('winnersCount')?.textContent = M.winners;
-    safeGetElement('doubleFaultsCount')?.textContent = M.doubleFaults || 0;
-    safeGetElement('bestStreakCount')?.textContent = M.bestStreak || M.streak;
-    safeGetElement('longestRally')?.textContent = M.longestRally;
-    safeGetElement('totalPoints')?.textContent = M.pointsPlayed || 0;
+    { const _el = safeGetElement('acesCount'); if(_el) _el.textContent = M.aces; }
+    { const _el = safeGetElement('winnersCount'); if(_el) _el.textContent = M.winners; }
+    { const _el = safeGetElement('doubleFaultsCount'); if(_el) _el.textContent = M.doubleFaults || 0; }
+    { const _el = safeGetElement('bestStreakCount'); if(_el) _el.textContent = M.bestStreak || M.streak; }
+    { const _el = safeGetElement('longestRally'); if(_el) _el.textContent = M.longestRally; }
+    { const _el = safeGetElement('totalPoints'); if(_el) _el.textContent = M.pointsPlayed || 0; }
 
     const avgRally = M.pointsPlayed > 0 ? (M.totalRallies / M.pointsPlayed).toFixed(1) : '0';
-    safeGetElement('avgRally')?.textContent = avgRally;
+    { const _el = safeGetElement('avgRally'); if(_el) _el.textContent = avgRally; }
 
     // Calculate match duration
     const matchDuration = M.startTime ? Math.floor((Date.now() - M.startTime) / 1000) : 0;
     const minutes = Math.floor(matchDuration / 60);
     const seconds = matchDuration % 60;
-    safeGetElement('matchDuration')?.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    { const _el = safeGetElement('matchDuration'); if(_el) _el.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`; }
 
     // Check daily challenge progress
     if(won) {
@@ -3651,7 +3649,7 @@ function updatePlayerPos(x){
     const r = court.getBoundingClientRect();
     const rel = ((x - r.left) / r.width) * 100;
     M.playerPos = Math.max(12, Math.min(88, rel));
-    safeGetElement('playerPaddle')?.style.left = M.playerPos + '%';
+    { const _el = safeGetElement('playerPaddle'); if(_el) _el.style.left = M.playerPos + '%'; }
     updatePlayerDirection();
 }
 
