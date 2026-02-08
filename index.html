@@ -1673,14 +1673,16 @@ function getPlayerSprites(char){
         return {
             swing: 'player-retro-backswing.png' + V,
             run: 'player-retro-run.png' + V,
-            idle: 'player-idle-v2.png' + V
+            idle: 'player-idle-v2.png' + V,
+            idleIsSheet: false  // player1 has a dedicated single-frame idle
         };
     }
     const base = 'sprites-v2/characters/' + char.id + '-';
     return {
         swing: base + 'back-swing.png' + V,
         run: base + 'back-run.png' + V,
-        idle: base + 'back-swing.png' + V
+        idle: base + 'back-swing.png' + V,
+        idleIsSheet: true  // other characters use swing sheet for idle (show frame 1)
     };
 }
 
@@ -1690,14 +1692,16 @@ function getOpponentSprites(char){
         return {
             swing: 'opponent-retro-frontswing.png' + V,
             run: 'opponent-retro-run.png' + V,
-            idle: 'opponent-idle-v2.png' + V
+            idle: 'opponent-idle-v2.png' + V,
+            idleIsSheet: false  // player1 has a dedicated single-frame idle
         };
     }
     const base = 'sprites-v2/characters/' + char.id + '-';
     return {
         swing: base + 'front-swing.png' + V,
         run: base + 'front-run.png' + V,
-        idle: base + 'front-swing.png' + V
+        idle: base + 'front-swing.png' + V,
+        idleIsSheet: true  // other characters use swing sheet for idle (show frame 1)
     };
 }
 
@@ -1709,9 +1713,11 @@ function getCharSprites(char){
         playerSwing: p.swing,
         playerRun: p.run,
         playerIdle: p.idle,
+        playerIdleIsSheet: p.idleIsSheet || false,
         oppSwing: opp.swing,
         oppRun: opp.run,
-        oppIdle: opp.idle
+        oppIdle: opp.idle,
+        oppIdleIsSheet: opp.idleIsSheet || false
     };
 }
 
@@ -3371,8 +3377,14 @@ function setPlayerSprite(newState, force = false) {
         case SpriteStates.IDLE:
         default:
             sprite.style.backgroundImage = `url(${SPRITES.playerIdle})`;
-            sprite.style.backgroundSize = '80px 96px';
-            sprite.style.backgroundPosition = '0 0';
+            // If idle is a sprite sheet (8 frames), show just frame 1
+            if(SPRITES.playerIdleIsSheet) {
+                sprite.style.backgroundSize = '640px 96px';
+                sprite.style.backgroundPosition = '0 0';
+            } else {
+                sprite.style.backgroundSize = '80px 96px';
+                sprite.style.backgroundPosition = '0 0';
+            }
             break;
     }
     
@@ -3422,8 +3434,14 @@ function setOpponentSprite(newState, force = false) {
         case SpriteStates.IDLE:
         default:
             sprite.style.backgroundImage = `url(${SPRITES.oppIdle})`;
-            sprite.style.backgroundSize = '80px 96px';
-            sprite.style.backgroundPosition = '0 0';
+            // If idle is a sprite sheet (8 frames), show just frame 1
+            if(SPRITES.oppIdleIsSheet) {
+                sprite.style.backgroundSize = '640px 96px';
+                sprite.style.backgroundPosition = '0 0';
+            } else {
+                sprite.style.backgroundSize = '80px 96px';
+                sprite.style.backgroundPosition = '0 0';
+            }
             break;
     }
     
