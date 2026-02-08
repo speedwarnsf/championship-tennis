@@ -202,7 +202,7 @@
         .progress-toast{position:fixed;top:-80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ffd700,#ffed4e);padding:12px 25px;border-radius:25px;color:#1a1a2e;font-weight:700;z-index:3000;transition:top 0.4s ease}
         .progress-toast.show{top:40px}
         .shop-screen{background:#000;padding:15px;overflow-y:auto;z-index:1100;touch-action:pan-y;-webkit-overflow-scrolling:touch}
-        .char-select{background:#000;padding:15px 15px 80px;overflow:hidden;z-index:1100;display:flex;flex-direction:column}
+        .char-select{background:#000;padding:15px 15px 80px;overflow:hidden;z-index:1100;flex-direction:column}
         .char-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;flex:1;padding-bottom:10px}
         .char-select-btn{position:fixed;bottom:15px;left:15px;right:15px;z-index:1101}
         .char-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
@@ -332,7 +332,7 @@
                 <div class="char-stat"><div class="char-stat-label">Control</div><div class="char-stat-value" id="charControl">50</div></div>
             </div>
         </div>
-        <div class="char-grid" id="charGrid" style="min-height:200px;background:rgba(255,0,0,0.3);"><div style="color:#fff;padding:20px;font-size:18px;">⬛ GRID v20 ⬛</div></div>
+        <div class="char-grid" id="charGrid"></div>
         <button class="menu-btn primary char-select-btn" onclick="confirmCharacter()">SELECT</button>
     </div>
     <div class="video-intro" id="videoIntro">
@@ -1377,20 +1377,10 @@ function updateSprites(){
 }
 
 function showCharSelect(){
-    alert('showCharSelect called v21');
     document.getElementById('mainMenu').classList.remove('active');
     document.getElementById('charSelect').classList.add('active');
-    document.getElementById('charGrid').innerHTML = '<div style="background:lime;color:black;padding:20px;font-size:18px;">✅ showCharSelect OK (v21)</div>';
-    try {
-        renderCharGrid();
-    } catch(e) {
-        document.getElementById('charGrid').innerHTML = '<div style="color:red;padding:20px;">renderCharGrid error: ' + e.message + '</div>';
-    }
-    try {
-        if(selectedChar) selectCharacter(selectedChar);
-    } catch(e) {
-        console.error('selectCharacter error:', e);
-    }
+    renderCharGrid();
+    if(selectedChar) selectCharacter(selectedChar);
 }
 
 function closeCharSelect(){
@@ -1400,9 +1390,9 @@ function closeCharSelect(){
 
 function renderCharGrid(){
     var grid = document.getElementById('charGrid');
-    if(!grid) { alert('no grid'); return; }
+    if(!grid) return;
     var chars = window.CHARACTERS;
-    if(!chars || !chars.length) { grid.innerHTML='<div style="color:red">No CHARACTERS</div>'; return; }
+    if(!chars || !chars.length) return;
     var html = '';
     var V = '?v=20';
     for(var i = 0; i < chars.length; i++){
