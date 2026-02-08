@@ -332,7 +332,7 @@
                 <div class="char-stat"><div class="char-stat-label">Control</div><div class="char-stat-value" id="charControl">50</div></div>
             </div>
         </div>
-        <div class="char-grid" id="charGrid"><div style="color:#ffd700;padding:20px;">Loading v18...</div></div>
+        <div class="char-grid" id="charGrid" style="min-height:200px;background:rgba(255,0,0,0.3);"><div style="color:#fff;padding:20px;font-size:18px;">⬛ GRID v20 ⬛</div></div>
         <button class="menu-btn primary char-select-btn" onclick="confirmCharacter()">SELECT</button>
     </div>
     <div class="video-intro" id="videoIntro">
@@ -1379,7 +1379,7 @@ function updateSprites(){
 function showCharSelect(){
     document.getElementById('mainMenu').classList.remove('active');
     document.getElementById('charSelect').classList.add('active');
-    document.getElementById('charGrid').innerHTML = '<div style="color:lime;padding:20px;">showCharSelect reached try block (v19)</div>';
+    document.getElementById('charGrid').innerHTML = '<div style="background:lime;color:black;padding:20px;font-size:18px;">✅ showCharSelect OK (v20)</div>';
     try {
         renderCharGrid();
     } catch(e) {
@@ -1403,7 +1403,7 @@ function renderCharGrid(){
     var chars = window.CHARACTERS;
     if(!chars || !chars.length) { grid.innerHTML='<div style="color:red">No CHARACTERS</div>'; return; }
     var html = '';
-    var V = '?v=18';
+    var V = '?v=20';
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
