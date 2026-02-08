@@ -2062,9 +2062,23 @@ function animateBall(){
         }
     }
     
-    // Out of bounds (sidelines)
+    // Out of bounds (sidelines) - check who hit it out
     if(M.ballPos.x < 10 || M.ballPos.x > 90){
-        ballOut('wide');
+        // ballVel.y < 0 means traveling toward opponent = player hit it out
+        const playerHitOut = M.ballVel.y < 0;
+        if(playerHitOut){
+            ballOut('wide'); // Player hit out, opponent gets point
+        } else {
+            // Opponent hit out, player gets point
+            M.ballActive = false;
+            M.canHit = false;
+            resetBallUI();
+            sounds.miss();
+            showCallOverlay('OUT!', true);
+            M.streak++;
+            updateStreakDisplay();
+            if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
+        }
         return;
     }
     
@@ -2285,17 +2299,28 @@ function animateReturn(){
         sounds.bounce();
     }
     
-    // Out wide - opponent's shot went out, point for player!
+    // Out wide - who hit it out? Check ball direction
     if(M.ballPos.x < 10 || M.ballPos.x > 90){
         M.ballActive = false;
         resetBallUI();
         M.combo = 0;
         M.rally = 0;
         sounds.miss();
-        showCallOverlay('OUT!', true);
-        M.streak++;
-        updateStreakDisplay();
-        if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
+        
+        // ballVel.y < 0 means ball traveling toward opponent = player hit it out
+        // ballVel.y > 0 means ball traveling toward player = opponent hit it out
+        const playerHitOut = M.ballVel.y < 0;
+        
+        if(playerHitOut){
+            showCallOverlay('OUT!', false);
+            M.streak = 0;
+            if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
+        } else {
+            showCallOverlay('OUT!', true);
+            M.streak++;
+            updateStreakDisplay();
+            if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
+        }
         return;
     }
     
