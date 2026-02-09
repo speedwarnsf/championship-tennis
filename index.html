@@ -4185,9 +4185,6 @@ document.addEventListener('mousedown', e => {
 
     if(M.isPlayerServe && M.servePhase === 'ready'){
         serveToss();
-        return;
-    }
-    if(M.isPlayerServe && M.servePhase === 'toss'){
         startServeCharge(e.clientY, e.clientX);
         return;
     }
