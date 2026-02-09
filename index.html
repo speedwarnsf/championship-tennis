@@ -1172,18 +1172,13 @@ function initAudio(){
 
     // Enhanced layered hit sounds for more impact
     sounds.hit=()=>{
-        playTone(80,0.08,0.45);
-        setTimeout(()=>playTone(220,0.04,0.35),15);
-        setTimeout(()=>playTone(600,0.03,0.2),30);
-        setTimeout(()=>playTone(140,0.02,0.15),5); // Extra thump
+        playTone(80,0.06,0.25);
+        setTimeout(()=>playTone(220,0.03,0.18),15);
     };
 
     sounds.powerHit=()=>{
-        playTone(60,0.12,0.55);
-        setTimeout(()=>playTone(280,0.05,0.4),20);
-        setTimeout(()=>playTone(900,0.04,0.25),35);
-        setTimeout(()=>playTone(45,0.08,0.3),10); // Deep power rumble
-        setTimeout(()=>playTone(1500,0.02,0.2),50); // Sharp crack
+        playTone(60,0.08,0.3);
+        setTimeout(()=>playTone(280,0.04,0.2),20);
     };
 
     // Enhanced bounce sounds with variety
@@ -1693,9 +1688,10 @@ function executePlayerServe(power, aimX){
         const serveSpeed = baseSpeed * (1 + st.serve * 0.005) * M.settings.speed * 0.65;
 
         // Fault detection
-        const faultChance = M.settings.serveFaultChance * (1 - serveAccuracy * 0.5) * (power > 0.8 ? 1.3 : 1);
-        const isNetFault = power < 0.2 || Math.random() < faultChance * 0.3;
-        const isOutFault = targetX < boxLeft - 5 || targetX > boxRight + 5 || Math.random() < faultChance * 0.4;
+        // Fault chance - much more forgiving; only extreme power causes issues
+        const faultChance = M.settings.serveFaultChance * (1 - serveAccuracy * 0.7) * (power > 0.95 ? 1.5 : 1);
+        const isNetFault = power < 0.1 || Math.random() < faultChance * 0.1;
+        const isOutFault = targetX < boxLeft - 8 || targetX > boxRight + 8 || Math.random() < faultChance * 0.15;
 
         // Calculate serve speed for display (80-140 MPH range based on power and serve stat)
         const baseServeSpeed = 80 + power * 40 + st.serve * 0.2;
@@ -1953,7 +1949,13 @@ function opponentServe(){
     highlightServiceBox();
     updateServeIndicator();
 
-    // Opponent prepares to serve
+    // Position opponent at correct baseline side for serve
+    // Deuce side: opponent stands right of center (from their POV) = screen left (~35%)
+    // Ad side: opponent stands left of center (from their POV) = screen right (~65%)
+    const servePosX = M.serveSide === 'deuce' ? 40 : 60;
+    M.oppPos = servePosX;
+    { const _el = safeGetElement('opponent'); if(_el) _el.style.left = servePosX + '%'; }
+
     const oppServeDelay = 800;
 
     setTimeout(() => {
