@@ -3963,7 +3963,8 @@ let playerCurrentY = BASELINE_Y;
 let playerYLerpActive = false;
 
 function triggerNetRush() {
-    if (M.atNet || !M.active || M.isPlayerServe || M.servePhase !== 'none') return;
+    // Block during any serve (player or opponent) and until ball has bounced in service box
+    if (M.atNet || !M.active || M.isPlayerServe || M.servePhase !== 'none' || M.ballBounces < 1) return;
     M.atNet = true;
     playerTargetY = NET_POSITION_Y;
     M.netRushTimer = Date.now();
