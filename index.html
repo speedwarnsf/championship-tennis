@@ -595,7 +595,7 @@
             <h2 class="tutorial-title">HOW TO PLAY</h2>
             <p class="tutorial-text">
                 <strong>🎾 SERVING:</strong><br>
-                When it's your serve: TAP to toss the ball, TAP again at the sweet spot for power, then AIM with a swipe!<br><br>
+                When it's your serve: TAP to toss, PULL DOWN to charge power, and RELEASE at the sweet spot for timing bonus!<br><br>
                 <strong>⚡ RETURNING:</strong><br>
                 Watch for the GREEN GLOW - swipe up to hit!<br><br>
                 <strong>📍 COURT:</strong><br>
@@ -1619,13 +1619,13 @@ function startPlayerServe(){
     { const _el = safeGetElement('ballShadow'); if(_el) _el.style.top = '92%'; }
 }
 
-// STEP 1: Tap to toss
+// STEP 1: Tap to start ball toss
 function serveToss(){
     if(M.servePhase !== 'ready') return;
     M.servePhase = 'toss';
 
     const hint = safeGetElement('swipeHint');
-    hint.textContent = 'TAP FOR TIMING!';
+    hint.textContent = 'PULL BACK & RELEASE!';
 
     // Hide main ball, show toss ball rising above player
     const ball = safeGetElement('ball');
@@ -1635,19 +1635,17 @@ function serveToss(){
     tossBall.classList.add('active');
     tossBall.style.left = '50%';
 
-    // Animate toss ball rising + timing cursor
+    // Show timing bar (right side)
     M.serveTossProgress = 0;
-    M.serveTossDir = 1; // 1 = rising
+    M.serveTossDir = 1;
     const timingEl = safeGetElement('serveTiming');
     timingEl.classList.add('active');
-
     const cursor = safeGetElement('serveTimingCursor');
 
     function animateToss(){
-        if(M.servePhase !== 'toss'){
-            return; // Phase changed (player tapped)
+        if(M.servePhase !== 'toss' && M.servePhase !== 'charging'){
+            return; // Serve was released or cancelled
         }
-        // Progress goes 0→1 (bottom to top) then back down
         M.serveTossProgress += M.serveTossDir * 0.012;
 
         if(M.serveTossProgress >= 1){
@@ -1655,17 +1653,24 @@ function serveToss(){
             M.serveTossDir = -1;
         }
         if(M.serveTossProgress <= 0){
-            // Missed entirely — auto weak serve
+            // Ball fell back down — auto-release with weak timing
             M.serveTossProgress = 0;
-            serveTimingTap();
+            if(M.servePhase === 'charging') {
+                releaseServe(null, null);
+            } else {
+                // Player never started pulling — auto weak serve
+                M.servePhase = 'charging';
+                M.servePower = 0;
+                releaseServe(null, null);
+            }
             return;
         }
 
-        // Position toss ball: goes from 85% up to 65% (20% travel)
+        // Position toss ball: rises from 85% up to 65%
         const ballY = 85 - M.serveTossProgress * 20;
         tossBall.style.top = ballY + '%';
 
-        // Cursor position: 0 = bottom (100%), 1 = top (0%)
+        // Cursor tracks toss progress: 0=bottom(100%), 1=top(0%)
         const cursorPct = (1 - M.serveTossProgress) * 100;
         cursor.style.top = cursorPct + '%';
 
@@ -1674,29 +1679,81 @@ function serveToss(){
     requestAnimationFrame(animateToss);
 }
 
-// STEP 2: Tap for timing
-function serveTimingTap(){
+// STEP 2: Pull back to charge power (touch/mouse down during toss)
+function startServeCharge(clientY, clientX){
     if(M.servePhase !== 'toss') return;
-    M.servePhase = 'aim';
+    M.servePhase = 'charging';
+    M.serveStartY = clientY;
+    M.serveStartX = clientX;
+    M.servePower = 0;
 
-    const progress = M.serveTossProgress; // 0-1, where ~0.85-1.0 is sweet spot
+    // Show power bar (left side)
+    safeGetElement('servePower')?.classList.add('active');
 
-    // Determine quality based on cursor position in zones
-    // Zone layout (from top=0): red-top 0-15%, green 15-35%, yellow 35-60%, red-bottom 60-100%
-    // Progress 1.0 = top (0%), progress 0 = bottom (100%)
-    let quality, qualityLabel, powerMult, accuracyMult;
-    if(progress >= 0.85){ // top 15% = red zone (overshoot)
-        quality = 'weak'; qualityLabel = 'WEAK'; powerMult = 0.4; accuracyMult = 0.3;
-    } else if(progress >= 0.65){ // 65-85% = green sweet spot
-        quality = 'perfect'; qualityLabel = 'PERFECT!'; powerMult = 1.0; accuracyMult = 1.0;
-    } else if(progress >= 0.40){ // 40-65% = yellow
-        quality = 'good'; qualityLabel = 'GOOD'; powerMult = 0.7; accuracyMult = 0.7;
-    } else { // bottom 40% = red
-        quality = 'weak'; qualityLabel = 'WEAK'; powerMult = 0.35; accuracyMult = 0.2;
+    // Show aim indicator
+    safeGetElement('serveAim')?.classList.add('active');
+    const aimEl = safeGetElement('serveAim');
+    aimEl.style.left = M.serveAimX + '%';
+    aimEl.style.top = '42%';
+
+    safeGetElement('serveTargetLine')?.classList.add('active');
+}
+
+// Update power + aim during pull-back drag
+function updateServeCharge(clientY, clientX){
+    if(M.servePhase !== 'charging') return;
+
+    // Power from pull-down distance
+    const pullDist = clientY - M.serveStartY;
+    M.servePower = Math.min(1, Math.max(0, pullDist / 150));
+    { const _el = safeGetElement('servePowerFill'); if(_el) _el.style.height = (M.servePower * 100) + '%'; }
+
+    // Aim from horizontal position
+    const court = getCourtElement();
+    if(court && clientX){
+        const rect = court.getBoundingClientRect();
+        const relX = ((clientX - rect.left) / rect.width) * 100;
+
+        const isDeuce = M.serveSide === 'deuce';
+        const boxLeft = isDeuce ? 22 : 49.5;
+        const boxRight = isDeuce ? 49.5 : 78;
+        const boxCenter = (boxLeft + boxRight) / 2;
+        const aimOffset = (relX - 50) * 0.4;
+        M.serveAimX = Math.max(boxLeft, Math.min(boxRight, boxCenter + aimOffset));
+
+        const aimEl = safeGetElement('serveAim');
+        aimEl.style.left = M.serveAimX + '%';
+
+        const lineEl = safeGetElement('serveTargetLine');
+        lineEl.style.left = '50%';
+        lineEl.style.bottom = '10%';
+        lineEl.style.height = '50%';
+        const angle = Math.atan2(M.serveAimX - 50, 50) * (180 / Math.PI);
+        lineEl.style.transform = `rotate(${angle}deg)`;
+    }
+}
+
+// STEP 3: Release — timing determined by toss position at this moment
+function releaseServe(){
+    if(M.servePhase !== 'charging') return;
+    M.servePhase = 'swing';
+
+    const progress = M.serveTossProgress; // Where the ball is when released
+
+    // Timing quality from toss position at release
+    // Zone layout: red-top 85-100%, green sweet spot 65-85%, yellow 40-65%, red-bottom 0-40%
+    let quality, qualityLabel, accuracyMult;
+    if(progress >= 0.85){
+        quality = 'weak'; qualityLabel = 'WEAK'; accuracyMult = 0.3;
+    } else if(progress >= 0.65){
+        quality = 'perfect'; qualityLabel = 'PERFECT!'; accuracyMult = 1.0;
+    } else if(progress >= 0.40){
+        quality = 'good'; qualityLabel = 'GOOD'; accuracyMult = 0.7;
+    } else {
+        quality = 'weak'; qualityLabel = 'WEAK'; accuracyMult = 0.2;
     }
 
     M.serveTimingQuality = quality;
-    M.servePower = powerMult;
     M.serveAccuracyMult = accuracyMult;
 
     // Show feedback text
@@ -1705,54 +1762,9 @@ function serveTimingTap(){
     fb.className = 'serve-feedback active ' + quality;
     setTimeout(() => fb.classList.remove('active'), 800);
 
-    // Hide timing bar
-    safeGetElement('serveTiming')?.classList.remove('active');
-
-    // Ball pauses at peak, player swings
-    const tossBall = safeGetElement('serveTossBall');
-
-    // Show aim target briefly in service box — player can swipe to adjust
-    M.serveAimX = M.serveSide === 'deuce' ? 35 : 64;
-    const aimEl = safeGetElement('serveAim');
-    aimEl.style.left = M.serveAimX + '%';
-    aimEl.style.top = '42%';
-    aimEl.classList.add('active');
-
-    const hint = safeGetElement('swipeHint');
-    hint.textContent = 'SWIPE TO AIM';
-
-    M.serveAimStart = Date.now();
-
-    // 0.5s aim window then auto-execute
-    M.serveAimTimeout = setTimeout(() => {
-        finalizeServe();
-    }, 500);
-}
-
-// During aim phase, allow swipe left/right
-function serveAimMove(clientX){
-    if(M.servePhase !== 'aim') return;
-    const court = getCourtElement();
-    if(!court) return;
-    const rect = court.getBoundingClientRect();
-    const relX = ((clientX - rect.left) / rect.width) * 100;
-
-    const isDeuce = M.serveSide === 'deuce';
-    const boxLeft = isDeuce ? 22 : 49.5;
-    const boxRight = isDeuce ? 49.5 : 78;
-    const boxCenter = (boxLeft + boxRight) / 2;
-    const aimOffset = (relX - 50) * 0.5;
-    M.serveAimX = Math.max(boxLeft, Math.min(boxRight, boxCenter + aimOffset));
-
-    const aimEl = safeGetElement('serveAim');
-    aimEl.style.left = M.serveAimX + '%';
-}
-
-function finalizeServe(){
-    if(M.servePhase !== 'aim') return;
-    M.servePhase = 'swing';
-
     // Hide all serve UI
+    safeGetElement('serveTiming')?.classList.remove('active');
+    safeGetElement('servePower')?.classList.remove('active');
     safeGetElement('swipeHint')?.classList.remove('active','serve');
     safeGetElement('playerPaddle')?.classList.remove('serving');
     safeGetElement('serveAim')?.classList.remove('active');
@@ -1785,24 +1797,29 @@ function executePlayerServe(power, aimX){
         const qualityAcc = M.serveAccuracyMult || 0.5;
         const aimTarget = aimX;
 
-        // Spread based on timing quality and serve stat
+        // Spread: timing controls accuracy, serve stat reduces further
         const maxSpread = (1 - qualityAcc) * 8 + (1 - serveAccuracy) * 3;
         const randomSpread = (Math.random() - 0.5) * maxSpread;
         let targetX = aimTarget + randomSpread;
 
-        // Speed: perfect = fast, weak = slow
-        const baseSpeed = 1.0 + power * 2.0;
-        const serveSpeed = baseSpeed * (1 + st.serve * 0.005) * M.settings.speed * 0.65;
+        // Speed: pull-back power is the base, timing gives a multiplier bonus
+        // Perfect timing = 1.3x speed bonus, good = 1.1x, weak = 0.8x
+        const timingSpeedMult = M.serveTimingQuality === 'perfect' ? 1.3 : (M.serveTimingQuality === 'good' ? 1.1 : 0.8);
+        const baseSpeed = 1.5 + power * 1.5;
+        const serveSpeed = baseSpeed * timingSpeedMult * (1 + st.serve * 0.005) * M.settings.speed * 0.65;
 
-        // Fault chance based on timing quality
-        const qualityFault = M.serveTimingQuality === 'weak' ? 0.4 : (M.serveTimingQuality === 'good' ? 0.05 : 0.02);
-        const faultChance = qualityFault * M.settings.serveFaultChance;
-        const isNetFault = power < 0.15 || Math.random() < faultChance * 0.3;
-        const isOutFault = targetX < boxLeft - 5 || targetX > boxRight + 5 || Math.random() < faultChance * 0.4;
+        // Fault chance: weak timing + high power = risky, perfect timing = safe
+        const qualityFault = M.serveTimingQuality === 'weak' ? 0.4 : (M.serveTimingQuality === 'good' ? 0.08 : 0.02);
+        const powerRisk = power > 0.9 ? 1.5 : 1.0;
+        const faultChance = qualityFault * M.settings.serveFaultChance * powerRisk * (1 - serveAccuracy * 0.5);
+        const isNetFault = power < 0.1 || Math.random() < faultChance * 0.2;
+        const isOutFault = targetX < boxLeft - 5 || targetX > boxRight + 5 || Math.random() < faultChance * 0.3;
 
-        // Serve speed display: perfect 120-140, good 95-115, weak 70-90
-        const speedBase = M.serveTimingQuality === 'perfect' ? 125 : (M.serveTimingQuality === 'good' ? 100 : 75);
-        M.lastServeSpeed = Math.round(speedBase + st.serve * 0.15 + (Math.random() - 0.5) * 15);
+        // Serve speed display: combines power + timing
+        // power 0-1 maps to ~80-120 base, timing bonus adds up to +20
+        const timingBonus = M.serveTimingQuality === 'perfect' ? 20 : (M.serveTimingQuality === 'good' ? 8 : -10);
+        const baseServeSpeed = 80 + power * 40 + st.serve * 0.2 + timingBonus;
+        M.lastServeSpeed = Math.round(baseServeSpeed + (Math.random() - 0.5) * 10);
         { const _el = safeGetElement('serveSpeed'); if(_el) _el.textContent = M.lastServeSpeed + ' MPH'; }
 
         const isLet = !isNetFault && Math.random() < 0.05;
@@ -3290,6 +3307,7 @@ function resetBallUI(){
     safeGetElement('swipeHint')?.classList.remove('active', 'serve');
     safeGetElement('playerPaddle')?.classList.remove('can-hit', 'serving');
     safeGetElement('serveTiming')?.classList.remove('active');
+    safeGetElement('servePower')?.classList.remove('active');
     safeGetElement('serveTossBall')?.classList.remove('active');
     safeGetElement('serveAim')?.classList.remove('active');
     safeGetElement('serveTargetLine')?.classList.remove('active');
@@ -4083,13 +4101,13 @@ document.addEventListener('touchstart', e => {
         return;
     }
 
-    // Handle serve: tap to toss (step 1) or tap for timing (step 2)
+    // Serve: tap to toss, then pull-back to charge
     if(M.isPlayerServe && M.servePhase === 'ready'){
         serveToss();
         return;
     }
     if(M.isPlayerServe && M.servePhase === 'toss'){
-        serveTimingTap();
+        startServeCharge(t.clientY, t.clientX);
         return;
     }
 
@@ -4103,9 +4121,9 @@ document.addEventListener('touchmove', e => {
 
     const t = e.touches[0];
 
-    // Aim adjustment during serve aim phase
-    if(M.servePhase === 'aim'){
-        serveAimMove(t.clientX);
+    // Update pull-back power + aim during charging
+    if(M.servePhase === 'charging'){
+        updateServeCharge(t.clientY, t.clientX);
         return;
     }
 
@@ -4119,10 +4137,9 @@ document.addEventListener('touchend', e => {
 
     const t = e.changedTouches[0];
 
-    // During aim phase, release finalizes aim early
-    if(M.servePhase === 'aim'){
-        if(M.serveAimTimeout) clearTimeout(M.serveAimTimeout);
-        finalizeServe();
+    // Release serve — timing determined by toss position at this moment
+    if(M.servePhase === 'charging'){
+        releaseServe();
         touchY = touchX = null;
         return;
     }
@@ -4171,7 +4188,7 @@ document.addEventListener('mousedown', e => {
         return;
     }
     if(M.isPlayerServe && M.servePhase === 'toss'){
-        serveTimingTap();
+        startServeCharge(e.clientY, e.clientX);
         return;
     }
 
@@ -4182,8 +4199,8 @@ document.addEventListener('mousedown', e => {
 document.addEventListener('mousemove', e => {
     if(!M.active) return;
 
-    if(M.servePhase === 'aim'){
-        serveAimMove(e.clientX);
+    if(M.servePhase === 'charging'){
+        updateServeCharge(e.clientY, e.clientX);
         return;
     }
 
@@ -4195,9 +4212,8 @@ document.addEventListener('mouseup', e => {
 
     if(!M.active) return;
 
-    if(M.servePhase === 'aim'){
-        if(M.serveAimTimeout) clearTimeout(M.serveAimTimeout);
-        finalizeServe();
+    if(M.servePhase === 'charging'){
+        releaseServe();
         touchY = touchX = null;
         return;
     }
