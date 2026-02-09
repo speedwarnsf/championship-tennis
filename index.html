@@ -153,13 +153,27 @@
         @keyframes playSprite4{0%{background-position:0% var(--sprite-y)}100%{background-position:100% var(--sprite-y)}}
         .hit-zone{position:absolute;bottom:8%;left:8%;right:8%;top:52%;border:3px dashed rgba(255,215,0,0.2);border-radius:20px;pointer-events:none;z-index:5;display:none}
         .hit-zone.active{border-color:rgba(76,255,80,0.4);background:rgba(76,255,80,0.05)}
-        /* Serve power meter */
-        .serve-power{position:absolute;bottom:20%;left:50%;transform:translateX(-50%);width:60%;max-width:200px;display:none;flex-direction:column;align-items:center;gap:8px;z-index:100}
-        .serve-power.active{display:flex}
-        .serve-power-label{font-size:11px;color:#fff;text-transform:uppercase;letter-spacing:2px;text-shadow:0 2px 4px rgba(0,0,0,0.5)}
-        .serve-power-bar{width:100%;height:20px;background:rgba(0,0,0,0.6);border:2px solid rgba(255,215,0,0.5);border-radius:10px;overflow:hidden}
-        .serve-power-fill{height:100%;width:0%;background:linear-gradient(90deg,#4caf50,#ffd700 50%,#f44336);transition:width 0.05s}
-        .serve-power-zones{display:flex;justify-content:space-between;width:100%;font-size:8px;color:rgba(255,255,255,0.6);padding:0 2px}
+        /* Serve timing bar (replaces old power meter) */
+        .serve-timing{position:absolute;right:12%;bottom:25%;width:24px;height:180px;display:none;flex-direction:column;align-items:center;z-index:100;pointer-events:none}
+        .serve-timing.active{display:flex}
+        .serve-timing-track{position:relative;width:24px;height:180px;background:rgba(0,0,0,0.7);border:2px solid rgba(255,255,255,0.3);border-radius:12px;overflow:hidden}
+        .serve-timing-zone{position:absolute;left:0;right:0}
+        .serve-timing-zone.red-top{top:0;height:15%;background:rgba(244,67,54,0.6)}
+        .serve-timing-zone.green{top:15%;height:20%;background:rgba(76,175,80,0.6);box-shadow:inset 0 0 10px rgba(76,255,80,0.3)}
+        .serve-timing-zone.yellow{top:35%;height:25%;background:rgba(255,193,7,0.5)}
+        .serve-timing-zone.red-bottom{top:60%;height:40%;background:rgba(244,67,54,0.4)}
+        .serve-timing-cursor{position:absolute;left:-2px;right:-2px;height:4px;background:#fff;border-radius:2px;box-shadow:0 0 8px rgba(255,255,255,0.8);transition:none;z-index:2}
+        .serve-timing-label{font-size:8px;color:rgba(255,255,255,0.7);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+        /* Serve feedback text */
+        .serve-feedback{position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);font-family:'Bebas Neue',sans-serif;font-size:52px;pointer-events:none;z-index:200;opacity:0;text-shadow:0 4px 20px rgba(0,0,0,0.8)}
+        .serve-feedback.active{animation:serveFeedbackPop 0.8s ease-out forwards}
+        .serve-feedback.perfect{color:#4caf50}
+        .serve-feedback.good{color:#ffc107}
+        .serve-feedback.weak{color:#f44336}
+        @keyframes serveFeedbackPop{0%{opacity:0;transform:translate(-50%,-50%) scale(0.3)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.3)}40%{transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-60%) scale(1)}}
+        /* Toss ball (separate element for visual toss above player) */
+        .serve-toss-ball{position:absolute;width:14px;height:14px;background:radial-gradient(circle at 30% 30%,#fcf836,#c9d11a);border-radius:50%;transform:translate(-50%,-50%);z-index:41;display:none;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.5)}
+        .serve-toss-ball.active{display:block}
         /* Serve aim indicator */
         .serve-aim{position:absolute;width:30px;height:30px;border:2px solid rgba(255,215,0,0.7);border-radius:50%;transform:translate(-50%,-50%);z-index:45;display:none;pointer-events:none;box-shadow:0 0 8px rgba(255,215,0,0.3)}
         .serve-aim.active{display:block;animation:aimPulse 0.8s ease-in-out infinite}
@@ -506,12 +520,21 @@
             <div class="serve-target-line" id="serveTargetLine"></div>
             <div class="swipe-hint" id="swipeHint">SWIPE UP!</div>
             <div class="net-rush-indicator" id="netRushIndicator">🔥 AT NET</div>
-            <!-- Serve power meter -->
-            <div class="serve-power" id="servePower">
-                <div class="serve-power-label">PULL DOWN FOR POWER</div>
-                <div class="serve-power-bar"><div class="serve-power-fill" id="servePowerFill"></div></div>
-                <div class="serve-power-zones"><span>SOFT</span><span>MEDIUM</span><span>POWER</span></div>
+            <!-- Serve timing bar -->
+            <div class="serve-timing" id="serveTiming">
+                <div class="serve-timing-track">
+                    <div class="serve-timing-zone red-top"></div>
+                    <div class="serve-timing-zone green"></div>
+                    <div class="serve-timing-zone yellow"></div>
+                    <div class="serve-timing-zone red-bottom"></div>
+                    <div class="serve-timing-cursor" id="serveTimingCursor"></div>
+                </div>
+                <div class="serve-timing-label">TAP!</div>
             </div>
+            <!-- Serve feedback text -->
+            <div class="serve-feedback" id="serveFeedback"></div>
+            <!-- Toss ball visual -->
+            <div class="serve-toss-ball" id="serveTossBall"></div>
             <div class="power-bar"><div class="power-fill" id="powerFill"></div></div>
             <div class="hit-effect" id="hitEffect"></div>
             <div class="gem-drop" id="gemDrop">💎<div class="gem-timer" id="gemTimer"></div><div class="gem-multiplier" id="gemMultiplier">x1</div></div>
@@ -559,7 +582,7 @@
             <h2 class="tutorial-title">HOW TO PLAY</h2>
             <p class="tutorial-text">
                 <strong>🎾 SERVING:</strong><br>
-                When it's your serve, PULL DOWN to charge power, then RELEASE and swipe toward the service box!<br><br>
+                When it's your serve: TAP to toss the ball, TAP again at the sweet spot for power, then AIM with a swipe!<br><br>
                 <strong>⚡ RETURNING:</strong><br>
                 Watch for the GREEN GLOW - swipe up to hit!<br><br>
                 <strong>📍 COURT:</strong><br>
@@ -1547,11 +1570,13 @@ function clearServiceBoxHighlight(){
 
 function startPlayerServe(){
     M.isPlayerServe = true;
-    M.servePhase = 'ready';
+    M.servePhase = 'ready';  // waiting for tap to toss
     M.servePower = 0;
     M.serveStartY = null;
     M.serveStartX = null;
-    M.serveAimX = M.serveSide === 'deuce' ? 35 : 64; // Default aim to cross-court box center
+    M.serveTossProgress = 0;
+    M.serveTimingValue = null;
+    M.serveAimX = M.serveSide === 'deuce' ? 35 : 64;
 
     // Position player at baseline center
     M.playerPos = 50;
@@ -1563,144 +1588,211 @@ function startPlayerServe(){
     updateServeIndicator();
 
     const hint = safeGetElement('swipeHint');
-    hint.textContent = 'PULL DOWN TO SERVE';
+    hint.textContent = 'TAP TO TOSS';
     hint.classList.add('active','serve');
 
-    // Position ball with player
+    // Position ball with player (held)
     const ball = safeGetElement('ball');
     ball.classList.add('active');
     ball.style.left = '50%';
     ball.style.top = '88%';
+
+    // Hide toss ball
+    const tossBall = safeGetElement('serveTossBall');
+    if(tossBall) { tossBall.classList.remove('active'); }
 
     safeGetElement('ballShadow')?.classList.add('active');
     { const _el = safeGetElement('ballShadow'); if(_el) _el.style.left = '50%'; }
     { const _el = safeGetElement('ballShadow'); if(_el) _el.style.top = '92%'; }
 }
 
-function chargingServe(clientY, clientX){
-    if(M.servePhase !== 'ready' && M.servePhase !== 'charging') return;
+// STEP 1: Tap to toss
+function serveToss(){
+    if(M.servePhase !== 'ready') return;
+    M.servePhase = 'toss';
 
-    if(M.serveStartY === null){
-        M.serveStartY = clientY;
-        M.serveStartX = clientX;
-        M.servePhase = 'charging';
-        safeGetElement('servePower')?.classList.add('active');
-        safeGetElement('serveAim')?.classList.add('active');
-        safeGetElement('serveTargetLine')?.classList.add('active');
+    const hint = safeGetElement('swipeHint');
+    hint.textContent = 'TAP FOR TIMING!';
+
+    // Hide main ball, show toss ball rising above player
+    const ball = safeGetElement('ball');
+    ball.classList.remove('active');
+
+    const tossBall = safeGetElement('serveTossBall');
+    tossBall.classList.add('active');
+    tossBall.style.left = '50%';
+
+    // Animate toss ball rising + timing cursor
+    M.serveTossProgress = 0;
+    M.serveTossDir = 1; // 1 = rising
+    const timingEl = safeGetElement('serveTiming');
+    timingEl.classList.add('active');
+
+    const cursor = safeGetElement('serveTimingCursor');
+
+    function animateToss(){
+        if(M.servePhase !== 'toss'){
+            return; // Phase changed (player tapped)
+        }
+        // Progress goes 0→1 (bottom to top) then back down
+        M.serveTossProgress += M.serveTossDir * 0.012;
+
+        if(M.serveTossProgress >= 1){
+            M.serveTossProgress = 1;
+            M.serveTossDir = -1;
+        }
+        if(M.serveTossProgress <= 0){
+            // Missed entirely — auto weak serve
+            M.serveTossProgress = 0;
+            serveTimingTap();
+            return;
+        }
+
+        // Position toss ball: goes from 85% up to 65% (20% travel)
+        const ballY = 85 - M.serveTossProgress * 20;
+        tossBall.style.top = ballY + '%';
+
+        // Cursor position: 0 = bottom (100%), 1 = top (0%)
+        const cursorPct = (1 - M.serveTossProgress) * 100;
+        cursor.style.top = cursorPct + '%';
+
+        requestAnimationFrame(animateToss);
     }
-
-    // Calculate power based on pull-down distance
-    const pullDist = clientY - M.serveStartY;
-    M.servePower = Math.min(1, Math.max(0, pullDist / 150));
-
-    { const _el = safeGetElement('servePowerFill'); if(_el) _el.style.width = (M.servePower * 100) + '%'; }
-
-    // Update aim indicator position based on horizontal movement
-    const court = getCourtElement();
-    if(court && clientX){
-        const rect = court.getBoundingClientRect();
-        const relX = ((clientX - rect.left) / rect.width) * 100;
-
-        // Calculate target position in service box
-        // Cross-court: deuce serve aims LEFT, ad serve aims RIGHT
-        const isDeuce = M.serveSide === 'deuce';
-        const boxLeft = isDeuce ? 22 : 50;
-        const boxRight = isDeuce ? 49 : 78;
-        const boxCenter = (boxLeft + boxRight) / 2;
-
-        // Aim influenced by finger position
-        const aimOffset = (relX - 50) * 0.4;
-        const targetX = Math.max(boxLeft, Math.min(boxRight, boxCenter + aimOffset));
-
-        M.serveAimX = targetX;
-
-        // Position aim indicator
-        const aimEl = safeGetElement('serveAim');
-        aimEl.style.left = targetX + '%';
-        aimEl.style.top = '45%'; // Inside opponent's service box
-
-        // Position target line from player to aim
-        const lineEl = safeGetElement('serveTargetLine');
-        lineEl.style.left = '50%';
-        lineEl.style.bottom = '10%';
-        lineEl.style.height = '50%';
-        const angle = Math.atan2(targetX - 50, 50) * (180 / Math.PI);
-        lineEl.style.transform = `rotate(${angle}deg)`;
-    }
+    requestAnimationFrame(animateToss);
 }
 
-function releaseServe(endX, endY){
-    if(M.servePhase !== 'charging') return;
+// STEP 2: Tap for timing
+function serveTimingTap(){
+    if(M.servePhase !== 'toss') return;
+    M.servePhase = 'aim';
 
+    const progress = M.serveTossProgress; // 0-1, where ~0.85-1.0 is sweet spot
+
+    // Determine quality based on cursor position in zones
+    // Zone layout (from top=0): red-top 0-15%, green 15-35%, yellow 35-60%, red-bottom 60-100%
+    // Progress 1.0 = top (0%), progress 0 = bottom (100%)
+    let quality, qualityLabel, powerMult, accuracyMult;
+    if(progress >= 0.85){ // top 15% = red zone (overshoot)
+        quality = 'weak'; qualityLabel = 'WEAK'; powerMult = 0.4; accuracyMult = 0.3;
+    } else if(progress >= 0.65){ // 65-85% = green sweet spot
+        quality = 'perfect'; qualityLabel = 'PERFECT!'; powerMult = 1.0; accuracyMult = 1.0;
+    } else if(progress >= 0.40){ // 40-65% = yellow
+        quality = 'good'; qualityLabel = 'GOOD'; powerMult = 0.7; accuracyMult = 0.7;
+    } else { // bottom 40% = red
+        quality = 'weak'; qualityLabel = 'WEAK'; powerMult = 0.35; accuracyMult = 0.2;
+    }
+
+    M.serveTimingQuality = quality;
+    M.servePower = powerMult;
+    M.serveAccuracyMult = accuracyMult;
+
+    // Show feedback text
+    const fb = safeGetElement('serveFeedback');
+    fb.textContent = qualityLabel;
+    fb.className = 'serve-feedback active ' + quality;
+    setTimeout(() => fb.classList.remove('active'), 800);
+
+    // Hide timing bar
+    safeGetElement('serveTiming')?.classList.remove('active');
+
+    // Ball pauses at peak, player swings
+    const tossBall = safeGetElement('serveTossBall');
+
+    // Show aim target briefly in service box — player can swipe to adjust
+    M.serveAimX = M.serveSide === 'deuce' ? 35 : 64;
+    const aimEl = safeGetElement('serveAim');
+    aimEl.style.left = M.serveAimX + '%';
+    aimEl.style.top = '42%';
+    aimEl.classList.add('active');
+
+    const hint = safeGetElement('swipeHint');
+    hint.textContent = 'SWIPE TO AIM';
+
+    M.serveAimStart = Date.now();
+
+    // 0.5s aim window then auto-execute
+    M.serveAimTimeout = setTimeout(() => {
+        finalizeServe();
+    }, 500);
+}
+
+// During aim phase, allow swipe left/right
+function serveAimMove(clientX){
+    if(M.servePhase !== 'aim') return;
+    const court = getCourtElement();
+    if(!court) return;
+    const rect = court.getBoundingClientRect();
+    const relX = ((clientX - rect.left) / rect.width) * 100;
+
+    const isDeuce = M.serveSide === 'deuce';
+    const boxLeft = isDeuce ? 22 : 49.5;
+    const boxRight = isDeuce ? 49.5 : 78;
+    const boxCenter = (boxLeft + boxRight) / 2;
+    const aimOffset = (relX - 50) * 0.5;
+    M.serveAimX = Math.max(boxLeft, Math.min(boxRight, boxCenter + aimOffset));
+
+    const aimEl = safeGetElement('serveAim');
+    aimEl.style.left = M.serveAimX + '%';
+}
+
+function finalizeServe(){
+    if(M.servePhase !== 'aim') return;
     M.servePhase = 'swing';
 
-    // Hide charging UI
-    safeGetElement('servePower')?.classList.remove('active');
+    // Hide all serve UI
     safeGetElement('swipeHint')?.classList.remove('active','serve');
     safeGetElement('playerPaddle')?.classList.remove('serving');
     safeGetElement('serveAim')?.classList.remove('active');
     safeGetElement('serveTargetLine')?.classList.remove('active');
+    safeGetElement('serveTossBall')?.classList.remove('active');
 
-    // Use the aim target position we've been tracking
-    const aimX = M.serveAimX || 50;
-
-    // Execute serve with power and aim
-    executePlayerServe(M.servePower, aimX);
+    executePlayerServe(M.servePower, M.serveAimX);
 }
 
 function executePlayerServe(power, aimX){
     const st = getStats();
-    M.lastHitBy = 'player'; // Track who hit last
+    M.lastHitBy = 'player';
 
-    // Ball toss animation
+    // Show ball again at contact point and play swing
     const ball = safeGetElement('ball');
-    ball.classList.add('toss');
+    ball.classList.add('active');
+    ball.style.left = '50%';
+    ball.style.top = '80%';
 
     sounds.serve();
-
-    // Play serve animation with new system
     setPlayerSwinging();
 
     setTimeout(() => {
-        ball.classList.remove('toss');
-
-        // Determine target service box (CROSS-COURT: deuce serve → left box, ad serve → right box)
         const isDeuceCourt = M.serveSide === 'deuce';
         const boxCenterX = isDeuceCourt ? 35 : 64;
-        const boxLeft = isDeuceCourt ? 22 : 50;
-        const boxRight = isDeuceCourt ? 50 : 78;
+        const boxLeft = isDeuceCourt ? 22 : 49.5;
+        const boxRight = isDeuceCourt ? 49.5 : 78;
 
-        // Calculate serve trajectory
-        // Aim target is where player was aiming (tracked in M.serveAimX)
         const serveAccuracy = st.serve / 100;
-        const aimTarget = aimX; // This is the aim position player targeted
+        const qualityAcc = M.serveAccuracyMult || 0.5;
+        const aimTarget = aimX;
 
-        // Minimal random spread - ball should mostly follow aim line
-        // At low serve stat, max ±2% deviation; at high stat, max ±0.5%
-        const maxSpread = 2 - serveAccuracy * 1.5;
-        const randomSpread = (Math.random() - 0.5) * maxSpread * 2;
-
-        // Ball goes very close to where player aimed
+        // Spread based on timing quality and serve stat
+        const maxSpread = (1 - qualityAcc) * 8 + (1 - serveAccuracy) * 3;
+        const randomSpread = (Math.random() - 0.5) * maxSpread;
         let targetX = aimTarget + randomSpread;
 
-        // Power affects speed and fault chance
-        const baseSpeed = 1.5 + power * 1.5;
+        // Speed: perfect = fast, weak = slow
+        const baseSpeed = 1.0 + power * 2.0;
         const serveSpeed = baseSpeed * (1 + st.serve * 0.005) * M.settings.speed * 0.65;
 
-        // Fault detection
-        // Fault chance - much more forgiving; only extreme power causes issues
-        const faultChance = M.settings.serveFaultChance * (1 - serveAccuracy * 0.7) * (power > 0.95 ? 1.5 : 1);
-        const isNetFault = power < 0.1 || Math.random() < faultChance * 0.1;
-        const isOutFault = targetX < boxLeft - 8 || targetX > boxRight + 8 || Math.random() < faultChance * 0.15;
+        // Fault chance based on timing quality
+        const qualityFault = M.serveTimingQuality === 'weak' ? 0.4 : (M.serveTimingQuality === 'good' ? 0.05 : 0.02);
+        const faultChance = qualityFault * M.settings.serveFaultChance;
+        const isNetFault = power < 0.15 || Math.random() < faultChance * 0.3;
+        const isOutFault = targetX < boxLeft - 5 || targetX > boxRight + 5 || Math.random() < faultChance * 0.4;
 
-        // Calculate serve speed for display (80-140 MPH range based on power and serve stat)
-        const baseServeSpeed = 80 + power * 40 + st.serve * 0.2;
-        M.lastServeSpeed = Math.round(baseServeSpeed + (Math.random() - 0.5) * 10);
+        // Serve speed display: perfect 120-140, good 95-115, weak 70-90
+        const speedBase = M.serveTimingQuality === 'perfect' ? 125 : (M.serveTimingQuality === 'good' ? 100 : 75);
+        M.lastServeSpeed = Math.round(speedBase + st.serve * 0.15 + (Math.random() - 0.5) * 15);
         { const _el = safeGetElement('serveSpeed'); if(_el) _el.textContent = M.lastServeSpeed + ' MPH'; }
 
-        // Let serve (hits net but goes over - replay)
         const isLet = !isNetFault && Math.random() < 0.05;
-
         if(isLet){
             sounds.let();
             showNetCordEffect();
@@ -1716,13 +1808,11 @@ function executePlayerServe(power, aimX){
         }
 
         if(isOutFault){
-            // Commit to serve but it goes out
             M.ballActive = true;
             M.ballPos = {x: 50, y: 90};
             M.ballH = 100;
             M.ballBounces = 0;
             targetX = targetX < boxCenterX ? boxLeft - 10 : boxRight + 10;
-            // Out fault — still arcs over but lands outside the box
             const faultFrames = (90 - 35) / (serveSpeed * 1.2);
             const faultZ = (0.07 * faultFrames * faultFrames - 100) / faultFrames;
             M.ballVel = {
@@ -3186,7 +3276,8 @@ function resetBallUI(){
     safeGetElement('hitZone')?.classList.remove('active');
     safeGetElement('swipeHint')?.classList.remove('active', 'serve');
     safeGetElement('playerPaddle')?.classList.remove('can-hit', 'serving');
-    safeGetElement('servePower')?.classList.remove('active');
+    safeGetElement('serveTiming')?.classList.remove('active');
+    safeGetElement('serveTossBall')?.classList.remove('active');
     safeGetElement('serveAim')?.classList.remove('active');
     safeGetElement('serveTargetLine')?.classList.remove('active');
     clearServiceBoxHighlight();
@@ -3979,9 +4070,13 @@ document.addEventListener('touchstart', e => {
         return;
     }
 
-    // Handle serve charging
+    // Handle serve: tap to toss (step 1) or tap for timing (step 2)
     if(M.isPlayerServe && M.servePhase === 'ready'){
-        chargingServe(t.clientY, t.clientX);
+        serveToss();
+        return;
+    }
+    if(M.isPlayerServe && M.servePhase === 'toss'){
+        serveTimingTap();
         return;
     }
 
@@ -3995,9 +4090,9 @@ document.addEventListener('touchmove', e => {
 
     const t = e.touches[0];
 
-    // Continue charging serve
-    if(M.servePhase === 'charging'){
-        chargingServe(t.clientY, t.clientX);
+    // Aim adjustment during serve aim phase
+    if(M.servePhase === 'aim'){
+        serveAimMove(t.clientX);
         return;
     }
 
@@ -4011,9 +4106,10 @@ document.addEventListener('touchend', e => {
 
     const t = e.changedTouches[0];
 
-    // Release serve
-    if(M.servePhase === 'charging'){
-        releaseServe(t.clientX, t.clientY);
+    // During aim phase, release finalizes aim early
+    if(M.servePhase === 'aim'){
+        if(M.serveAimTimeout) clearTimeout(M.serveAimTimeout);
+        finalizeServe();
         touchY = touchX = null;
         return;
     }
@@ -4062,7 +4158,11 @@ document.addEventListener('mousedown', e => {
     }
 
     if(M.isPlayerServe && M.servePhase === 'ready'){
-        chargingServe(e.clientY, e.clientX);
+        serveToss();
+        return;
+    }
+    if(M.isPlayerServe && M.servePhase === 'toss'){
+        serveTimingTap();
         return;
     }
 
@@ -4073,8 +4173,8 @@ document.addEventListener('mousedown', e => {
 document.addEventListener('mousemove', e => {
     if(!M.active) return;
 
-    if(M.servePhase === 'charging'){
-        chargingServe(e.clientY, e.clientX);
+    if(M.servePhase === 'aim'){
+        serveAimMove(e.clientX);
         return;
     }
 
@@ -4086,8 +4186,9 @@ document.addEventListener('mouseup', e => {
 
     if(!M.active) return;
 
-    if(M.servePhase === 'charging'){
-        releaseServe(e.clientX, e.clientY);
+    if(M.servePhase === 'aim'){
+        if(M.serveAimTimeout) clearTimeout(M.serveAimTimeout);
+        finalizeServe();
         touchY = touchX = null;
         return;
     }
