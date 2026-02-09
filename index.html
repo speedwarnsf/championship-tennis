@@ -92,16 +92,16 @@
         .sideline-right{right:12%;top:0;bottom:0;width:3px}
         .baseline-top{top:6%;left:0;right:0;height:3px}
         .baseline-bottom{bottom:6%;left:0;right:0;height:3px}
-        .service-top{top:27%;left:12%;right:12%;height:2px}
-        .service-bottom{bottom:27%;left:12%;right:12%;height:2px}
+        .service-top{top:36.5%;left:24%;right:25%;height:2px}
+        .service-bottom{top:69.5%;left:24%;right:25%;height:2px}
         .center-service{left:50%;top:27%;bottom:27%;width:2px}
-        .net{top:60%;left:-2%;right:-2%;height:6px;background:linear-gradient(to bottom,rgba(255,255,255,0.9),rgba(100,100,100,0.9));z-index:20;transform:translateY(-50%)}
+        .net{top:53%;left:-2%;right:-2%;height:6px;background:linear-gradient(to bottom,rgba(255,255,255,0.9),rgba(100,100,100,0.9));z-index:20;transform:translateY(-50%)}
         /* Service box highlighting */
         .service-box{position:absolute;border:3px solid transparent;border-radius:8px;pointer-events:none;z-index:15;opacity:0;transition:opacity 0.3s}
-        .service-box.opp-right{top:27%;bottom:40%;left:50%;right:12%}
-        .service-box.opp-left{top:27%;bottom:40%;left:12%;right:50%}
-        .service-box.player-right{top:60%;height:13%;left:50%;right:12%}
-        .service-box.player-left{top:60%;height:13%;left:12%;right:50%}
+        .service-box.opp-right{top:36.5%;bottom:47%;left:49.5%;right:25%}
+        .service-box.opp-left{top:36.5%;bottom:47%;left:25%;right:50.5%}
+        .service-box.player-right{top:53%;height:16.5%;left:49.5%;right:25%}
+        .service-box.player-left{top:53%;height:16.5%;left:25%;right:50.5%}
         .service-box.active{opacity:1;border-color:rgba(76,255,80,0.25);background:rgba(76,255,80,0.04);animation:serviceBoxPulse 2s ease-in-out infinite}
         @keyframes serviceBoxPulse{0%,100%{border-color:rgba(76,255,80,0.15)}50%{border-color:rgba(76,255,80,0.3)}}
         /* Net cord effect */
@@ -1556,7 +1556,7 @@ function startPlayerServe(){
     M.servePower = 0;
     M.serveStartY = null;
     M.serveStartX = null;
-    M.serveAimX = M.serveSide === 'deuce' ? 30 : 70; // Default aim to cross-court box center
+    M.serveAimX = M.serveSide === 'deuce' ? 37 : 62; // Default aim to cross-court box center
 
     // Position player at baseline center
     M.playerPos = 50;
@@ -1609,8 +1609,8 @@ function chargingServe(clientY, clientX){
         // Calculate target position in service box
         // Cross-court: deuce serve aims LEFT, ad serve aims RIGHT
         const isDeuce = M.serveSide === 'deuce';
-        const boxLeft = isDeuce ? 15 : 52;
-        const boxRight = isDeuce ? 48 : 85;
+        const boxLeft = isDeuce ? 24 : 50;
+        const boxRight = isDeuce ? 49 : 75;
         const boxCenter = (boxLeft + boxRight) / 2;
 
         // Aim influenced by finger position
@@ -1622,7 +1622,7 @@ function chargingServe(clientY, clientX){
         // Position aim indicator
         const aimEl = safeGetElement('serveAim');
         aimEl.style.left = targetX + '%';
-        aimEl.style.top = '35%';
+        aimEl.style.top = '45%'; // Inside opponent's service box
 
         // Position target line from player to aim
         const lineEl = safeGetElement('serveTargetLine');
@@ -1671,9 +1671,9 @@ function executePlayerServe(power, aimX){
 
         // Determine target service box (CROSS-COURT: deuce serve → left box, ad serve → right box)
         const isDeuceCourt = M.serveSide === 'deuce';
-        const boxCenterX = isDeuceCourt ? 30 : 70;
-        const boxLeft = isDeuceCourt ? 12 : 50;
-        const boxRight = isDeuceCourt ? 50 : 88;
+        const boxCenterX = isDeuceCourt ? 37 : 62;
+        const boxLeft = isDeuceCourt ? 24 : 50;
+        const boxRight = isDeuceCourt ? 50 : 75;
 
         // Calculate serve trajectory
         // Aim target is where player was aiming (tracked in M.serveAimX)
@@ -1782,14 +1782,14 @@ function animateServeBall(result){
             const isDeuce = M.serveSide === 'deuce';
             const isPlayerServing = M.servingPlayer === 'player';
 
-            // Court dimensions: sidelines at 12%-88%, net at ~60%, opp service line ~27%, player service line ~73%
-            // When PLAYER serves (from bottom), ball must land in OPPONENT's boxes (y: 27-60%)
-            // When OPPONENT serves (from top), ball must land in PLAYER's boxes (y: 60-73%)
+            // Court from image: sidelines 24%-75%, net 53%, service lines 36.5%/69.5%, center 49.5%
+            // When PLAYER serves: ball must land in OPPONENT's boxes (y: 36.5-53%)
+            // When OPPONENT serves: ball must land in PLAYER's boxes (y: 53-69.5%)
             // CROSS-COURT RULE: Serve from deuce side (right) goes to LEFT box, and vice versa
-            const boxLeft = isDeuce ? 12 : 50.5;   // Deuce serve → left box (cross-court)
-            const boxRight = isDeuce ? 49.5 : 88;  // Ad serve → right box (cross-court)
-            const boxTop = isPlayerServing ? 27 : 60;
-            const boxBottom = isPlayerServing ? 60 : 73;
+            const boxLeft = isDeuce ? 24 : 49.5;   // Deuce serve → left box (cross-court)
+            const boxRight = isDeuce ? 49.5 : 75;  // Ad serve → right box (cross-court)
+            const boxTop = isPlayerServing ? 36.5 : 53;
+            const boxBottom = isPlayerServing ? 53 : 69.5;
 
             // Minimal tolerance for pixel-perfect detection
             const tolerance = 0.3;
@@ -3816,7 +3816,7 @@ let lastTapX = 0;
 let lastTapY = 0;
 const DOUBLE_TAP_THRESHOLD = 350; // ms
 const DOUBLE_TAP_DISTANCE = 50; // px
-const NET_POSITION_Y = 75; // % from top (net is at ~60%, stand inside service box)
+const NET_POSITION_Y = 62; // % from top (net is at 53%, stand in service box)
 const BASELINE_Y = 95;
 const NET_RUSH_DURATION = 4500; // ms before auto-retreat
 let playerTargetY = BASELINE_Y;
