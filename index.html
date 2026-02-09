@@ -20,12 +20,12 @@
         @keyframes slideInBall{0%{opacity:0;transform:translateX(100vw)}100%{opacity:1;transform:translateX(0)}}
         .loading-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;animation:fadeInContent 0.8s ease-out 1.4s forwards;opacity:0;margin-top:-70px}
         @keyframes fadeInContent{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
-        .loading-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,12vw,72px);background:linear-gradient(135deg,#9b59b6,#bb86fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:6px;text-shadow:0 0 30px rgba(187,134,252,0.3)}
+        .loading-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,12vw,72px);background:linear-gradient(135deg,#9b59b6,#bb86fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:6px}
         .loading-subtitle{color:rgba(255,255,255,0.5);font-size:13px;letter-spacing:5px;text-transform:uppercase;margin-bottom:50px}
         .play-button{padding:18px 70px;background:#fff;border:none;border-radius:35px;color:#1a1a2e;font-size:15px;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.3);transition:transform 0.2s,box-shadow 0.2s}
         .play-button:hover{transform:scale(1.05);box-shadow:0 15px 40px rgba(0,0,0,0.4)}
         .main-menu{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);justify-content:space-between;padding:15px;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch}
-        .game-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,11vw,64px);color:#ffd700;text-align:center;letter-spacing:4px;text-shadow:3px 3px 0 #000,0 0 20px rgba(255,215,0,0.5)}
+        .game-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,11vw,64px);color:#ffd700;text-align:center;letter-spacing:4px;text-shadow:3px 3px 0 #000}
         .tagline{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,215,0,0.6);text-align:center}
         .player-card{background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 100%);border:3px solid;border-color:#6a8aba #2a3a5a #2a3a5a #6a8aba;border-radius:8px;padding:12px;margin:10px 0;box-shadow:3px 3px 0 rgba(0,0,0,0.4)}
         .player-level{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
@@ -100,8 +100,8 @@
         .service-box{position:absolute;border:3px solid transparent;border-radius:8px;pointer-events:none;z-index:15;opacity:0;transition:opacity 0.3s}
         .service-box.deuce{top:27%;bottom:50%;left:50%;right:12%}
         .service-box.ad{top:27%;bottom:50%;left:12%;right:50%}
-        .service-box.active{opacity:1;border-color:rgba(76,255,80,0.5);background:rgba(76,255,80,0.1);animation:serviceBoxPulse 1s ease-in-out infinite}
-        @keyframes serviceBoxPulse{0%,100%{border-color:rgba(76,255,80,0.3)}50%{border-color:rgba(76,255,80,0.7)}}
+        .service-box.active{opacity:1;border-color:rgba(76,255,80,0.25);background:rgba(76,255,80,0.04);animation:serviceBoxPulse 2s ease-in-out infinite}
+        @keyframes serviceBoxPulse{0%,100%{border-color:rgba(76,255,80,0.15)}50%{border-color:rgba(76,255,80,0.3)}}
         /* Net cord effect */
         .net-cord{position:absolute;top:50%;left:-2%;right:-2%;height:6px;z-index:21;transform:translateY(-50%);pointer-events:none;opacity:0}
         .net-cord.active{animation:netCordFlash 0.4s ease-out}
@@ -109,10 +109,10 @@
         .ball{position:absolute;width:20px;height:20px;background:radial-gradient(circle at 30% 30%,#fcf836,#c9d11a);border-radius:50%;transform:translate(-50%,-50%);z-index:40;display:none;box-shadow:0 2px 4px rgba(0,0,0,0.4)}
         .ball.fast{box-shadow:0 2px 4px rgba(0,0,0,0.4),-8px 0 12px rgba(252,248,54,0.3)}
         .ball.active{display:block}
-        .ball.glowing{box-shadow:0 0 30px rgba(76,255,80,1),0 0 50px rgba(76,255,80,0.5);animation:ballGlow 0.4s ease-in-out infinite}
+        .ball.glowing{box-shadow:0 0 12px rgba(76,255,80,0.6),0 0 24px rgba(76,255,80,0.2);animation:ballGlow 0.6s ease-in-out infinite}
         .ball.toss{animation:ballToss 0.6s ease-out}
         @keyframes ballToss{0%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-150%) scale(1.2)}100%{transform:translate(-50%,-50%) scale(1)}}
-        @keyframes ballGlow{0%,100%{transform:translate(-50%,-50%) scale(1.3)}50%{transform:translate(-50%,-50%) scale(1.6)}}
+        @keyframes ballGlow{0%,100%{transform:translate(-50%,-50%) scale(1.1)}50%{transform:translate(-50%,-50%) scale(1.25)}}
         @keyframes flashFade{0%{opacity:1}100%{opacity:0}}
         /* Enhanced ball trail effect */
         .ball-trail{position:absolute;width:10px;height:10px;background:rgba(252,248,54,0.4);border-radius:50%;transform:translate(-50%,-50%);z-index:38;pointer-events:none;opacity:0;transition:opacity 0.1s}
@@ -130,8 +130,8 @@
         .opponent.hitting{animation:opponentHit 0.3s ease}
         @keyframes opponentHit{50%{transform:translateX(-50%) scale(1.2) rotate(-5deg)}}
         .player-paddle{position:absolute;bottom:5%;width:86px;height:104px;display:flex;align-items:center;justify-content:center;transform:translateX(-50%);transition:left 0.1s ease-out;z-index:35}
-        .player-paddle.can-hit{filter:drop-shadow(0 0 8px rgba(76,255,80,0.3));animation:none}
-        .player-paddle.serving{filter:drop-shadow(0 0 25px rgba(255,215,0,0.8))}
+        .player-paddle.can-hit{filter:drop-shadow(0 0 5px rgba(76,255,80,0.2));animation:none}
+        .player-paddle.serving{filter:drop-shadow(0 0 10px rgba(255,215,0,0.4))}
         @keyframes paddleReady{0%,100%{transform:translateX(-50%) scale(1.05)}50%{transform:translateX(-50%) scale(1)}}
         .player-sprite{position:relative;width:80px;height:96px;overflow:hidden;image-rendering:pixelated;transform:scale(1);transition:transform 0.2s ease}
         .player-sprite.flipped{transform:scaleX(-1)}
@@ -157,7 +157,7 @@
         .serve-power-fill{height:100%;width:0%;background:linear-gradient(90deg,#4caf50,#ffd700 50%,#f44336);transition:width 0.05s}
         .serve-power-zones{display:flex;justify-content:space-between;width:100%;font-size:8px;color:rgba(255,255,255,0.6);padding:0 2px}
         /* Serve aim indicator */
-        .serve-aim{position:absolute;width:30px;height:30px;border:3px solid #ffd700;border-radius:50%;transform:translate(-50%,-50%);z-index:45;display:none;pointer-events:none;box-shadow:0 0 15px rgba(255,215,0,0.5)}
+        .serve-aim{position:absolute;width:30px;height:30px;border:2px solid rgba(255,215,0,0.7);border-radius:50%;transform:translate(-50%,-50%);z-index:45;display:none;pointer-events:none;box-shadow:0 0 8px rgba(255,215,0,0.3)}
         .serve-aim.active{display:block;animation:aimPulse 0.8s ease-in-out infinite}
         .serve-aim-dot{position:absolute;top:50%;left:50%;width:6px;height:6px;background:#ffd700;border-radius:50%;transform:translate(-50%,-50%)}
         @keyframes aimPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1}50%{transform:translate(-50%,-50%) scale(1.3);opacity:0.8}}
@@ -170,7 +170,7 @@
         .hit-effect.active{animation:hitRipple 0.6s ease-out}
         @keyframes hitRipple{0%{opacity:1;transform:translate(-50%,-50%) scale(0.5)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.5)}}
         /* Gem improvements */
-        .gem-drop{position:absolute;width:45px;height:45px;font-size:36px;display:none;transform:translate(-50%,-50%);z-index:150;cursor:pointer;filter:drop-shadow(0 0 10px rgba(231,76,60,0.8))}
+        .gem-drop{position:absolute;width:45px;height:45px;font-size:36px;display:none;transform:translate(-50%,-50%);z-index:150;cursor:pointer;filter:drop-shadow(0 0 6px rgba(231,76,60,0.5))}
         .gem-drop.active{display:block;animation:gemFloat 1.5s ease-in-out infinite}
         .gem-drop.urgent{animation:gemUrgent 0.3s ease-in-out infinite}
         @keyframes gemFloat{0%,100%{transform:translate(-50%,-50%) scale(1) rotate(0deg)}50%{transform:translate(-50%,-60%) scale(1.15) rotate(10deg)}}
@@ -236,7 +236,7 @@
         .char-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;text-shadow:2px 2px 0 #000,0 0 10px rgba(100,200,255,0.5);letter-spacing:3px}
         .char-card{background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 50%,#1a2a4a 100%);border:3px solid;border-color:#6a8aba #2a3a5a #2a3a5a #6a8aba;border-radius:4px;padding:6px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:2px 2px 0 #0a1a2a}
         .char-card:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #0a1a2a}
-        .char-card.selected{border-color:#ffd700 #aa8800 #aa8800 #ffd700;background:linear-gradient(180deg,#4a5a7a 0%,#3a4a6a 50%,#2a3a5a 100%);box-shadow:2px 2px 0 #0a1a2a,0 0 15px rgba(255,215,0,0.4)}
+        .char-card.selected{border-color:#ffd700 #aa8800 #aa8800 #ffd700;background:linear-gradient(180deg,#4a5a7a 0%,#3a4a6a 50%,#2a3a5a 100%);box-shadow:2px 2px 0 #0a1a2a,0 0 8px rgba(255,215,0,0.2)}
         .char-card.locked{opacity:0.6;filter:grayscale(0.5) brightness(0.7)}
         .char-preview{width:64px;height:77px;margin:0 auto 4px;background-size:512px 77px;background-repeat:no-repeat;background-position:0 0;image-rendering:pixelated;border:2px solid #1a2a4a;background-color:#0a0a1a}
         .char-name{font-size:9px;color:#8ac;font-weight:700;text-transform:uppercase;text-shadow:1px 1px 0 #000;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1877,6 +1877,14 @@ function load(){
         if(!G.equipment.serveGear) G.equipment.serveGear = null;
     }
 
+    // Restore unlocked characters from save
+    if(G.unlockedChars){
+        G.unlockedChars.forEach(id => {
+            const c = window.CHARACTERS.find(ch => ch.id === id);
+            if(c) c.unlocked = true;
+        });
+    }
+
     // Initialize daily challenges
     initDailyChallenge();
 }
@@ -2165,9 +2173,11 @@ function tryUnlock(id){
     var char = window.CHARACTERS.find(function(c) { return c.id === id; });
     if(G.coins >= char.cost){
         G.coins -= char.cost;
+        char.unlocked = true;
         G.unlockedChars = G.unlockedChars || [];
         G.unlockedChars.push(id);
         save();
+        updateUI();
         renderCharGrid();
         selectCharacter(char);
         toast(`${char.name} unlocked!`);
@@ -2910,22 +2920,6 @@ function updateOpp(){
     { const _el = safeGetElement('opponent'); if(_el) _el.style.left = M.oppPos + '%'; }
 }
 
-function ballOut(reason){
-    M.ballActive = false;
-    M.canHit = false;
-    resetBallUI();
-    M.combo = 0;
-    M.pendingCombo = false;
-    M.rally = 0;
-    sounds.miss();
-    showCallOverlay('OUT!', false);
-
-    M.streak = 0;
-    updateStreakDisplay();
-
-    if(!scorePoint('o')) setTimeout(startNextPoint, 1500);
-}
-
 function ballMissed(){
     M.ballActive = false;
     M.canHit = false;
@@ -3024,7 +3018,7 @@ function hitstop(duration = 150) {
     if(!court) return;
 
     // Flash white for impact
-    court.style.filter = 'brightness(2) contrast(1.5)';
+    court.style.filter = 'brightness(1.3) contrast(1.15)';
     setTimeout(() => {
         court.style.filter = '';
     }, duration);
