@@ -595,9 +595,11 @@
             <h2 class="tutorial-title">HOW TO PLAY</h2>
             <p class="tutorial-text">
                 <strong>🎾 SERVING:</strong><br>
-                When it's your serve: TAP to toss, PULL DOWN to charge power, and RELEASE at the sweet spot for timing bonus!<br><br>
+                TAP to toss, PULL DOWN to charge power, RELEASE at the sweet spot for timing bonus! Aim with horizontal position.<br><br>
                 <strong>⚡ RETURNING:</strong><br>
-                Watch for the GREEN GLOW - swipe up to hit!<br><br>
+                Watch for the GREEN GLOW — SWIPE UP for power returns! Longer swipes = more power. Angle your swipe to aim.<br><br>
+                <strong>🏃 NET RUSH:</strong><br>
+                DOUBLE-TAP to rush the net for volleys!<br><br>
                 <strong>📍 COURT:</strong><br>
                 • Serve to deuce court (right) on even points<br>
                 • Serve to ad court (left) on odd points<br>
@@ -1601,7 +1603,7 @@ function startPlayerServe(){
     updateServeIndicator();
 
     const hint = safeGetElement('swipeHint');
-    hint.textContent = 'TAP TO TOSS';
+    hint.textContent = 'PULL BACK & RELEASE';
     hint.classList.add('active','serve');
 
     // Position ball with player (held)
@@ -4102,12 +4104,9 @@ document.addEventListener('touchstart', e => {
         return;
     }
 
-    // Serve: tap to toss, then pull-back to charge
+    // Serve: tap starts toss AND immediately begins pull-back tracking
     if(M.isPlayerServe && M.servePhase === 'ready'){
         serveToss();
-        return;
-    }
-    if(M.isPlayerServe && M.servePhase === 'toss'){
         startServeCharge(t.clientY, t.clientX);
         return;
     }
