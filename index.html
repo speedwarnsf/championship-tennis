@@ -100,6 +100,8 @@
         .service-box{position:absolute;border:3px solid transparent;border-radius:8px;pointer-events:none;z-index:15;opacity:0;transition:opacity 0.3s}
         .service-box.deuce{top:27%;bottom:50%;left:50%;right:12%}
         .service-box.ad{top:27%;bottom:50%;left:12%;right:50%}
+        .service-box.deuce-player{top:50%;height:23%;left:50%;right:12%}
+        .service-box.ad-player{top:50%;height:23%;left:12%;right:50%}
         .service-box.active{opacity:1;border-color:rgba(76,255,80,0.25);background:rgba(76,255,80,0.04);animation:serviceBoxPulse 2s ease-in-out infinite}
         @keyframes serviceBoxPulse{0%,100%{border-color:rgba(76,255,80,0.15)}50%{border-color:rgba(76,255,80,0.3)}}
         /* Net cord effect */
@@ -482,6 +484,8 @@
             <!-- Service boxes -->
             <div class="service-box deuce" id="serviceBoxDeuce"></div>
             <div class="service-box ad" id="serviceBoxAd"></div>
+            <div class="service-box deuce-player" id="serviceBoxDeucePlayer"></div>
+            <div class="service-box ad-player" id="serviceBoxAdPlayer"></div>
             <div class="hit-zone" id="hitZone"></div>
             <div class="opponent" id="opponent">
                 <div class="player-sprite opponent-sprite">
@@ -1501,24 +1505,37 @@ function updateServeIndicator(){
 }
 
 function highlightServiceBox(){
-    const deuce = safeGetElement('serviceBoxDeuce');
-    const ad = safeGetElement('serviceBoxAd');
-
-    deuce.classList.remove('active');
-    ad.classList.remove('active');
+    // Clear all service box highlights
+    safeGetElement('serviceBoxDeuce')?.classList.remove('active');
+    safeGetElement('serviceBoxAd')?.classList.remove('active');
+    safeGetElement('serviceBoxDeucePlayer')?.classList.remove('active');
+    safeGetElement('serviceBoxAdPlayer')?.classList.remove('active');
 
     M.serveSide = getServeSide();
 
-    if(M.serveSide === 'deuce'){
-        deuce.classList.add('active');
+    const isPlayerServing = M.servingPlayer === 'player';
+    if(isPlayerServing){
+        // Player serves into opponent's boxes (top half)
+        if(M.serveSide === 'deuce'){
+            safeGetElement('serviceBoxDeuce')?.classList.add('active');
+        } else {
+            safeGetElement('serviceBoxAd')?.classList.add('active');
+        }
     } else {
-        ad.classList.add('active');
+        // Opponent serves into player's boxes (bottom half)
+        if(M.serveSide === 'deuce'){
+            safeGetElement('serviceBoxDeucePlayer')?.classList.add('active');
+        } else {
+            safeGetElement('serviceBoxAdPlayer')?.classList.add('active');
+        }
     }
 }
 
 function clearServiceBoxHighlight(){
     safeGetElement('serviceBoxDeuce')?.classList.remove('active');
     safeGetElement('serviceBoxAd')?.classList.remove('active');
+    safeGetElement('serviceBoxDeucePlayer')?.classList.remove('active');
+    safeGetElement('serviceBoxAdPlayer')?.classList.remove('active');
 }
 
 function startPlayerServe(){
@@ -1748,15 +1765,16 @@ function animateServeBall(result){
         // BULLETPROOF service box detection
         if(M.ballBounces === 1){
             const isDeuce = M.serveSide === 'deuce';
+            const isPlayerServing = M.servingPlayer === 'player';
 
-            // PRECISE service box coordinates (matching court lines exactly)
-            // Court dimensions: sidelines at 12%-88%, service lines at 27%-73%, net at 50%
-            // Service boxes are 27%-50% depth (from net to service line)
+            // Court dimensions: sidelines at 12%-88%, service lines at 27% and 73%, net at 50%
+            // When PLAYER serves (from bottom), ball must land in OPPONENT's boxes (y: 27-50%)
+            // When OPPONENT serves (from top), ball must land in PLAYER's boxes (y: 50-73%)
             // Deuce court: right side (50%-88% width), Ad court: left side (12%-50% width)
             const boxLeft = isDeuce ? 50.5 : 12;   // Slight overlap with center line
             const boxRight = isDeuce ? 88 : 49.5;
-            const boxTop = 27;                      // Service line
-            const boxBottom = 50;                   // Net line
+            const boxTop = isPlayerServing ? 27 : 50;
+            const boxBottom = isPlayerServing ? 50 : 73;
 
             // Minimal tolerance for pixel-perfect detection
             const tolerance = 0.3;
@@ -1952,6 +1970,9 @@ function opponentServe(){
 
         const st = getStats();
         const isDeuceCourt = M.serveSide === 'deuce';
+        // Opponent serves cross-court into PLAYER's service boxes (y:50-73%)
+        // From opponent's POV at top: deuce side serve goes to player's deuce box (screen right: 50-88%)
+        // Ad side serve goes to player's ad box (screen left: 12-50%)
         const targetX = isDeuceCourt ? 55 + Math.floor(Math.random() * 20) : 25 + Math.floor(Math.random() * 20);
 
         // Opponent serve speed
