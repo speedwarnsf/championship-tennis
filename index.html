@@ -1723,13 +1723,16 @@ function executePlayerServe(power, aimX){
             // Commit to serve but it goes out
             M.ballActive = true;
             M.ballPos = {x: 50, y: 90};
-            M.ballH = 15;
+            M.ballH = 100;
             M.ballBounces = 0;
             targetX = targetX < boxCenterX ? boxLeft - 10 : boxRight + 10;
+            // Out fault — still arcs over but lands outside the box
+            const faultFrames = (90 - 35) / (serveSpeed * 1.2);
+            const faultZ = (0.07 * faultFrames * faultFrames - 100) / faultFrames;
             M.ballVel = {
                 x: (targetX - M.ballPos.x) / 80,
                 y: -serveSpeed * 1.2,
-                z: 2.5
+                z: faultZ
             };
             animateServeBall('out');
             return;
@@ -1738,19 +1741,24 @@ function executePlayerServe(power, aimX){
         // Good serve!
         M.ballActive = true;
         M.ballPos = {x: 50, y: 88};
-        M.ballH = 15;
+        M.ballH = 100;  // High contact point (ball toss)
         M.ballBounces = 0;
         M.isPlayerServe = false;
         M.servePhase = 'flight';
 
         clearServiceBoxHighlight();
 
-        // Ball arcs up then descends — must bounce in opponent's service box (y: 28-54%)
-        // Higher z = bigger arc, more time to travel across court before landing
+        // SERVE PHYSICS: Ball starts high, descends over net, bounces in opponent's service box
+        // Target bounce at ~42% (middle of opponent's service box 28-54%)
+        const targetBounceY = 42;
+        const framesToTarget = (88 - targetBounceY) / (serveSpeed * 1.2);
+        // ballH = 100 + z0*n - 0.07*n^2 = 0 → z0 = (0.07*n^2 - 100) / n
+        const z0 = (0.07 * framesToTarget * framesToTarget - 100) / framesToTarget;
+
         M.ballVel = {
             x: (targetX - M.ballPos.x) / 70,
-            y: -serveSpeed * 1.2,  // Faster to reach service box
-            z: 2.5  // Upward arc that descends into service box
+            y: -serveSpeed * 1.2,
+            z: z0
         };
 
         // Check if it's an ace (opponent can't reach)
@@ -1980,28 +1988,35 @@ function opponentServe(){
         M.ballActive = true;
         M.lastHitBy = 'opp'; // Track who hit last
         M.ballPos = {x: M.oppPos, y: 10};
-        M.ballH = 80;
+        M.ballH = 100;  // High contact point (ball toss)
         M.ballBounces = 0;
 
         const st = getStats();
         const isDeuceCourt = M.serveSide === 'deuce';
-        // Opponent serves CROSS-COURT into PLAYER's service boxes (y:50-73%)
-        // From opponent's POV: their deuce side is screen-left (x<50), cross-court → player's right box (x 50-88%)
-        // Their ad side is screen-right (x>50), cross-court → player's left box (x 12-50%)
+        // Opponent serves CROSS-COURT into PLAYER's service boxes
         const targetX = isDeuceCourt ? 55 + Math.floor(Math.random() * 20) : 25 + Math.floor(Math.random() * 20);
 
         // Opponent serve speed
         const serveSpd = M.settings.speed * M.settings.oppServeSpeed * 0.65;
 
-        // Display opponent serve speed (slightly faster than player typically)
+        // Display opponent serve speed
         const oppServeSpeed = Math.round(90 + M.settings.oppServeSpeed * 30 + Math.floor(Math.random() * 15));
         M.lastServeSpeed = oppServeSpeed;
         { const _el = safeGetElement('serveSpeed'); if(_el) _el.textContent = oppServeSpeed + ' MPH'; }
 
+        // SERVE PHYSICS: Ball starts high, descends sharply over net, bounces in player's service box
+        // Must NOT bounce before crossing the net — z must be negative (downward) from the start
+        // Calculate z so ball reaches ground (ballH=0) when y reaches the service box (~65%)
+        // Target y for bounce: ~65% (middle of player's service box)
+        const targetBounceY = 65;
+        const framesToBounce = (targetBounceY - 10) / (serveSpd * 1.2);
+        // ballH = 100 + z0*n - 0.07*n^2 = 0 → z0 = (0.07*n^2 - 100) / n
+        const z0 = (0.07 * framesToBounce * framesToBounce - 100) / framesToBounce;
+
         M.ballVel = {
             x: (targetX - M.ballPos.x) / 100 * 1.1,
             y: serveSpd * 1.2,
-            z: 2.5  // Arc up then descend into player's service box
+            z: z0
         };
 
         const ball = safeGetElement('ball');
