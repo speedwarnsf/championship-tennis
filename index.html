@@ -1723,13 +1723,13 @@ function executePlayerServe(power, aimX){
             // Commit to serve but it goes out
             M.ballActive = true;
             M.ballPos = {x: 50, y: 90};
-            M.ballH = 60;
+            M.ballH = 15;
             M.ballBounces = 0;
             targetX = targetX < boxCenterX ? boxLeft - 10 : boxRight + 10;
             M.ballVel = {
                 x: (targetX - M.ballPos.x) / 80,
-                y: -serveSpeed,
-                z: -0.3
+                y: -serveSpeed * 1.2,
+                z: 2.5
             };
             animateServeBall('out');
             return;
@@ -1738,19 +1738,19 @@ function executePlayerServe(power, aimX){
         // Good serve!
         M.ballActive = true;
         M.ballPos = {x: 50, y: 88};
-        M.ballH = 60;  // Start high (ball toss)
+        M.ballH = 15;
         M.ballBounces = 0;
         M.isPlayerServe = false;
         M.servePhase = 'flight';
 
         clearServiceBoxHighlight();
 
-        // Ball must arc DOWN and bounce in service box (y: 27-60% for player serves)
-        // Higher initial height + negative z = ball descends to bounce in box
+        // Ball arcs up then descends — must bounce in opponent's service box (y: 28-54%)
+        // Higher z = bigger arc, more time to travel across court before landing
         M.ballVel = {
             x: (targetX - M.ballPos.x) / 70,
-            y: -serveSpeed,
-            z: -0.5  // Downward arc from toss height
+            y: -serveSpeed * 1.2,  // Faster to reach service box
+            z: 2.5  // Upward arc that descends into service box
         };
 
         // Check if it's an ace (opponent can't reach)
@@ -2000,8 +2000,8 @@ function opponentServe(){
 
         M.ballVel = {
             x: (targetX - M.ballPos.x) / 100 * 1.1,
-            y: serveSpd,
-            z: -0.5  // Downward arc to bounce in player's service box
+            y: serveSpd * 1.2,
+            z: 2.5  // Arc up then descend into player's service box
         };
 
         const ball = safeGetElement('ball');
