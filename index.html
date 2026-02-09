@@ -1941,6 +1941,12 @@ function animateServeBall(result){
 
             // Ball in play after valid bounce in service box
             M.servePhase = 'none';
+
+            // If OPPONENT was serving, hand off to main game loop so player can return
+            if(!isPlayerServing){
+                requestAnimationFrame(animateBall);
+                return; // Stop animateServeBall loop
+            }
         }
     }
 
