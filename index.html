@@ -129,7 +129,7 @@
         .opponent{position:absolute;top:5%;left:50%;transform:translateX(-50%);width:80px;height:96px;display:flex;align-items:center;justify-content:center;z-index:30;transition:left 0.2s ease-out}
         .opponent.hitting{animation:opponentHit 0.3s ease}
         @keyframes opponentHit{50%{transform:translateX(-50%) scale(1.2) rotate(-5deg)}}
-        .player-paddle{position:absolute;bottom:5%;width:86px;height:104px;display:flex;align-items:center;justify-content:center;transform:translateX(-50%);transition:left 0.1s ease-out;z-index:35}
+        .player-paddle{position:absolute;bottom:5%;width:86px;height:104px;display:flex;align-items:center;justify-content:center;transform:translateX(-50%);z-index:35}
         .player-paddle.can-hit{filter:drop-shadow(0 0 5px rgba(76,255,80,0.2));animation:none}
         .player-paddle.serving{filter:drop-shadow(0 0 10px rgba(255,215,0,0.4))}
         @keyframes paddleReady{0%,100%{transform:translateX(-50%) scale(1.05)}50%{transform:translateX(-50%) scale(1)}}
@@ -215,6 +215,30 @@
         .reward-label{font-size:13px;color:rgba(255,255,255,0.8);text-transform:uppercase}
         .reward-value{font-family:'Bebas Neue',sans-serif;font-size:28px;background:linear-gradient(135deg,#4caf50,#8bc34a);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         .continue-btn{padding:18px 50px;background:linear-gradient(135deg,#ffd700,#ffed4e);border:none;border-radius:25px;color:#1a1a2e;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
+
+        /* Trophy Case / Achievements */
+        .trophy-screen{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:12px;overflow-y:auto;z-index:1100;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+        .trophy-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:8px 12px;background:linear-gradient(180deg,#4a6a9a 0%,#3a5a8a 50%,#2a4a7a 100%);border:2px solid #6a8aba;border-radius:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 2px 4px rgba(0,0,0,0.3)}
+        .trophy-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#ffd700;text-shadow:2px 2px 0 #000,0 0 10px rgba(255,215,0,0.5);letter-spacing:3px}
+        .trophy-grid{display:grid;grid-template-columns:1fr;gap:8px;padding-bottom:20px}
+        .trophy-card{background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 100%);border:2px solid;border-color:#5a7a9a #1a2a4a #1a2a4a #5a7a9a;border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px;box-shadow:2px 2px 0 rgba(0,0,0,0.3)}
+        .trophy-card.unlocked{border-color:#ffd700 #aa8800 #aa8800 #ffd700;background:linear-gradient(180deg,#4a5a7a 0%,#3a4a6a 100%)}
+        .trophy-card.locked{opacity:0.5;filter:grayscale(0.6)}
+        .trophy-icon{font-size:32px;min-width:40px;text-align:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))}
+        .trophy-card.locked .trophy-icon{filter:grayscale(1) brightness(0.5)}
+        .trophy-info{flex:1}
+        .trophy-name{font-family:'Bebas Neue',sans-serif;font-size:16px;color:#ffd700;text-shadow:1px 1px 0 #000}
+        .trophy-card.locked .trophy-name{color:#666}
+        .trophy-desc{font-size:10px;color:#8ac;margin-top:2px}
+        .trophy-card.locked .trophy-desc{color:#555}
+        .trophy-date{font-size:8px;color:rgba(255,215,0,0.6);margin-top:3px}
+        .trophy-progress{font-size:9px;color:#4caf50;font-weight:700;margin-top:2px}
+        .achievement-popup{position:fixed;top:-100px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ffd700,#ffed4e);border:3px solid #aa8800;border-radius:15px;padding:12px 20px;display:flex;align-items:center;gap:10px;z-index:5000;transition:top 0.5s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 8px 30px rgba(255,215,0,0.4)}
+        .achievement-popup.show{top:50px}
+        .achievement-popup-icon{font-size:28px}
+        .achievement-popup-text{color:#1a1a2e}
+        .achievement-popup-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px}
+        .achievement-popup-desc{font-size:10px;opacity:0.7}
 
         /* Daily Challenge System */
         .challenge-banner{background:linear-gradient(135deg,#9b59b6,#8e44ad);border:2px solid rgba(155,89,182,0.5);border-radius:12px;margin:10px 0;padding:12px;color:#fff}
@@ -377,6 +401,7 @@
             <button class="menu-btn primary" onclick="startMatch()">PLAY MATCH</button>
             <button class="menu-btn" onclick="showCharSelect()">SELECT PLAYER</button>
             <button class="menu-btn" onclick="showShop()">PRO SHOP</button>
+            <button class="menu-btn" onclick="showTrophyCase()">🏆 TROPHY CASE</button>
             <button class="menu-btn" onclick="showTutorial()">HOW TO PLAY</button>
         </div>
     </div>
@@ -404,6 +429,19 @@
         </div>
         <div class="char-grid" id="charGrid"></div>
         <button class="menu-btn primary char-select-btn" onclick="confirmCharacter()">SELECT</button>
+    </div>
+    <!-- Trophy Case -->
+    <div class="screen trophy-screen" id="trophyScreen">
+        <div class="trophy-header"><h2 class="trophy-title">🏆 TROPHY CASE</h2><button class="back-btn" onclick="closeTrophyCase()">BACK</button></div>
+        <div class="trophy-grid" id="trophyGrid"></div>
+    </div>
+    <!-- Achievement popup -->
+    <div class="achievement-popup" id="achievementPopup">
+        <div class="achievement-popup-icon" id="achievementPopupIcon">🏆</div>
+        <div class="achievement-popup-text">
+            <div class="achievement-popup-title" id="achievementPopupTitle">Achievement Unlocked!</div>
+            <div class="achievement-popup-desc" id="achievementPopupDesc">Description</div>
+        </div>
     </div>
     <div class="video-intro" id="videoIntro">
         <div id="videoPlayer"></div>
@@ -836,9 +874,109 @@ const DAILY_CHALLENGES = [
     {id:'winner_streak',name:'Winner Machine',desc:'Hit 5 winners in a match',target:5,type:'winners',reward:{coins:80,gems:1}},
     {id:'rally_king',name:'Rally King',desc:'Win a 10+ shot rally',target:10,type:'longestRally',reward:{coins:120,gems:2}},
     {id:'perfect_serve',name:'Perfect Server',desc:'No double faults in a match',target:0,type:'doubleFaults',reward:{coins:60,gems:1}},
-    {id:'quick_win',name:'Speed Demon',desc:'Win a match in under 5 minutes',target:300,type:'matchTime',reward:{coins:150,gems:3}},
-    {id:'streak_master',name:'Streak Master',desc:'Get a 8+ point streak',target:8,type:'streak',reward:{coins:90,gems:2}}
+    {id:'quick_win',name:'Speed Demon',desc:'Win a match in under 3 minutes',target:180,type:'matchTime',reward:{coins:150,gems:3}},
+    {id:'streak_master',name:'Streak Master',desc:'Get a 8+ point streak',target:8,type:'streak',reward:{coins:90,gems:2}},
+    {id:'hold_serve',name:'Iron Serve',desc:'Win without losing a single service game',target:1,type:'noBreak',reward:{coins:120,gems:3}},
+    {id:'comeback_kid',name:'Comeback Kid',desc:'Win after being down 0-3 in games',target:1,type:'comeback',reward:{coins:150,gems:3}},
+    {id:'flawless',name:'Flawless Victory',desc:'Win a set 6-0',target:1,type:'bagel',reward:{coins:200,gems:4}},
+    {id:'ace_barrage',name:'Ace Barrage',desc:'Score 5 aces in a single match',target:5,type:'aces',reward:{coins:180,gems:3}}
 ];
+
+// ========== ACHIEVEMENT SYSTEM ==========
+const ACHIEVEMENTS = [
+    {id:'first_ace',name:'First Ace',desc:'Score your first ace',icon:'🎯',check:s=>s.totalAces>=1},
+    {id:'ace_10',name:'Ace Machine',desc:'Score 10 total aces',icon:'🔥',check:s=>s.totalAces>=10},
+    {id:'ace_50',name:'Ace Legend',desc:'Score 50 total aces',icon:'⚡',check:s=>s.totalAces>=50},
+    {id:'first_win',name:'First Victory',desc:'Win your first match',icon:'✨',check:s=>s.matchesWon>=1},
+    {id:'win_10',name:'10 Game Win Streak',desc:'Win 10 matches total',icon:'🏅',check:s=>s.matchesWon>=10},
+    {id:'win_50',name:'Half Century',desc:'Win 50 matches',icon:'👑',check:s=>s.matchesWon>=50},
+    {id:'perfect_set',name:'Perfect Set',desc:'Win a set 6-0',icon:'💎',check:s=>s.perfectSets>=1},
+    {id:'streak_5',name:'On Fire',desc:'Get a 5-point streak',icon:'🔥',check:s=>s.bestStreak>=5},
+    {id:'streak_10',name:'Unstoppable',desc:'Get a 10-point streak',icon:'💥',check:s=>s.bestStreak>=10},
+    {id:'rally_15',name:'Rally Master',desc:'Win a 15+ shot rally',icon:'🏸',check:s=>s.longestRally>=15},
+    {id:'rally_25',name:'Marathon Rally',desc:'Win a 25+ shot rally',icon:'🎪',check:s=>s.longestRally>=25},
+    {id:'rich',name:'High Roller',desc:'Accumulate 1000 coins total',icon:'💰',check:s=>s.totalCoins>=1000},
+    {id:'wealthy',name:'Tennis Tycoon',desc:'Accumulate 5000 coins total',icon:'🤑',check:s=>s.totalCoins>=5000},
+    {id:'winner_20',name:'Winner Factory',desc:'Hit 20 winners in career',icon:'🎾',check:s=>s.totalWinners>=20},
+    {id:'matches_25',name:'Veteran',desc:'Play 25 matches',icon:'🎖️',check:s=>s.matchesPlayed>=25},
+    {id:'matches_100',name:'Centurion',desc:'Play 100 matches',icon:'🏛️',check:s=>s.matchesPlayed>=100},
+];
+
+function initAchievements() {
+    if(!G.achievements) G.achievements = {};
+}
+
+function checkAchievements() {
+    if(!G.careerStats) return;
+    if(!G.achievements) G.achievements = {};
+
+    const stats = G.careerStats;
+    let newUnlocks = [];
+
+    ACHIEVEMENTS.forEach(a => {
+        if(!G.achievements[a.id] && a.check(stats)) {
+            G.achievements[a.id] = { unlockedAt: new Date().toISOString() };
+            newUnlocks.push(a);
+        }
+    });
+
+    // Show popups for new achievements
+    newUnlocks.forEach((a, i) => {
+        setTimeout(() => showAchievementPopup(a), i * 2500);
+    });
+
+    if(newUnlocks.length > 0) save();
+}
+
+function showAchievementPopup(achievement) {
+    const popup = safeGetElement('achievementPopup');
+    if(!popup) return;
+    safeGetElement('achievementPopupIcon').textContent = achievement.icon;
+    safeGetElement('achievementPopupTitle').textContent = achievement.name;
+    safeGetElement('achievementPopupDesc').textContent = achievement.desc;
+    popup.classList.add('show');
+    sounds.winner?.();
+    setTimeout(() => popup.classList.remove('show'), 2200);
+}
+
+function showTrophyCase() {
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('trophyScreen')?.classList.add('active');
+    renderTrophyCase();
+}
+
+function closeTrophyCase() {
+    safeGetElement('trophyScreen')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
+}
+
+function renderTrophyCase() {
+    const grid = safeGetElement('trophyGrid');
+    if(!grid) return;
+    if(!G.achievements) G.achievements = {};
+
+    const unlocked = ACHIEVEMENTS.filter(a => G.achievements[a.id]);
+    const locked = ACHIEVEMENTS.filter(a => !G.achievements[a.id]);
+
+    grid.innerHTML = `<div style="text-align:center;color:rgba(255,215,0,0.7);font-size:12px;margin-bottom:5px">${unlocked.length} / ${ACHIEVEMENTS.length} Unlocked</div>`;
+
+    // Show unlocked first, then locked
+    [...unlocked, ...locked].forEach(a => {
+        const isUnlocked = !!G.achievements[a.id];
+        const date = isUnlocked ? new Date(G.achievements[a.id].unlockedAt).toLocaleDateString() : '';
+        const card = document.createElement('div');
+        card.className = `trophy-card ${isUnlocked ? 'unlocked' : 'locked'}`;
+        card.innerHTML = `
+            <div class="trophy-icon">${a.icon}</div>
+            <div class="trophy-info">
+                <div class="trophy-name">${a.name}</div>
+                <div class="trophy-desc">${a.desc}</div>
+                ${isUnlocked ? `<div class="trophy-date">Unlocked ${date}</div>` : ''}
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
 
 function initDailyChallenge() {
     const today = new Date().toDateString();
@@ -1007,6 +1145,9 @@ let M={
     longestRally:0,
     totalRallies:0,
     pointsPlayed:0,
+    bestStreak:0,
+    lostServiceGame:false,
+    wasDown03:false,
     // Settings
     settings:null
 };
@@ -1905,6 +2046,9 @@ function load(){
 
     // Initialize daily challenges
     initDailyChallenge();
+
+    // Initialize achievements
+    initAchievements();
 }
 
 function save(){
@@ -2726,7 +2870,15 @@ function scorePoint(player){
         } else {
             M.oGames++;
             toast('GAME! Opponent won');
+            // Track if player lost their own service game
+            if(M.servingPlayer === 'player') M.lostServiceGame = true;
         }
+
+        // Track comeback (was down 0-3)
+        if(M.pGames === 0 && M.oGames >= 3) M.wasDown03 = true;
+
+        // Track best streak
+        if(M.streak > (M.bestStreak || 0)) M.bestStreak = M.streak;
 
         M.pPoints = 0;
         M.oPoints = 0;
@@ -3476,9 +3628,11 @@ function endMatch(){
             totalWinners: 0,
             totalCoins: 0,
             bestStreak: 0,
-            longestRally: 0
+            longestRally: 0,
+            perfectSets: 0
         };
     }
+    if(!G.careerStats.perfectSets) G.careerStats.perfectSets = 0;
 
     G.careerStats.matchesPlayed++;
     if(won) G.careerStats.matchesWon++;
@@ -3487,6 +3641,9 @@ function endMatch(){
     G.careerStats.totalCoins += coins;
     if(M.streak > G.careerStats.bestStreak) G.careerStats.bestStreak = M.streak;
     if(M.longestRally > G.careerStats.longestRally) G.careerStats.longestRally = M.longestRally;
+
+    // Track perfect sets (6-0)
+    if(won && M.oGames === 0 && M.pGames >= 6) G.careerStats.perfectSets++;
 
     const oldNTRP = getNTRP();
     G.coins += coins;
@@ -3542,7 +3699,14 @@ function endMatch(){
         checkChallengeProgress('doubleFaults', M.doubleFaults || 0);
         checkChallengeProgress('matchTime', matchDuration);
         checkChallengeProgress('streak', M.bestStreak || M.streak || 0);
+        // New challenge types
+        if(!M.lostServiceGame) checkChallengeProgress('noBreak', 1);
+        if(M.wasDown03 && won) checkChallengeProgress('comeback', 1);
+        if(M.oGames === 0 && M.pGames >= 6) checkChallengeProgress('bagel', 1);
     }
+
+    // Check achievements
+    checkAchievements();
 
     // Show match performance
     if(won) {
@@ -3699,6 +3863,34 @@ document.addEventListener('mouseup', e => {
     touchY = touchX = null;
 });
 
+// Smooth player movement with lerp interpolation
+let playerTargetPos = 50;
+let playerCurrentPos = 50;
+let playerLerpActive = false;
+
+function lerpPlayerMovement() {
+    if(!M.active) { playerLerpActive = false; return; }
+
+    const lerpSpeed = 0.25; // Smooth interpolation factor
+    const diff = playerTargetPos - playerCurrentPos;
+
+    if(Math.abs(diff) > 0.3) {
+        playerCurrentPos += diff * lerpSpeed;
+        M.playerPos = playerCurrentPos;
+        const paddle = safeGetElement('playerPaddle');
+        if(paddle) paddle.style.left = playerCurrentPos + '%';
+        updatePlayerDirection();
+        requestAnimationFrame(lerpPlayerMovement);
+    } else {
+        playerCurrentPos = playerTargetPos;
+        M.playerPos = playerCurrentPos;
+        const paddle = safeGetElement('playerPaddle');
+        if(paddle) paddle.style.left = playerCurrentPos + '%';
+        updatePlayerDirection();
+        playerLerpActive = false;
+    }
+}
+
 function updatePlayerPos(x){
     if(M.isPlayerServe) return; // Don't move during serve
 
@@ -3707,9 +3899,13 @@ function updatePlayerPos(x){
 
     const r = court.getBoundingClientRect();
     const rel = ((x - r.left) / r.width) * 100;
-    M.playerPos = Math.max(12, Math.min(88, rel));
-    { const _el = safeGetElement('playerPaddle'); if(_el) _el.style.left = M.playerPos + '%'; }
-    updatePlayerDirection();
+    playerTargetPos = Math.max(12, Math.min(88, rel));
+
+    // Start lerp loop if not already running
+    if(!playerLerpActive) {
+        playerLerpActive = true;
+        requestAnimationFrame(lerpPlayerMovement);
+    }
 }
 
 function updatePlayerDirection(){
