@@ -153,7 +153,7 @@
         @keyframes playSprite4{0%{background-position:0% var(--sprite-y)}100%{background-position:100% var(--sprite-y)}}
         .hit-zone{position:absolute;bottom:8%;left:8%;right:8%;top:52%;border:3px dashed rgba(255,215,0,0.2);border-radius:20px;pointer-events:none;z-index:5;display:none}
         .hit-zone.active{border-color:rgba(76,255,80,0.4);background:rgba(76,255,80,0.05)}
-        /* Serve timing bar (replaces old power meter) */
+        /* Serve timing bar */
         .serve-timing{position:absolute;right:12%;bottom:25%;width:24px;height:180px;display:none;flex-direction:column;align-items:center;z-index:100;pointer-events:none}
         .serve-timing.active{display:flex}
         .serve-timing-track{position:relative;width:24px;height:180px;background:rgba(0,0,0,0.7);border:2px solid rgba(255,255,255,0.3);border-radius:12px;overflow:hidden}
@@ -164,6 +164,12 @@
         .serve-timing-zone.red-bottom{top:60%;height:40%;background:rgba(244,67,54,0.4)}
         .serve-timing-cursor{position:absolute;left:-2px;right:-2px;height:4px;background:#fff;border-radius:2px;box-shadow:0 0 8px rgba(255,255,255,0.8);transition:none;z-index:2}
         .serve-timing-label{font-size:8px;color:rgba(255,255,255,0.7);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+        /* Serve power meter (pull-back indicator) */
+        .serve-power{position:absolute;left:12%;bottom:25%;width:24px;height:180px;display:none;flex-direction:column;align-items:center;z-index:100;pointer-events:none}
+        .serve-power.active{display:flex}
+        .serve-power-track{position:relative;width:24px;height:180px;background:rgba(0,0,0,0.7);border:2px solid rgba(255,255,255,0.3);border-radius:12px;overflow:hidden}
+        .serve-power-fill{position:absolute;bottom:0;left:0;right:0;height:0%;background:linear-gradient(to top,#4caf50,#ffd700 60%,#f44336);transition:height 0.05s}
+        .serve-power-label{font-size:8px;color:rgba(255,255,255,0.7);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
         /* Serve feedback text */
         .serve-feedback{position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);font-family:'Bebas Neue',sans-serif;font-size:52px;pointer-events:none;z-index:200;opacity:0;text-shadow:0 4px 20px rgba(0,0,0,0.8)}
         .serve-feedback.active{animation:serveFeedbackPop 0.8s ease-out forwards}
@@ -520,7 +526,7 @@
             <div class="serve-target-line" id="serveTargetLine"></div>
             <div class="swipe-hint" id="swipeHint">SWIPE UP!</div>
             <div class="net-rush-indicator" id="netRushIndicator">🔥 AT NET</div>
-            <!-- Serve timing bar -->
+            <!-- Serve timing bar (right side) -->
             <div class="serve-timing" id="serveTiming">
                 <div class="serve-timing-track">
                     <div class="serve-timing-zone red-top"></div>
@@ -529,7 +535,14 @@
                     <div class="serve-timing-zone red-bottom"></div>
                     <div class="serve-timing-cursor" id="serveTimingCursor"></div>
                 </div>
-                <div class="serve-timing-label">TAP!</div>
+                <div class="serve-timing-label">TIMING</div>
+            </div>
+            <!-- Serve power bar (left side) -->
+            <div class="serve-power" id="servePower">
+                <div class="serve-power-track">
+                    <div class="serve-power-fill" id="servePowerFill"></div>
+                </div>
+                <div class="serve-power-label">POWER</div>
             </div>
             <!-- Serve feedback text -->
             <div class="serve-feedback" id="serveFeedback"></div>
@@ -4121,12 +4134,8 @@ document.addEventListener('touchend', e => {
     const dx = t.clientX - touchX;
     const dt = Date.now() - touchT;
 
-    // Swipe-up for net rush (long fast upward swipe when NOT in hit zone)
-    if(!M.canHit && detectSwipeUp(touchY, t.clientY, dt)) {
-        triggerNetRush();
-        touchY = touchX = null;
-        return;
-    }
+    // Swipe-up reserved for power returns — no longer triggers net rush
+    // (use double-tap for net rush instead)
 
     if(!M.canHit) { touchY = touchX = null; return; }
 
