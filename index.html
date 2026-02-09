@@ -95,13 +95,13 @@
         .service-top{top:27%;left:12%;right:12%;height:2px}
         .service-bottom{bottom:27%;left:12%;right:12%;height:2px}
         .center-service{left:50%;top:27%;bottom:27%;width:2px}
-        .net{top:50%;left:-2%;right:-2%;height:6px;background:linear-gradient(to bottom,rgba(255,255,255,0.9),rgba(100,100,100,0.9));z-index:20;transform:translateY(-50%)}
+        .net{top:60%;left:-2%;right:-2%;height:6px;background:linear-gradient(to bottom,rgba(255,255,255,0.9),rgba(100,100,100,0.9));z-index:20;transform:translateY(-50%)}
         /* Service box highlighting */
         .service-box{position:absolute;border:3px solid transparent;border-radius:8px;pointer-events:none;z-index:15;opacity:0;transition:opacity 0.3s}
-        .service-box.opp-right{top:27%;bottom:50%;left:50%;right:12%}
-        .service-box.opp-left{top:27%;bottom:50%;left:12%;right:50%}
-        .service-box.player-right{top:50%;height:23%;left:50%;right:12%}
-        .service-box.player-left{top:50%;height:23%;left:12%;right:50%}
+        .service-box.opp-right{top:27%;bottom:40%;left:50%;right:12%}
+        .service-box.opp-left{top:27%;bottom:40%;left:12%;right:50%}
+        .service-box.player-right{top:60%;height:13%;left:50%;right:12%}
+        .service-box.player-left{top:60%;height:13%;left:12%;right:50%}
         .service-box.active{opacity:1;border-color:rgba(76,255,80,0.25);background:rgba(76,255,80,0.04);animation:serviceBoxPulse 2s ease-in-out infinite}
         @keyframes serviceBoxPulse{0%,100%{border-color:rgba(76,255,80,0.15)}50%{border-color:rgba(76,255,80,0.3)}}
         /* Net cord effect */
@@ -1780,14 +1780,14 @@ function animateServeBall(result){
             const isDeuce = M.serveSide === 'deuce';
             const isPlayerServing = M.servingPlayer === 'player';
 
-            // Court dimensions: sidelines at 12%-88%, service lines at 27% and 73%, net at 50%
-            // When PLAYER serves (from bottom), ball must land in OPPONENT's boxes (y: 27-50%)
-            // When OPPONENT serves (from top), ball must land in PLAYER's boxes (y: 50-73%)
+            // Court dimensions: sidelines at 12%-88%, net at ~60%, opp service line ~27%, player service line ~73%
+            // When PLAYER serves (from bottom), ball must land in OPPONENT's boxes (y: 27-60%)
+            // When OPPONENT serves (from top), ball must land in PLAYER's boxes (y: 60-73%)
             // CROSS-COURT RULE: Serve from deuce side (right) goes to LEFT box, and vice versa
             const boxLeft = isDeuce ? 12 : 50.5;   // Deuce serve → left box (cross-court)
             const boxRight = isDeuce ? 49.5 : 88;  // Ad serve → right box (cross-court)
-            const boxTop = isPlayerServing ? 27 : 50;
-            const boxBottom = isPlayerServing ? 50 : 73;
+            const boxTop = isPlayerServing ? 27 : 60;
+            const boxBottom = isPlayerServing ? 60 : 73;
 
             // Minimal tolerance for pixel-perfect detection
             const tolerance = 0.3;
@@ -3814,7 +3814,7 @@ let lastTapX = 0;
 let lastTapY = 0;
 const DOUBLE_TAP_THRESHOLD = 350; // ms
 const DOUBLE_TAP_DISTANCE = 50; // px
-const NET_POSITION_Y = 58; // % from top
+const NET_POSITION_Y = 65; // % from top (net is at ~60%)
 const BASELINE_Y = 95;
 const NET_RUSH_DURATION = 4500; // ms before auto-retreat
 let playerTargetY = BASELINE_Y;
