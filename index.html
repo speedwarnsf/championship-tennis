@@ -98,10 +98,10 @@
         .net{top:50%;left:-2%;right:-2%;height:6px;background:linear-gradient(to bottom,rgba(255,255,255,0.9),rgba(100,100,100,0.9));z-index:20;transform:translateY(-50%)}
         /* Service box highlighting */
         .service-box{position:absolute;border:3px solid transparent;border-radius:8px;pointer-events:none;z-index:15;opacity:0;transition:opacity 0.3s}
-        .service-box.deuce{top:27%;bottom:50%;left:50%;right:12%}
-        .service-box.ad{top:27%;bottom:50%;left:12%;right:50%}
-        .service-box.deuce-player{top:50%;height:23%;left:50%;right:12%}
-        .service-box.ad-player{top:50%;height:23%;left:12%;right:50%}
+        .service-box.opp-right{top:27%;bottom:50%;left:50%;right:12%}
+        .service-box.opp-left{top:27%;bottom:50%;left:12%;right:50%}
+        .service-box.player-right{top:50%;height:23%;left:50%;right:12%}
+        .service-box.player-left{top:50%;height:23%;left:12%;right:50%}
         .service-box.active{opacity:1;border-color:rgba(76,255,80,0.25);background:rgba(76,255,80,0.04);animation:serviceBoxPulse 2s ease-in-out infinite}
         @keyframes serviceBoxPulse{0%,100%{border-color:rgba(76,255,80,0.15)}50%{border-color:rgba(76,255,80,0.3)}}
         /* Net cord effect */
@@ -484,10 +484,10 @@
                 <div class="net-cord" id="netCord"></div>
             </div>
             <!-- Service boxes -->
-            <div class="service-box deuce" id="serviceBoxDeuce"></div>
-            <div class="service-box ad" id="serviceBoxAd"></div>
-            <div class="service-box deuce-player" id="serviceBoxDeucePlayer"></div>
-            <div class="service-box ad-player" id="serviceBoxAdPlayer"></div>
+            <div class="service-box opp-right" id="serviceBoxOppRight"></div>
+            <div class="service-box opp-left" id="serviceBoxOppLeft"></div>
+            <div class="service-box player-right" id="serviceBoxPlayerRight"></div>
+            <div class="service-box player-left" id="serviceBoxPlayerLeft"></div>
             <div class="hit-zone" id="hitZone"></div>
             <div class="opponent" id="opponent">
                 <div class="player-sprite opponent-sprite">
@@ -1515,36 +1515,39 @@ function updateServeIndicator(){
 
 function highlightServiceBox(){
     // Clear all service box highlights
-    safeGetElement('serviceBoxDeuce')?.classList.remove('active');
-    safeGetElement('serviceBoxAd')?.classList.remove('active');
-    safeGetElement('serviceBoxDeucePlayer')?.classList.remove('active');
-    safeGetElement('serviceBoxAdPlayer')?.classList.remove('active');
+    safeGetElement('serviceBoxOppRight')?.classList.remove('active');
+    safeGetElement('serviceBoxOppLeft')?.classList.remove('active');
+    safeGetElement('serviceBoxPlayerRight')?.classList.remove('active');
+    safeGetElement('serviceBoxPlayerLeft')?.classList.remove('active');
 
     M.serveSide = getServeSide();
 
     const isPlayerServing = M.servingPlayer === 'player';
     if(isPlayerServing){
-        // Player serves into opponent's boxes (top half)
+        // Player serves CROSS-COURT into opponent's boxes (top half)
+        // Deuce side (player on right) → ball goes to opponent's LEFT box
+        // Ad side (player on left) → ball goes to opponent's RIGHT box
         if(M.serveSide === 'deuce'){
-            safeGetElement('serviceBoxDeuce')?.classList.add('active');
+            safeGetElement('serviceBoxOppLeft')?.classList.add('active');
         } else {
-            safeGetElement('serviceBoxAd')?.classList.add('active');
+            safeGetElement('serviceBoxOppRight')?.classList.add('active');
         }
     } else {
-        // Opponent serves into player's boxes (bottom half)
+        // Opponent serves CROSS-COURT into player's boxes (bottom half)
+        // Deuce side → ball goes to player's RIGHT box (cross-court from opp's left)
         if(M.serveSide === 'deuce'){
-            safeGetElement('serviceBoxDeucePlayer')?.classList.add('active');
+            safeGetElement('serviceBoxPlayerRight')?.classList.add('active');
         } else {
-            safeGetElement('serviceBoxAdPlayer')?.classList.add('active');
+            safeGetElement('serviceBoxPlayerLeft')?.classList.add('active');
         }
     }
 }
 
 function clearServiceBoxHighlight(){
-    safeGetElement('serviceBoxDeuce')?.classList.remove('active');
-    safeGetElement('serviceBoxAd')?.classList.remove('active');
-    safeGetElement('serviceBoxDeucePlayer')?.classList.remove('active');
-    safeGetElement('serviceBoxAdPlayer')?.classList.remove('active');
+    safeGetElement('serviceBoxOppRight')?.classList.remove('active');
+    safeGetElement('serviceBoxOppLeft')?.classList.remove('active');
+    safeGetElement('serviceBoxPlayerRight')?.classList.remove('active');
+    safeGetElement('serviceBoxPlayerLeft')?.classList.remove('active');
 }
 
 function startPlayerServe(){
@@ -1553,7 +1556,7 @@ function startPlayerServe(){
     M.servePower = 0;
     M.serveStartY = null;
     M.serveStartX = null;
-    M.serveAimX = M.serveSide === 'deuce' ? 68 : 32; // Default aim to box center
+    M.serveAimX = M.serveSide === 'deuce' ? 30 : 70; // Default aim to cross-court box center
 
     // Position player at baseline center
     M.playerPos = 50;
@@ -1604,9 +1607,10 @@ function chargingServe(clientY, clientX){
         const relX = ((clientX - rect.left) / rect.width) * 100;
 
         // Calculate target position in service box
+        // Cross-court: deuce serve aims LEFT, ad serve aims RIGHT
         const isDeuce = M.serveSide === 'deuce';
-        const boxLeft = isDeuce ? 52 : 15;
-        const boxRight = isDeuce ? 85 : 48;
+        const boxLeft = isDeuce ? 15 : 52;
+        const boxRight = isDeuce ? 48 : 85;
         const boxCenter = (boxLeft + boxRight) / 2;
 
         // Aim influenced by finger position
@@ -1665,11 +1669,11 @@ function executePlayerServe(power, aimX){
     setTimeout(() => {
         ball.classList.remove('toss');
 
-        // Determine target service box
+        // Determine target service box (CROSS-COURT: deuce serve → left box, ad serve → right box)
         const isDeuceCourt = M.serveSide === 'deuce';
-        const boxCenterX = isDeuceCourt ? 65 : 35;
-        const boxLeft = isDeuceCourt ? 50 : 12;
-        const boxRight = isDeuceCourt ? 88 : 50;
+        const boxCenterX = isDeuceCourt ? 30 : 70;
+        const boxLeft = isDeuceCourt ? 12 : 50;
+        const boxRight = isDeuceCourt ? 50 : 88;
 
         // Calculate serve trajectory
         // Aim target is where player was aiming (tracked in M.serveAimX)
@@ -1779,9 +1783,9 @@ function animateServeBall(result){
             // Court dimensions: sidelines at 12%-88%, service lines at 27% and 73%, net at 50%
             // When PLAYER serves (from bottom), ball must land in OPPONENT's boxes (y: 27-50%)
             // When OPPONENT serves (from top), ball must land in PLAYER's boxes (y: 50-73%)
-            // Deuce court: right side (50%-88% width), Ad court: left side (12%-50% width)
-            const boxLeft = isDeuce ? 50.5 : 12;   // Slight overlap with center line
-            const boxRight = isDeuce ? 88 : 49.5;
+            // CROSS-COURT RULE: Serve from deuce side (right) goes to LEFT box, and vice versa
+            const boxLeft = isDeuce ? 12 : 50.5;   // Deuce serve → left box (cross-court)
+            const boxRight = isDeuce ? 49.5 : 88;  // Ad serve → right box (cross-court)
             const boxTop = isPlayerServing ? 27 : 50;
             const boxBottom = isPlayerServing ? 50 : 73;
 
@@ -1979,9 +1983,9 @@ function opponentServe(){
 
         const st = getStats();
         const isDeuceCourt = M.serveSide === 'deuce';
-        // Opponent serves cross-court into PLAYER's service boxes (y:50-73%)
-        // From opponent's POV at top: deuce side serve goes to player's deuce box (screen right: 50-88%)
-        // Ad side serve goes to player's ad box (screen left: 12-50%)
+        // Opponent serves CROSS-COURT into PLAYER's service boxes (y:50-73%)
+        // From opponent's POV: their deuce side is screen-left (x<50), cross-court → player's right box (x 50-88%)
+        // Their ad side is screen-right (x>50), cross-court → player's left box (x 12-50%)
         const targetX = isDeuceCourt ? 55 + Math.floor(Math.random() * 20) : 25 + Math.floor(Math.random() * 20);
 
         // Opponent serve speed
