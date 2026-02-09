@@ -98,10 +98,10 @@
         .net{top:54%;left:-2%;right:-2%;height:6px;background:linear-gradient(to bottom,rgba(255,255,255,0.9),rgba(100,100,100,0.9));z-index:20;transform:translateY(-50%)}
         /* Service box highlighting */
         .service-box{position:absolute;border:3px solid transparent;border-radius:8px;pointer-events:none;z-index:15;opacity:0;transition:opacity 0.3s}
-        .service-box.opp-right{top:28%;bottom:46%;left:49.5%;right:22%}
-        .service-box.opp-left{top:28%;bottom:46%;left:22%;right:50.5%}
-        .service-box.player-right{top:54%;height:21%;left:49.5%;right:22%}
-        .service-box.player-left{top:54%;height:21%;left:22%;right:50.5%}
+        .service-box.opp-right{top:32%;bottom:42%;left:49.5%;right:18%}
+        .service-box.opp-left{top:32%;bottom:42%;left:18%;right:50.5%}
+        .service-box.player-right{top:58%;height:18%;left:49.5%;right:18%}
+        .service-box.player-left{top:58%;height:18%;left:18%;right:50.5%}
         .service-box.active{opacity:1;border-color:rgba(76,255,80,0.25);background:rgba(76,255,80,0.04);animation:serviceBoxPulse 2s ease-in-out infinite}
         @keyframes serviceBoxPulse{0%,100%{border-color:rgba(76,255,80,0.15)}50%{border-color:rgba(76,255,80,0.3)}}
         /* Net cord effect */
@@ -3824,7 +3824,7 @@ let playerCurrentY = BASELINE_Y;
 let playerYLerpActive = false;
 
 function triggerNetRush() {
-    if (M.atNet || !M.active || M.isPlayerServe) return;
+    if (M.atNet || !M.active || M.isPlayerServe || M.servePhase !== 'none') return;
     M.atNet = true;
     playerTargetY = NET_POSITION_Y;
     M.netRushTimer = Date.now();
