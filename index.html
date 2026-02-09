@@ -131,7 +131,9 @@
         .opponent{position:absolute;top:5%;left:50%;transform:translateX(-50%);width:80px;height:96px;display:flex;align-items:center;justify-content:center;z-index:30;transition:left 0.2s ease-out}
         .opponent.hitting{animation:opponentHit 0.3s ease}
         @keyframes opponentHit{50%{transform:translateX(-50%) scale(1.2) rotate(-5deg)}}
-        .player-paddle{position:absolute;bottom:5%;width:86px;height:104px;display:flex;align-items:center;justify-content:center;transform:translateX(-50%);z-index:35}
+        .player-paddle{position:absolute;bottom:5%;width:86px;height:104px;display:flex;align-items:center;justify-content:center;transform:translateX(-50%);z-index:35;transition:none}
+        .net-rush-indicator{position:absolute;bottom:42%;left:50%;transform:translateX(-50%);padding:6px 14px;background:rgba(255,100,0,0.85);border-radius:8px;color:#fff;font-size:11px;font-weight:700;text-transform:uppercase;opacity:0;pointer-events:none;z-index:45;transition:opacity 0.3s}
+        .net-rush-indicator.active{opacity:1;animation:hintPulse 0.8s ease-in-out infinite}
         .player-paddle.can-hit{filter:drop-shadow(0 0 5px rgba(76,255,80,0.2));animation:none}
         .player-paddle.serving{filter:drop-shadow(0 0 10px rgba(255,215,0,0.4))}
         @keyframes paddleReady{0%,100%{transform:translateX(-50%) scale(1.05)}50%{transform:translateX(-50%) scale(1)}}
@@ -503,6 +505,7 @@
             <div class="serve-aim" id="serveAim"><div class="serve-aim-dot"></div></div>
             <div class="serve-target-line" id="serveTargetLine"></div>
             <div class="swipe-hint" id="swipeHint">SWIPE UP!</div>
+            <div class="net-rush-indicator" id="netRushIndicator">🔥 AT NET</div>
             <!-- Serve power meter -->
             <div class="serve-power" id="servePower">
                 <div class="serve-power-label">PULL DOWN FOR POWER</div>
@@ -1153,7 +1156,13 @@ let M={
     lostServiceGame:false,
     wasDown03:false,
     // Settings
-    settings:null
+    settings:null,
+    // Net rush
+    playerY:95,           // Player Y position (95=baseline, 58=net)
+    atNet:false,
+    netRushTimer:0,
+    oppAtNet:false,
+    oppY:8
 };
 
 let audio,sounds={};
@@ -2607,6 +2616,9 @@ function actuallyStartMatch(){
 function startNextPoint(){
     if(!M.active) return;
 
+    resetPlayerToBaseline();
+    resetOppFromNet();
+
     M.serveNum = 1;
     M.serveSide = getServeSide();
     M.rally = 0;
@@ -3075,11 +3087,14 @@ function animateBall(){
     shadow.style.left = M.ballPos.x + '%';
     shadow.style.top = M.ballPos.y + '%';
 
-    // Check if ball is in player's hit zone
+    // Check if ball is in player's hit zone (adjusted for net position)
     const st = getStats();
-    const hzStart = Math.max(52, 100 - M.settings.hitWindow * 100 - st.control * 0.12);
+    const playerHitY = M.atNet ? M.playerY : 95;
+    const hzSize = M.atNet ? 12 : (M.settings.hitWindow * 100 + st.control * 0.12);
+    const hzStart = Math.max(52, playerHitY - hzSize);
+    const hzEnd = M.atNet ? (playerHitY + 5) : 90;
 
-    if(M.ballPos.y > hzStart && M.ballPos.y < 90 && M.ballH < 50 && M.ballBounces <= 1 && !M.canHit){
+    if(M.ballPos.y > hzStart && M.ballPos.y < hzEnd && M.ballH < 50 && M.ballBounces <= (M.atNet ? 0 : 1) && !M.canHit){
         M.canHit = true;
         ball.classList.add('glowing');
         safeGetElement('hitZone')?.classList.add('active');
@@ -3101,8 +3116,9 @@ function animateBall(){
         safeGetElement('playerPaddle')?.classList.remove('can-hit');
     }
 
-    // Ball passed player - missed
-    if(M.ballPos.y > 93){
+    // Ball passed player - missed (adjusted for net position)
+    const passedY = M.atNet ? (M.playerY + 8) : 93;
+    if(M.ballPos.y > passedY){
         ballMissed();
         return;
     }
@@ -3116,9 +3132,11 @@ function animateBall(){
 
 function updateOpp(){
     const diff = M.ballPos.x - M.oppPos;
+    // At net: reduced lateral coverage
+    const effSpeed = M.oppAtNet ? M.settings.oppSpeed * 0.7 : M.settings.oppSpeed;
     const moving = Math.abs(diff) > 2;
     setOppRunning(moving);
-    M.oppPos += diff * M.settings.oppSpeed;
+    M.oppPos += diff * effSpeed;
     { const _el = safeGetElement('opponent'); if(_el) _el.style.left = M.oppPos + '%'; }
 }
 
@@ -3172,8 +3190,11 @@ function hitBall(power, angle){
 
     const st = getStats();
     const dist = Math.abs(M.ballPos.x - M.playerPos);
-    const acc = Math.max(0, 1 - dist/50);
-    const qual = power * acc * (1 + st.control/100);
+    // At net: tighter reach but higher base quality for volleys
+    const reachDiv = M.atNet ? 35 : 50;
+    const acc = Math.max(0, 1 - dist/reachDiv);
+    const volleyBonus = M.atNet ? 1.25 : 1;
+    const qual = power * acc * (1 + st.control/100) * volleyBonus;
 
     showHitEffect(power);
 
@@ -3434,12 +3455,22 @@ function returnBall(qual, angle){
     // Add spin based on angle
     M.ballSpin = Math.sin(angle) * 0.5;
 
-    M.ballH = 30;
-    M.ballVel = {
-        x: Math.max(-1.3, Math.min(1.3, (ang + pos) * 0.75)),
-        y: -1.6 * spd * qual * 0.65,
-        z: 2.5 * qual
-    };
+    // Volley mechanic: at net = flatter, faster, more decisive
+    if (M.atNet) {
+        M.ballH = 15;
+        M.ballVel = {
+            x: Math.max(-1.6, Math.min(1.6, (ang + pos) * 0.9)),
+            y: -2.2 * spd * qual * 0.7,
+            z: 1.2 * qual  // Much flatter trajectory
+        };
+    } else {
+        M.ballH = 30;
+        M.ballVel = {
+            x: Math.max(-1.3, Math.min(1.3, (ang + pos) * 0.75)),
+            y: -1.6 * spd * qual * 0.65,
+            z: 2.5 * qual
+        };
+    }
 
     animateReturn();
 }
@@ -3499,8 +3530,9 @@ function animateReturn(){
     shadow.style.left = M.ballPos.x + '%';
     shadow.style.top = M.ballPos.y + '%';
 
-    // Ball reached opponent's side
-    if(M.ballPos.y < 12){
+    // Ball reached opponent's side (adjusted for net position)
+    const oppReachY = M.oppAtNet ? (M.oppY + 5) : 12;
+    if(M.ballPos.y < oppReachY){
         M.ballActive = false;
 
         const st = getStats();
@@ -3536,6 +3568,21 @@ function animateReturn(){
                 z: 1.5
             };
             M.ballSpin = (Math.random() - 0.5) * 0.3;
+
+            // Opponent volley: faster/flatter when at net
+            if (M.oppAtNet) {
+                M.ballPos = {x: M.oppPos, y: M.oppY + 3};
+                M.ballH = 20;
+                const tx2 = M.playerPos > 50 ? 25 + Math.floor(Math.random() * 25) : 50 + Math.floor(Math.random() * 25);
+                M.ballVel = {
+                    x: (tx2 - M.ballPos.x) / 100 * 2.2,
+                    y: M.settings.speed * 0.85,
+                    z: 0.8
+                };
+            }
+
+            // Maybe opponent rushes net after return
+            maybeOppNetRush();
 
             safeGetElement('opponent')?.classList.add('hitting');
             setOppSwinging();
@@ -3756,6 +3803,141 @@ function returnToMenu(){
     updateUI();
 }
 
+// ========== NET RUSH SYSTEM ==========
+
+let lastTapTime = 0;
+let lastTapX = 0;
+let lastTapY = 0;
+const DOUBLE_TAP_THRESHOLD = 350; // ms
+const DOUBLE_TAP_DISTANCE = 50; // px
+const NET_POSITION_Y = 58; // % from top
+const BASELINE_Y = 95;
+const NET_RUSH_DURATION = 4500; // ms before auto-retreat
+let playerTargetY = BASELINE_Y;
+let playerCurrentY = BASELINE_Y;
+let playerYLerpActive = false;
+
+function triggerNetRush() {
+    if (M.atNet || !M.active || M.isPlayerServe) return;
+    M.atNet = true;
+    playerTargetY = NET_POSITION_Y;
+    M.netRushTimer = Date.now();
+    if (!playerYLerpActive) {
+        playerYLerpActive = true;
+        requestAnimationFrame(lerpPlayerY);
+    }
+    const ind = safeGetElement('netRushIndicator');
+    if (ind) ind.classList.add('active');
+    // Auto-retreat after duration
+    setTimeout(() => {
+        if (M.atNet) retreatToBaseline();
+    }, NET_RUSH_DURATION);
+}
+
+function retreatToBaseline() {
+    M.atNet = false;
+    playerTargetY = BASELINE_Y;
+    if (!playerYLerpActive) {
+        playerYLerpActive = true;
+        requestAnimationFrame(lerpPlayerY);
+    }
+    const ind = safeGetElement('netRushIndicator');
+    if (ind) ind.classList.remove('active');
+}
+
+function lerpPlayerY() {
+    if (!M.active) { playerYLerpActive = false; return; }
+    const speed = 0.12;
+    const diff = playerTargetY - playerCurrentY;
+    if (Math.abs(diff) > 0.5) {
+        playerCurrentY += diff * speed;
+        M.playerY = playerCurrentY;
+        updatePlayerPaddleY();
+        requestAnimationFrame(lerpPlayerY);
+    } else {
+        playerCurrentY = playerTargetY;
+        M.playerY = playerCurrentY;
+        updatePlayerPaddleY();
+        playerYLerpActive = false;
+    }
+}
+
+function updatePlayerPaddleY() {
+    const paddle = safeGetElement('playerPaddle');
+    if (!paddle) return;
+    // Convert Y% to bottom%. baseline(95%) = bottom:5%, net(58%) = bottom:42%
+    const bottomPct = 100 - M.playerY;
+    paddle.style.bottom = bottomPct + '%';
+}
+
+function detectDoubleTap(x, y) {
+    const now = Date.now();
+    const dist = Math.sqrt((x - lastTapX) ** 2 + (y - lastTapY) ** 2);
+    if (now - lastTapTime < DOUBLE_TAP_THRESHOLD && dist < DOUBLE_TAP_DISTANCE) {
+        lastTapTime = 0;
+        return true;
+    }
+    lastTapTime = now;
+    lastTapX = x;
+    lastTapY = y;
+    return false;
+}
+
+function detectSwipeUp(startY, endY, dt) {
+    const dy = startY - endY;
+    return dy > 80 && dt < 300; // fast upward swipe
+}
+
+// Reset player Y on point end
+function resetPlayerToBaseline() {
+    M.atNet = false;
+    M.oppAtNet = false;
+    M.oppY = 8;
+    playerTargetY = BASELINE_Y;
+    playerCurrentY = BASELINE_Y;
+    M.playerY = BASELINE_Y;
+    updatePlayerPaddleY();
+    const ind = safeGetElement('netRushIndicator');
+    if (ind) ind.classList.remove('active');
+    // Reset opponent Y
+    const opp = safeGetElement('opponent');
+    if (opp) opp.style.top = '8%';
+}
+
+// AI net rush logic
+function maybeOppNetRush() {
+    if (M.oppAtNet || !M.active) return;
+    const s = M.settings || DIFF[G.difficulty];
+    // Higher difficulty = more likely to rush net
+    let chance = 0;
+    if (G.difficulty === 'pro') chance = 0.08;
+    if (G.difficulty === 'legend') chance = 0.18;
+    // More likely on short balls (ball near net)
+    if (M.ballPos.y > 35 && M.ballPos.y < 55) chance += 0.1;
+    if (Math.random() < chance) {
+        M.oppAtNet = true;
+        M.oppY = 42; // Opponent moves to net
+        const opp = safeGetElement('opponent');
+        if (opp) {
+            opp.style.transition = 'top 0.5s ease-out';
+            opp.style.top = '42%';
+            setTimeout(() => { if(opp) opp.style.transition = ''; }, 600);
+        }
+    }
+}
+
+function resetOppFromNet() {
+    if (!M.oppAtNet) return;
+    M.oppAtNet = false;
+    M.oppY = 8;
+    const opp = safeGetElement('opponent');
+    if (opp) {
+        opp.style.transition = 'top 0.4s ease-in';
+        opp.style.top = '8%';
+        setTimeout(() => { if(opp) opp.style.transition = ''; }, 500);
+    }
+}
+
 // ========== INPUT HANDLING ==========
 
 let touchY = null, touchX = null, touchT = null;
@@ -3767,6 +3949,12 @@ document.addEventListener('touchstart', e => {
     touchY = t.clientY;
     touchX = t.clientX;
     touchT = Date.now();
+
+    // Double-tap to rush net
+    if(detectDoubleTap(t.clientX, t.clientY)) {
+        triggerNetRush();
+        return;
+    }
 
     // Handle serve charging
     if(M.isPlayerServe && M.servePhase === 'ready'){
@@ -3808,11 +3996,20 @@ document.addEventListener('touchend', e => {
     }
 
     // Normal hit
-    if(!M.canHit || !touchY) return;
+    if(!touchY) { touchY = touchX = null; return; }
 
     const dy = touchY - t.clientY;
     const dx = t.clientX - touchX;
     const dt = Date.now() - touchT;
+
+    // Swipe-up for net rush (long fast upward swipe when NOT in hit zone)
+    if(!M.canHit && detectSwipeUp(touchY, t.clientY, dt)) {
+        triggerNetRush();
+        touchY = touchX = null;
+        return;
+    }
+
+    if(!M.canHit) { touchY = touchX = null; return; }
 
     if(dy > 8 || (dt < 180 && Math.abs(dy) < 8)){
         const pwr = Math.min(1, Math.max(0.3, dy/90));
@@ -3834,6 +4031,12 @@ document.addEventListener('mousedown', e => {
     touchY = e.clientY;
     touchX = e.clientX;
     touchT = Date.now();
+
+    // Double-tap to rush net
+    if(detectDoubleTap(e.clientX, e.clientY)) {
+        triggerNetRush();
+        return;
+    }
 
     if(M.isPlayerServe && M.servePhase === 'ready'){
         chargingServe(e.clientY, e.clientX);
