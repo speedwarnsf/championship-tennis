@@ -1962,6 +1962,10 @@ function animateServeBall(result){
 
             // If OPPONENT was serving, hand off to main game loop so player can return
             if(!isPlayerServing){
+                // Cap post-bounce height so ball is returnable (H < 50 in hit zone)
+                // Serve drops from H=100, creating huge bounce velocity — clamp it
+                M.ballVel.z = Math.min(M.ballVel.z, 2.2);
+                M.ballH = 0;
                 requestAnimationFrame(animateBall);
                 return; // Stop animateServeBall loop
             }
@@ -2179,7 +2183,10 @@ function opponentServe(){
         setTimeout(() => safeGetElement('opponent')?.classList.remove('hitting'), 250);
         sounds.serve();
 
-        animateBall();
+        // Use animateServeBall for proper serve physics (gravity 0.14)
+        // so the ball doesn't bounce unreachably high when it lands
+        M.servePhase = 'flight';
+        animateServeBall('good');
     }, oppServeDelay);
 }
 
