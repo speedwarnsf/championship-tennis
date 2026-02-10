@@ -2928,8 +2928,8 @@ function updateMatchUI(){
     if (!validateCriticalState()) { console.error("❌ Invalid state for updateMatchUI"); return; }
     const score = getTennisScore(M.pPoints, M.oPoints);
 
-    { const _el = safeGetElement('playerPoints'); if(_el) _el.textContent = score.deuce ? 'DEUCE' : score.p; }
-    { const _el = safeGetElement('opponentPoints'); if(_el) _el.textContent = score.deuce ? 'DEUCE' : score.o; }
+    { const _el = safeGetElement('playerPoints'); if(_el) _el.textContent = score.p; }
+    { const _el = safeGetElement('opponentPoints'); if(_el) _el.textContent = score.o; }
     { const _el = safeGetElement('playerGames'); if(_el) _el.textContent = M.pGames; }
     { const _el = safeGetElement('opponentGames'); if(_el) _el.textContent = M.oGames; }
     { const _el = safeGetElement('rallyCount'); if(_el) _el.textContent = M.rally; }
@@ -2940,10 +2940,15 @@ function updateMatchUI(){
         { const _el = safeGetElement('opponentSets'); if(_el) _el.textContent = `Sets: ${M.oSets}`; }
     }
 
-    // Show tiebreak indicator
+    // Show tiebreak/deuce indicator
     const tbInd = safeGetElement('tiebreakIndicator');
+    const score2 = getTennisScore(M.pPoints, M.oPoints);
     if(M.isTiebreak){
         tbInd.textContent = 'TIEBREAK';
+    } else if(score2.deuce){
+        tbInd.textContent = 'DEUCE';
+    } else if(score2.p === 'AD' || score2.o === 'AD'){
+        tbInd.textContent = score2.p === 'AD' ? 'YOUR ADVANTAGE' : 'OPP ADVANTAGE';
     } else {
         tbInd.textContent = '';
     }
@@ -3107,25 +3112,35 @@ function checkSetWin(){
     const oGames = M.oGames;
     const diff = Math.abs(pGames - oGames);
 
-    // Game target depends on match type (quick=6, standard/pro=6)
-    const winGames = G.matchType === 'quick' ? 6 : 6;
+    // Game target depends on match type
+    const winGames = 6;
 
     // Set win: reach target games with 2 game lead
     if((pGames >= winGames || oGames >= winGames) && diff >= 2 && !M.isTiebreak){
-        if(pGames > oGames){
+        const playerWonSet = pGames > oGames;
+        if(playerWonSet){
             M.pSets++;
-            toast('SET! You won the set!');
         } else {
             M.oSets++;
-            toast('SET! Opponent won the set');
         }
+        const setScore = `${pGames}-${oGames}`;
         M.pGames = 0;
         M.oGames = 0;
         M.isTiebreak = false;
-        return false; // Continue playing
+
+        // Check if match is over before showing changeover
+        if(checkEnd()) return true;
+
+        // Show set changeover with score
+        setTimeout(async () => {
+            await showCourtChange(playerWonSet ? 'SET WON!' : 'SET LOST', `Set: ${setScore}`);
+            startNextPoint();
+        }, 500);
+        updateMatchUI();
+        return true; // Prevent normal startNextPoint
     }
 
-    // Tiebreak at tied game target (6-6 or 4-4 for quick)
+    // Tiebreak at 6-6
     if(pGames === winGames && oGames === winGames && !M.isTiebreak){
         M.isTiebreak = true;
         M.tiebreakServer = M.servingPlayer;
@@ -3323,6 +3338,7 @@ function resetBallUI(){
     safeGetElement('serveTargetLine')?.classList.remove('active');
     clearServiceBoxHighlight();
     ballTrailPositions = [];
+    ballTrailElements.forEach(el => el.style.display = 'none');
 }
 
 // ========== HITTING ==========
@@ -3410,11 +3426,32 @@ function hitstop(duration = 150) {
     }
 }
 
-// Enhanced ball trail system
+// Enhanced ball trail system - pooled to avoid DOM thrashing
 let ballTrailPositions = [];
+let ballTrailElements = [];
+const MAX_TRAIL_ELEMENTS = 6;
+
+function initBallTrailPool() {
+    const court = getCourtElement();
+    if(!court || ballTrailElements.length > 0) return;
+    for(let i = 0; i < MAX_TRAIL_ELEMENTS; i++) {
+        const trail = document.createElement('div');
+        trail.className = 'ball-trail';
+        trail.style.display = 'none';
+        court.appendChild(trail);
+        ballTrailElements.push(trail);
+    }
+}
+
+let trailFrameSkip = 0;
 function createBallTrail() {
     if(!M.ballActive || window.animationPaused) return;
     if(isPerformanceMode()) return;
+
+    // Only update every 3rd frame to reduce overhead
+    if(++trailFrameSkip % 3 !== 0) return;
+
+    if(ballTrailElements.length === 0) initBallTrailPool();
 
     const ball = safeGetElement('ball');
     if(!ball || !ball.classList.contains('active')) return;
@@ -3424,34 +3461,26 @@ function createBallTrail() {
     if(!court) return;
     const courtRect = court.getBoundingClientRect();
 
-    // Calculate relative position
     const relX = ((ballRect.left + ballRect.width/2 - courtRect.left) / courtRect.width) * 100;
     const relY = ((ballRect.top + ballRect.height/2 - courtRect.top) / courtRect.height) * 100;
 
-    // Store position for trail
     ballTrailPositions.push({x: relX, y: relY, time: Date.now()});
+    if(ballTrailPositions.length > MAX_TRAIL_ELEMENTS) ballTrailPositions.shift();
 
-    // Limit trail length
-    if(ballTrailPositions.length > 8) {
-        ballTrailPositions.shift();
+    const now = Date.now();
+    for(let i = 0; i < MAX_TRAIL_ELEMENTS; i++) {
+        const el = ballTrailElements[i];
+        const pos = ballTrailPositions[ballTrailPositions.length - 1 - i];
+        if(!pos || now - pos.time > 300) {
+            el.style.display = 'none';
+            continue;
+        }
+        const age = now - pos.time;
+        el.style.display = 'block';
+        el.style.left = pos.x + '%';
+        el.style.top = pos.y + '%';
+        el.style.opacity = (1 - age / 300) * 0.6;
     }
-
-    // Create trail elements
-    ballTrailPositions.forEach((pos, index) => {
-        const age = Date.now() - pos.time;
-        if(age > 300) return; // Remove old trails
-
-        const trail = document.createElement('div');
-        trail.className = 'ball-trail active';
-        trail.style.left = pos.x + '%';
-        trail.style.top = pos.y + '%';
-        trail.style.opacity = (1 - age / 300) * 0.6;
-        trail.style.transform = `translate(-50%, -50%) scale(${1 - age / 400})`;
-
-        court.appendChild(trail);
-
-        setTimeout(() => trail.remove(), 300 - age);
-    });
 }
 
 // Swipe trail visualization
