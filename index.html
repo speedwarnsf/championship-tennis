@@ -424,8 +424,8 @@
         <div class="difficulty-section">
             <div class="difficulty-title">Match Length</div>
             <div class="difficulty-buttons">
-                <button class="difficulty-btn selected" onclick="selectMatchType('quick')" id="matchQuick">Quick<span class="difficulty-reward">First to 6</span></button>
-                <button class="difficulty-btn" onclick="selectMatchType('standard')" id="matchStandard">Standard<span class="difficulty-reward">Best of 3</span></button>
+                <button class="difficulty-btn selected" onclick="selectMatchType('quick')" id="matchQuick">Quick<span class="difficulty-reward">First to 3 Games</span></button>
+                <button class="difficulty-btn" onclick="selectMatchType('standard')" id="matchStandard">Standard<span class="difficulty-reward">1 Set (First to 6)</span></button>
                 <button class="difficulty-btn" onclick="selectMatchType('timed')" id="matchTimed">Timed<span class="difficulty-reward">Best of Time</span></button>
             </div>
         </div>
@@ -3133,6 +3133,9 @@ function scorePoint(player){
 }
 
 function checkSetWin(){
+    // Quick mode: no sets, checkEnd handles it directly
+    if(G.matchType === 'quick') return checkEnd();
+
     const pGames = M.pGames;
     const oGames = M.oGames;
     const diff = Math.abs(pGames - oGames);
@@ -3849,10 +3852,23 @@ function animateReturn(){
 }
 
 function checkEnd(){
-    // Check if match is over based on sets won
-    // Quick/Standard: 1 set to win
-    // Pro: Best of 3 sets (first to 2)
-    const setsToWin = G.matchType === 'standard' ? 2 : 1;
+    // Quick mode: first to 3 games wins (no sets)
+    if(G.matchType === 'quick'){
+        if(M.pGames >= 3){
+            M.pSets = 1; M.oSets = 0; // Mark as won for endMatch
+            endMatch();
+            return true;
+        }
+        if(M.oGames >= 3){
+            M.oSets = 0; M.pSets = 0; M.oSets = 1;
+            endMatch();
+            return true;
+        }
+        return false;
+    }
+
+    // Standard and other modes: 1 set to win
+    const setsToWin = 1;
 
     if(M.pSets >= setsToWin){
         endMatch();
