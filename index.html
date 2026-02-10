@@ -2,12 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Centre Court - Championship Tennis</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Championship Tennis</title>
+    <meta name="description" content="Mobile-first tennis game with realistic serve mechanics, scoring, and AI opponent." />
+    <meta name="theme-color" content="#1a1a2e" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Championship Tennis" />
+    <meta property="og:description" content="Mobile-first tennis game with realistic serve mechanics, scoring, and AI opponent." />
+    <meta property="og:image" content="https://championship-tennis.vercel.app/court.jpg" />
+    <meta property="og:url" content="https://championship-tennis.vercel.app/" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Championship Tennis" />
+    <meta name="twitter:description" content="Mobile-first tennis game with realistic serve mechanics, scoring, and AI opponent." />
+    <meta name="twitter:image" content="https://championship-tennis.vercel.app/court.jpg" />
+
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="preload" href="court.jpg" as="image">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;800&display=swap');
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
         body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#1a1a2e,#0f0f1e);min-height:100vh;overflow:hidden;overscroll-behavior:none;width:100%}
         .screen{position:fixed;inset:0;display:none;flex-direction:column;z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch}
