@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Championship Tennis</title>
     <meta name="description" content="Mobile-first tennis game with realistic serve mechanics, scoring, and AI opponent." />
     <meta name="theme-color" content="#1a1a2e" />
@@ -42,7 +42,7 @@
         .loading-subtitle{color:rgba(255,255,255,0.5);font-size:13px;letter-spacing:5px;text-transform:uppercase;margin-bottom:50px}
         .play-button{padding:18px 70px;background:#fff;border:none;border-radius:35px;color:#1a1a2e;font-size:15px;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.3);transition:transform 0.2s,box-shadow 0.2s}
         .play-button:hover{transform:scale(1.05);box-shadow:0 15px 40px rgba(0,0,0,0.4)}
-        .main-menu{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);justify-content:space-between;padding:15px;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+        .main-menu{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);justify-content:space-between;padding:calc(15px + env(safe-area-inset-top, 0px)) 15px calc(15px + env(safe-area-inset-bottom, 0px));overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch}
         .game-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,11vw,64px);color:#ffd700;text-align:center;letter-spacing:4px;text-shadow:3px 3px 0 #000}
         .tagline{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,215,0,0.6);text-align:center}
         .player-card{background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 100%);border:3px solid;border-color:#6a8aba #2a3a5a #2a3a5a #6a8aba;border-radius:8px;padding:12px;margin:10px 0;box-shadow:3px 3px 0 rgba(0,0,0,0.4)}
@@ -80,7 +80,7 @@
         .video-intro.fade-out{opacity:0}
         .skip-btn{position:absolute;bottom:30px;right:20px;padding:12px 24px;background:rgba(255,215,0,0.9);border:none;border-radius:8px;color:#1a1a2e;font-weight:700;font-size:14px;cursor:pointer;z-index:5001}
         #videoPlayer{width:100vw;height:100vh;object-fit:cover}
-        .game-hud{position:fixed;top:0;left:0;right:0;padding:10px 15px;display:none;z-index:100;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent)}
+        .game-hud{position:fixed;top:0;left:0;right:0;padding:calc(10px + env(safe-area-inset-top, 0px)) 15px 10px;display:none;z-index:100;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent)}
         .game-hud.active{display:block}
         .match-info{display:flex;justify-content:space-between;align-items:flex-start}
         .player-info{background:rgba(0,0,0,0.5);padding:10px 15px;border-radius:12px;border:1px solid rgba(255,215,0,0.3);text-align:center;min-width:80px}
@@ -2365,6 +2365,8 @@ const V = '?v=31';
 
 window.CHARACTERS = [
     {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
+    {id:'player2', name:'Serena Slammin', power:65, speed:50, control:40, unlocked:true},
+    {id:'player3', name:'Novak Joke-ovic', power:55, speed:55, control:50, unlocked:false, cost:500},
     {id:'player4', name:'Steffi Gaffe', power:45, speed:60, control:45, unlocked:true},
     {id:'player5', name:'Rafa Noddle', power:65, speed:40, control:45, unlocked:false, cost:500},
     {id:'player6', name:'Martina N.T.O.', power:40, speed:55, control:55, unlocked:false, cost:500},
@@ -2380,7 +2382,9 @@ window.CHARACTERS = [
     {id:'goth', name:'Monica Slay-less', power:55, speed:45, control:50, unlocked:false, cost:2500, special:true},
     {id:'anime', name:'Nick Curious', power:55, speed:65, control:30, unlocked:false, cost:3000, special:true},
     {id:'latino', name:'Carlos All-Crazz', power:60, speed:55, control:35, unlocked:false, cost:3000, special:true},
-    {id:'redhead', name:'Billie Jean Queen', power:50, speed:55, control:45, unlocked:false, cost:3000, special:true}
+    {id:'redhead', name:'Billie Jean Queen', power:50, speed:55, control:45, unlocked:false, cost:3000, special:true},
+    {id:'grandpa', name:'Rod Staver', power:35, speed:30, control:70, unlocked:false, cost:2500, special:true},
+    {id:'indian', name:'Sania Mirror', power:45, speed:60, control:50, unlocked:false, cost:2500, special:true}
 ];
 
 var selectedChar = window.CHARACTERS[0];
@@ -3866,7 +3870,7 @@ function checkEnd(){
             return true;
         }
         if(M.oGames >= 3){
-            M.oSets = 0; M.pSets = 0; M.oSets = 1;
+            M.pSets = 0; M.oSets = 1;
             endMatch();
             return true;
         }
