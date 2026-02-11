@@ -2791,8 +2791,14 @@ function actuallyStartMatch(){
     setTimeout(startNextPoint, 1200);
 }
 
+let _nextPointTimer = null;
 function startNextPoint(){
     if(!M.active) return;
+    // Prevent double-fire from multiple setTimeout calls
+    if(_nextPointTimer) { clearTimeout(_nextPointTimer); _nextPointTimer = null; }
+    if(M._startingPoint) return;
+    M._startingPoint = true;
+    setTimeout(() => { M._startingPoint = false; }, 500);
 
     resetPlayerToBaseline();
     resetOppFromNet();
