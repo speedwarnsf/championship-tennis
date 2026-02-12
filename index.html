@@ -2066,7 +2066,7 @@ function executePlayerServe(power, aimX){
         // Serve speed display: combines power + timing
         // power 0-1 maps to ~80-120 base, timing bonus adds up to +20
         const timingBonus = M.serveTimingQuality === 'perfect' ? 20 : (M.serveTimingQuality === 'good' ? 8 : -10);
-        const baseServeSpeed = 80 + power * 40 + st.serve * 0.2 + timingBonus;
+        const baseServeSpeed = 90 + power * 50 + st.serve * 0.3 + timingBonus;
         M.lastServeSpeed = Math.round(baseServeSpeed + (Math.random() - 0.5) * 10);
         { const _el = safeGetElement('serveSpeed'); if(_el) _el.textContent = M.lastServeSpeed + ' MPH'; }
 
@@ -3967,7 +3967,7 @@ function returnBall(qual, angle){
     const pos = off * 0.018;
 
     // Add spin based on angle
-    M.ballSpin = Math.sin(angle) * 0.5;
+    M.ballSpin = Math.sin(angle) * 0.8;
 
     // Volley mechanic: at net = flatter, faster, more decisive
     if (M.atNet) {
@@ -3981,7 +3981,7 @@ function returnBall(qual, angle){
         M.ballH = 30;
         M.ballVel = {
             x: Math.max(-1.3, Math.min(1.3, (ang + pos) * 0.75)),
-            y: -1.6 * spd * qual * 0.65,
+            y: -1.6 * spd * qual * (0.55 + Math.random() * 0.2),
             z: 2.5 * qual
         };
     }
