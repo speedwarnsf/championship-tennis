@@ -193,6 +193,19 @@
         @keyframes playSprite4{0%{background-position:0% var(--sprite-y)}100%{background-position:100% var(--sprite-y)}}
         .hit-zone{position:absolute;bottom:8%;left:8%;right:8%;top:52%;border:3px dashed rgba(255,215,0,0.2);border-radius:20px;pointer-events:none;z-index:5;display:none}
         .hit-zone.active{border-color:rgba(76,255,80,0.4);background:rgba(76,255,80,0.05)}
+        .hit-zone-indicators{position:absolute;bottom:8%;left:8%;right:8%;top:52%;pointer-events:none;z-index:4;display:none}
+        .hit-zone-indicators.visible{display:block}
+        .zone-arrow{position:absolute;font-size:18px;color:rgba(255,255,255,0.15);text-align:center;transition:color 0.3s,transform 0.3s}
+        .zone-arrow.left{left:8%;top:50%;transform:translateY(-50%) rotate(-45deg)}
+        .zone-arrow.right{right:8%;top:50%;transform:translateY(-50%) rotate(45deg)}
+        .zone-arrow.center{left:50%;top:30%;transform:translateX(-50%)}
+        .zone-label{position:absolute;font-size:8px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.12);font-weight:700;pointer-events:none}
+        .zone-label.lbl-left{left:12%;bottom:20%}
+        .zone-label.lbl-right{right:12%;bottom:20%}
+        .zone-label.lbl-up{left:50%;top:15%;transform:translateX(-50%)}
+        .hit-zone-indicators.active .zone-arrow{color:rgba(76,255,80,0.35);animation:zoneGlow 2s ease-in-out infinite}
+        .hit-zone-indicators.active .zone-label{color:rgba(76,255,80,0.25)}
+        @keyframes zoneGlow{0%,100%{opacity:0.5}50%{opacity:1}}
         /* Serve timing bar */
         .serve-timing{position:absolute;right:12%;bottom:25%;width:24px;height:180px;display:none;flex-direction:column;align-items:center;z-index:100;pointer-events:none}
         .serve-timing.active{display:flex}
@@ -306,6 +319,15 @@
 
         /* Daily Challenge System */
         .challenge-banner{background:linear-gradient(135deg,#9b59b6,#8e44ad);border:2px solid rgba(155,89,182,0.5);border-radius:12px;margin:10px 0;padding:12px;color:#fff}
+        .challenge-streak-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .challenge-streak-badge{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;color:#ffd700}
+        .challenge-streak-badge .streak-fire{font-size:14px;animation:firePulse 1s ease-in-out infinite}
+        @keyframes firePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+        .challenge-streak-days{display:flex;gap:3px;margin-top:6px;margin-bottom:8px}
+        .streak-day{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,0.4);font-weight:700}
+        .streak-day.completed{border-color:#ffd700;background:rgba(255,215,0,0.3);color:#ffd700}
+        .streak-day.today{border-color:#4caf50;box-shadow:0 0 8px rgba(76,175,80,0.5)}
+        .streak-day.today.completed{border-color:#ffd700;background:linear-gradient(135deg,#ffd700,#ff9800);color:#1a1a2e}
         .challenge-title{font-family:'Bebas Neue',sans-serif;font-size:18px;color:#e8d5ff;margin-bottom:5px}
         .challenge-desc{font-size:11px;color:rgba(255,255,255,0.8);margin-bottom:8px}
         .challenge-progress{display:flex;justify-content:space-between;align-items:center}
@@ -453,7 +475,11 @@
         </div>
         <!-- Daily Challenge -->
         <div class="challenge-banner" id="dailyChallenge">
-            <div class="challenge-title" id="challengeTitle">Daily Challenge: Ace Master</div>
+            <div class="challenge-streak-row">
+                <div class="challenge-title" id="challengeTitle" style="margin-bottom:0">Daily Challenge: Ace Master</div>
+                <div class="challenge-streak-badge" id="streakBadge"><span class="streak-fire">🔥</span><span id="streakCount">0</span> Day Streak</div>
+            </div>
+            <div class="challenge-streak-days" id="streakDays"></div>
             <div class="challenge-desc" id="challengeDesc">Score 3 aces in a single match</div>
             <div class="challenge-progress">
                 <div class="challenge-bar"><div class="challenge-fill" id="challengeFill" style="width:0%"></div></div>
@@ -550,6 +576,14 @@
             <div class="service-box player-right" id="serviceBoxPlayerRight"></div>
             <div class="service-box player-left" id="serviceBoxPlayerLeft"></div>
             <div class="hit-zone" id="hitZone"></div>
+            <div class="hit-zone-indicators" id="hitZoneIndicators">
+                <div class="zone-arrow left">↖</div>
+                <div class="zone-arrow center">↑</div>
+                <div class="zone-arrow right">↗</div>
+                <div class="zone-label lbl-left">LEFT</div>
+                <div class="zone-label lbl-up">POWER</div>
+                <div class="zone-label lbl-right">RIGHT</div>
+            </div>
             <div class="opponent" id="opponent">
                 <div class="player-sprite opponent-sprite">
                     <div class="sprite-inner" id="opponentSprite"></div>
@@ -988,6 +1022,18 @@ const ACHIEVEMENTS = [
     {id:'winner_20',name:'Winner Factory',desc:'Hit 20 winners in career',icon:'🎾',check:s=>s.totalWinners>=20},
     {id:'matches_25',name:'Veteran',desc:'Play 25 matches',icon:'🎖️',check:s=>s.matchesPlayed>=25},
     {id:'matches_100',name:'Centurion',desc:'Play 100 matches',icon:'🏛️',check:s=>s.matchesPlayed>=100},
+    {id:'no_double_fault',name:'Clean Server',desc:'Win a match with zero double faults',icon:'🎯',check:s=>s.cleanServeWins>=1},
+    {id:'streak_daily_3',name:'Dedicated',desc:'Complete daily challenges 3 days in a row',icon:'📅',check:s=>s.bestDailyStreak>=3},
+    {id:'streak_daily_7',name:'Weekly Warrior',desc:'Complete daily challenges 7 days in a row',icon:'🗓️',check:s=>s.bestDailyStreak>=7},
+    {id:'streak_daily_14',name:'Fortnight Force',desc:'14-day daily challenge streak',icon:'⭐',check:s=>s.bestDailyStreak>=14},
+    {id:'streak_daily_30',name:'Monthly Master',desc:'30-day daily challenge streak',icon:'🌟',check:s=>s.bestDailyStreak>=30},
+    {id:'legend_win',name:'Legend Slayer',desc:'Win a match on Legend difficulty',icon:'💀',check:s=>s.legendWins>=1},
+    {id:'legend_win_5',name:'Legend Master',desc:'Win 5 matches on Legend',icon:'🐉',check:s=>s.legendWins>=5},
+    {id:'rally_50',name:'Endurance King',desc:'50+ shot rally in a match',icon:'💪',check:s=>s.longestRally>=50},
+    {id:'bagel_3',name:'Bagel Baker',desc:'Win 3 sets 6-0',icon:'🥯',check:s=>s.perfectSets>=3},
+    {id:'win_no_game_lost',name:'Flawless',desc:'Win without losing a single game',icon:'💯',check:s=>s.flawlessWins>=1},
+    {id:'daily_10',name:'Challenge Hunter',desc:'Complete 10 daily challenges',icon:'🎯',check:s=>s.dailyChallengesCompleted>=10},
+    {id:'daily_50',name:'Challenge Legend',desc:'Complete 50 daily challenges',icon:'🏆',check:s=>s.dailyChallengesCompleted>=50},
 ];
 
 function initAchievements() {
@@ -1045,8 +1091,17 @@ function renderTrophyCase() {
 
     const unlocked = ACHIEVEMENTS.filter(a => G.achievements[a.id]);
     const locked = ACHIEVEMENTS.filter(a => !G.achievements[a.id]);
+    const pct = Math.round((unlocked.length / ACHIEVEMENTS.length) * 100);
 
-    grid.innerHTML = `<div style="text-align:center;color:rgba(255,215,0,0.7);font-size:12px;margin-bottom:5px">${unlocked.length} / ${ACHIEVEMENTS.length} Unlocked</div>`;
+    grid.innerHTML = `
+        <div style="text-align:center;margin-bottom:10px">
+            <div style="color:#ffd700;font-family:'Bebas Neue',sans-serif;font-size:28px">${unlocked.length} / ${ACHIEVEMENTS.length}</div>
+            <div style="color:rgba(255,215,0,0.5);font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Achievements Unlocked</div>
+            <div style="height:6px;background:rgba(0,0,0,0.3);border-radius:3px;overflow:hidden;margin:0 20px">
+                <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#ffd700,#ff9800);transition:width 0.5s"></div>
+            </div>
+        </div>
+    `;
 
     // Show unlocked first, then locked
     [...unlocked, ...locked].forEach(a => {
@@ -1054,12 +1109,51 @@ function renderTrophyCase() {
         const date = isUnlocked ? new Date(G.achievements[a.id].unlockedAt).toLocaleDateString() : '';
         const card = document.createElement('div');
         card.className = `trophy-card ${isUnlocked ? 'unlocked' : 'locked'}`;
+        
+        // Get progress for locked achievements
+        let progressHTML = '';
+        if(!isUnlocked && G.careerStats) {
+            const s = G.careerStats;
+            const progressMap = {
+                'first_ace': {cur: s.totalAces||0, max: 1},
+                'ace_10': {cur: s.totalAces||0, max: 10},
+                'ace_50': {cur: s.totalAces||0, max: 50},
+                'first_win': {cur: s.matchesWon||0, max: 1},
+                'win_10': {cur: s.matchesWon||0, max: 10},
+                'win_50': {cur: s.matchesWon||0, max: 50},
+                'matches_25': {cur: s.matchesPlayed||0, max: 25},
+                'matches_100': {cur: s.matchesPlayed||0, max: 100},
+                'streak_5': {cur: s.bestStreak||0, max: 5},
+                'streak_10': {cur: s.bestStreak||0, max: 10},
+                'rally_15': {cur: s.longestRally||0, max: 15},
+                'rally_25': {cur: s.longestRally||0, max: 25},
+                'rally_50': {cur: s.longestRally||0, max: 50},
+                'rich': {cur: s.totalCoins||0, max: 1000},
+                'wealthy': {cur: s.totalCoins||0, max: 5000},
+                'winner_20': {cur: s.totalWinners||0, max: 20},
+                'streak_daily_3': {cur: s.bestDailyStreak||0, max: 3},
+                'streak_daily_7': {cur: s.bestDailyStreak||0, max: 7},
+                'streak_daily_14': {cur: s.bestDailyStreak||0, max: 14},
+                'streak_daily_30': {cur: s.bestDailyStreak||0, max: 30},
+                'legend_win': {cur: s.legendWins||0, max: 1},
+                'legend_win_5': {cur: s.legendWins||0, max: 5},
+                'bagel_3': {cur: s.perfectSets||0, max: 3},
+                'daily_10': {cur: s.dailyChallengesCompleted||0, max: 10},
+                'daily_50': {cur: s.dailyChallengesCompleted||0, max: 50},
+            };
+            const p = progressMap[a.id];
+            if(p) {
+                const pctDone = Math.min(100, Math.round((p.cur/p.max)*100));
+                progressHTML = `<div class="trophy-progress">${p.cur}/${p.max} (${pctDone}%)</div>`;
+            }
+        }
+
         card.innerHTML = `
-            <div class="trophy-icon">${a.icon}</div>
+            <div class="trophy-icon" style="${isUnlocked ? 'filter:drop-shadow(0 0 8px rgba(255,215,0,0.6))' : ''}">${isUnlocked ? a.icon : '🔒'}</div>
             <div class="trophy-info">
                 <div class="trophy-name">${a.name}</div>
                 <div class="trophy-desc">${a.desc}</div>
-                ${isUnlocked ? `<div class="trophy-date">Unlocked ${date}</div>` : ''}
+                ${isUnlocked ? `<div class="trophy-date">✨ Unlocked ${date}</div>` : progressHTML}
             </div>
         `;
         grid.appendChild(card);
@@ -1068,11 +1162,26 @@ function renderTrophyCase() {
 
 function initDailyChallenge() {
     const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+    // Initialize streak data
+    if(!G.dailyStreak) G.dailyStreak = { count: 0, lastCompleted: null, history: [] };
+    if(!G.careerStats) G.careerStats = {};
+    if(!G.careerStats.bestDailyStreak) G.careerStats.bestDailyStreak = 0;
+    if(!G.careerStats.dailyChallengesCompleted) G.careerStats.dailyChallengesCompleted = 0;
+
+    // Check streak continuity
+    if(G.dailyStreak.lastCompleted && G.dailyStreak.lastCompleted !== today && G.dailyStreak.lastCompleted !== yesterday) {
+        G.dailyStreak.count = 0; // Streak broken
+        G.dailyStreak.history = [];
+    }
 
     // Check if challenge is from today
     if(!G.dailyChallenge || G.dailyChallenge.date !== today) {
-        // Generate new challenge
-        const challenge = DAILY_CHALLENGES[Math.floor(Math.random() * DAILY_CHALLENGES.length)];
+        // Use date seed for consistent daily challenge
+        const dateNum = new Date().getFullYear() * 10000 + (new Date().getMonth()+1) * 100 + new Date().getDate();
+        const idx = dateNum % DAILY_CHALLENGES.length;
+        const challenge = DAILY_CHALLENGES[idx];
         G.dailyChallenge = {
             ...challenge,
             date: today,
@@ -1082,6 +1191,30 @@ function initDailyChallenge() {
     }
 
     updateChallengeDisplay();
+    updateStreakDisplay();
+}
+
+function updateStreakDisplay() {
+    const streak = G.dailyStreak || { count: 0, history: [] };
+    const today = new Date().toDateString();
+
+    { const _el = safeGetElement('streakCount'); if(_el) _el.textContent = streak.count; }
+
+    // Build 7-day streak visualization
+    const daysEl = safeGetElement('streakDays');
+    if(!daysEl) return;
+    daysEl.innerHTML = '';
+    const dayNames = ['S','M','T','W','T','F','S'];
+    for(let i = 6; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 86400000);
+        const dateStr = d.toDateString();
+        const isToday = dateStr === today;
+        const isCompleted = (streak.history || []).includes(dateStr);
+        const dayEl = document.createElement('div');
+        dayEl.className = `streak-day${isCompleted ? ' completed' : ''}${isToday ? ' today' : ''}`;
+        dayEl.textContent = dayNames[d.getDay()];
+        daysEl.appendChild(dayEl);
+    }
 }
 
 function updateChallengeDisplay() {
@@ -1119,12 +1252,46 @@ function checkChallengeProgress(type, value) {
     }
 
     // Check if completed
-    if(challenge.progress >= challenge.target) {
+    if(challenge.progress >= challenge.target && !challenge.completed) {
         challenge.completed = true;
-        G.coins += challenge.reward.coins;
+        
+        // Streak bonus: extra coins for longer streaks
+        const streakBonus = Math.floor((G.dailyStreak?.count || 0) * 10);
+        const totalCoins = challenge.reward.coins + streakBonus;
+        
+        G.coins += totalCoins;
         G.gems += challenge.reward.gems;
-        toast(`🏆 Daily Challenge Complete! +${challenge.reward.coins}💰 +${challenge.reward.gems}💎`);
+
+        // Update streak
+        if(!G.dailyStreak) G.dailyStreak = { count: 0, lastCompleted: null, history: [] };
+        const today = new Date().toDateString();
+        if(G.dailyStreak.lastCompleted !== today) {
+            const yesterday = new Date(Date.now() - 86400000).toDateString();
+            if(G.dailyStreak.lastCompleted === yesterday) {
+                G.dailyStreak.count++;
+            } else {
+                G.dailyStreak.count = 1;
+            }
+            G.dailyStreak.lastCompleted = today;
+            if(!G.dailyStreak.history) G.dailyStreak.history = [];
+            G.dailyStreak.history.push(today);
+            // Keep only last 30 days
+            if(G.dailyStreak.history.length > 30) G.dailyStreak.history = G.dailyStreak.history.slice(-30);
+        }
+
+        // Update career stats for streak achievements
+        if(!G.careerStats.bestDailyStreak) G.careerStats.bestDailyStreak = 0;
+        if(!G.careerStats.dailyChallengesCompleted) G.careerStats.dailyChallengesCompleted = 0;
+        if(G.dailyStreak.count > G.careerStats.bestDailyStreak) G.careerStats.bestDailyStreak = G.dailyStreak.count;
+        G.careerStats.dailyChallengesCompleted++;
+
+        const streakMsg = streakBonus > 0 ? ` (+${streakBonus} streak bonus!)` : '';
+        toast(`🏆 Daily Challenge Complete! +${totalCoins}💰 +${challenge.reward.gems}💎${streakMsg}`);
+        if(G.dailyStreak.count >= 3) toast(`🔥 ${G.dailyStreak.count}-Day Streak!`);
         sounds.winner();
+        
+        updateStreakDisplay();
+        checkAchievements();
     }
 
     updateChallengeDisplay();
@@ -2841,6 +3008,8 @@ function actuallyStartMatch(){
     safeGetElement('gameCourt')?.classList.add('active');
     { const _el = safeGetElement('playerPaddle'); if(_el) _el.style.left = '70%'; }
     safeGetElement('streakDisplay')?.classList.remove('active');
+    // Show hit zone indicators on mobile/touch devices
+    if('ontouchstart' in window) safeGetElement('hitZoneIndicators')?.classList.add('visible');
 
     updateMatchUI();
     startTimer();
@@ -3364,6 +3533,7 @@ function animateBall(){
         M.canHit = true;
         ball.classList.add('glowing');
         safeGetElement('hitZone')?.classList.add('active');
+        safeGetElement('hitZoneIndicators')?.classList.add('active');
 
         const hint = safeGetElement('swipeHint');
         hint.textContent = 'SWIPE UP!';
@@ -3378,6 +3548,7 @@ function animateBall(){
         M.canHit = false;
         ball.classList.remove('glowing');
         safeGetElement('hitZone')?.classList.remove('active');
+        safeGetElement('hitZoneIndicators')?.classList.remove('active');
         safeGetElement('swipeHint')?.classList.remove('active');
         safeGetElement('playerPaddle')?.classList.remove('can-hit');
     }
@@ -3433,6 +3604,7 @@ function resetBallUI(){
     ball.classList.remove('active', 'glowing', 'toss');
     shadow.classList.remove('active');
     safeGetElement('hitZone')?.classList.remove('active');
+        safeGetElement('hitZoneIndicators')?.classList.remove('active');
     safeGetElement('swipeHint')?.classList.remove('active', 'serve');
     safeGetElement('playerPaddle')?.classList.remove('can-hit', 'serving');
     safeGetElement('serveTiming')?.classList.remove('active');
@@ -3455,6 +3627,7 @@ function hitBall(power, angle){
     const ball = safeGetElement('ball');
     ball.classList.remove('glowing');
     safeGetElement('hitZone')?.classList.remove('active');
+        safeGetElement('hitZoneIndicators')?.classList.remove('active');
     safeGetElement('swipeHint')?.classList.remove('active');
     safeGetElement('playerPaddle')?.classList.remove('can-hit');
 
@@ -4035,6 +4208,11 @@ function endMatch(){
         };
     }
     if(!G.careerStats.perfectSets) G.careerStats.perfectSets = 0;
+    if(!G.careerStats.legendWins) G.careerStats.legendWins = 0;
+    if(!G.careerStats.flawlessWins) G.careerStats.flawlessWins = 0;
+    if(!G.careerStats.cleanServeWins) G.careerStats.cleanServeWins = 0;
+    if(!G.careerStats.bestDailyStreak) G.careerStats.bestDailyStreak = 0;
+    if(!G.careerStats.dailyChallengesCompleted) G.careerStats.dailyChallengesCompleted = 0;
 
     G.careerStats.matchesPlayed++;
     if(won) G.careerStats.matchesWon++;
@@ -4046,6 +4224,12 @@ function endMatch(){
 
     // Track perfect sets (6-0)
     if(won && M.oGames === 0 && M.pGames >= 6) G.careerStats.perfectSets++;
+    // Track legend wins
+    if(won && G.difficulty === 'legend') G.careerStats.legendWins++;
+    // Track flawless wins (no games lost)
+    if(won && M.oGames === 0) G.careerStats.flawlessWins++;
+    // Track clean serve wins (no double faults)
+    if(won && (!M.doubleFaults || M.doubleFaults === 0)) G.careerStats.cleanServeWins++;
 
     const oldNTRP = getNTRP();
     G.coins += coins;
