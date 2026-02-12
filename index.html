@@ -170,8 +170,10 @@
         .ball-shadow.active{display:block}
         .opponent{position:absolute;top:5%;left:50%;transform:translateX(-50%);width:80px;height:96px;display:flex;align-items:center;justify-content:center;z-index:30;transition:left 0.25s cubic-bezier(0.22,0.61,0.36,1)}
         .opponent.hitting{animation:opponentHit 0.3s ease}
+        .opponent.windup{animation:opponentWindup 0.18s ease-out forwards}
         .opponent.lean-left{transform:translateX(-50%) skewX(6deg) scaleX(0.97)}
         .opponent.lean-right{transform:translateX(-50%) skewX(-6deg) scaleX(0.97)}
+        @keyframes opponentWindup{0%{transform:translateX(-50%) scale(1)}100%{transform:translateX(-50%) scale(0.92) rotate(5deg) translateY(2px)}}
         @keyframes opponentHit{50%{transform:translateX(-50%) scale(1.2) rotate(-5deg)}}
         .player-paddle{position:absolute;bottom:5%;width:86px;height:104px;display:flex;align-items:center;justify-content:center;transform:translateX(-50%);z-index:35;transition:none}
         .net-rush-indicator{position:absolute;bottom:42%;left:50%;transform:translateX(-50%);padding:6px 14px;background:rgba(255,100,0,0.85);border-radius:8px;color:#fff;font-size:11px;font-weight:700;text-transform:uppercase;opacity:0;pointer-events:none;z-index:45;transition:opacity 0.3s}
@@ -2297,10 +2299,17 @@ function opponentReturn(){
     // Opponent hits back
     M.oppPos = M.ballPos.x;
     { const _el = safeGetElement('opponent'); if(_el) _el.style.left = M.oppPos + '%'; }
-    safeGetElement('opponent')?.classList.add('hitting');
-    setOppSwinging();
-    setTimeout(() => safeGetElement('opponent')?.classList.remove('hitting'), 250);
-    sounds.hit();
+
+    // Windup anticipation before serve return
+    const oppEl = safeGetElement('opponent');
+    oppEl?.classList.add('windup');
+    setTimeout(() => {
+        oppEl?.classList.remove('windup');
+        oppEl?.classList.add('hitting');
+        setOppSwinging();
+        setTimeout(() => oppEl?.classList.remove('hitting'), 250);
+        sounds.hit();
+    }, 120);
 
     M.ballBounces = 0;
     M.ballH = 50;
@@ -4089,18 +4098,24 @@ function animateReturn(){
             // Maybe opponent rushes net after return
             maybeOppNetRush();
 
-            safeGetElement('opponent')?.classList.add('hitting');
-            setOppSwinging();
-            setTimeout(() => safeGetElement('opponent')?.classList.remove('hitting'), 250);
-            sounds.hit();
+            // Windup anticipation - brief telegraph before hitting
+            const oppEl = safeGetElement('opponent');
+            oppEl?.classList.add('windup');
+            setTimeout(() => {
+                oppEl?.classList.remove('windup');
+                oppEl?.classList.add('hitting');
+                setOppSwinging();
+                setTimeout(() => oppEl?.classList.remove('hitting'), 250);
+                sounds.hit();
 
-            M.ballActive = true;
-            M.canHit = false;
-            ball.classList.add('active');
-            ball.classList.remove('glowing');
-            shadow.classList.add('active');
+                M.ballActive = true;
+                M.canHit = false;
+                ball.classList.add('active');
+                ball.classList.remove('glowing');
+                shadow.classList.add('active');
 
-            animateBall();
+                animateBall();
+            }, 150);
         } else {
             // Opponent missed - point for player! (Winner!)
             resetBallUI();
