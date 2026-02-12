@@ -135,15 +135,37 @@
         @keyframes ballGlow{0%,100%{transform:translate(-50%,-50%) scale(1.1)}50%{transform:translate(-50%,-50%) scale(1.25)}}
         @keyframes flashFade{0%{opacity:1}100%{opacity:0}}
         /* Enhanced ball trail effect */
-        .ball-trail{position:absolute;width:10px;height:10px;background:rgba(252,248,54,0.4);border-radius:50%;transform:translate(-50%,-50%);z-index:38;pointer-events:none;opacity:0;transition:opacity 0.1s}
-        .ball-trail.active{opacity:1;animation:trailFade 0.3s ease-out forwards}
-        @keyframes trailFade{0%{opacity:0.8;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(0.3)}}
+        .ball-trail{position:absolute;width:12px;height:12px;background:radial-gradient(circle,rgba(252,248,54,0.7),rgba(252,248,54,0.1));border-radius:50%;transform:translate(-50%,-50%);z-index:38;pointer-events:none;opacity:0;transition:opacity 0.05s;filter:blur(1px)}
+        .ball-trail.active{opacity:1;animation:trailFade 0.35s ease-out forwards}
+        .ball-trail.power{width:16px;height:16px;background:radial-gradient(circle,rgba(255,100,50,0.8),rgba(255,200,50,0.2));filter:blur(2px)}
+        @keyframes trailFade{0%{opacity:0.9;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(0.2)}}
 
         /* Swipe trail visualization */
         .swipe-trail{position:absolute;pointer-events:none;z-index:45;opacity:0}
-        .swipe-trail.active{opacity:1;animation:swipeTrailFade 0.5s ease-out forwards}
-        .swipe-trail-segment{position:absolute;width:8px;height:8px;background:linear-gradient(135deg,#4caf50,#8bc34a);border-radius:50%;transform:translate(-50%,-50%)}
-        @keyframes swipeTrailFade{0%{opacity:1}100%{opacity:0}}
+        .swipe-trail.active{opacity:1;animation:swipeTrailFade 0.6s ease-out forwards}
+        .swipe-trail-segment{position:absolute;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 4px rgba(76,255,80,0.4)}
+        @keyframes swipeTrailFade{0%{opacity:1;filter:blur(0px)}100%{opacity:0;filter:blur(3px)}}
+        /* Rally tension vignette */
+        .rally-vignette{position:fixed;inset:0;pointer-events:none;z-index:90;opacity:0;transition:opacity 0.5s ease;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.6) 100%)}
+        .rally-vignette.active{opacity:1}
+        /* Rally zoom */
+        .game-court.rally-zoom{transition:transform 0.8s ease}
+        /* Results screen animations */
+        .match-results .results-title{animation:none}
+        .match-results.active .results-title{animation:resultsTitlePop 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards}
+        .match-results.active .final-score{animation:resultsFadeUp 0.6s ease-out 0.3s both}
+        .match-results.active .rewards-container{animation:resultsFadeUp 0.5s ease-out both}
+        .match-results.active .rewards-container:nth-child(3){animation-delay:0.5s}
+        .match-results.active .rewards-container:nth-child(4){animation-delay:0.7s}
+        .match-results.active .rewards-container:nth-child(5){animation-delay:0.9s}
+        .match-results.active .continue-btn{animation:resultsFadeUp 0.5s ease-out 1.1s both}
+        .match-results.active .reward-value{animation:rewardCountUp 0.4s ease-out both}
+        @keyframes resultsTitlePop{0%{opacity:0;transform:scale(0.3) rotate(-5deg)}60%{transform:scale(1.1) rotate(2deg)}100%{opacity:1;transform:scale(1) rotate(0deg)}}
+        @keyframes resultsFadeUp{0%{opacity:0;transform:translateY(30px)}100%{opacity:1;transform:translateY(0)}}
+        @keyframes rewardCountUp{0%{opacity:0;transform:scale(0.5)}50%{transform:scale(1.2)}100%{opacity:1;transform:scale(1)}}
+        /* Victory confetti */
+        .confetti-piece{position:fixed;width:10px;height:10px;z-index:2001;pointer-events:none;animation:confettiFall linear forwards}
+        @keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0deg)}100%{opacity:0;transform:translateY(100vh) rotate(720deg)}}
         .ball-shadow{position:absolute;width:24px;height:8px;background:radial-gradient(ellipse at center,rgba(0,0,0,0.4),transparent 70%);border-radius:50%;transform:translate(-50%,0);z-index:25;display:none}
         .ball-shadow.active{display:block}
         .opponent{position:absolute;top:5%;left:50%;transform:translateX(-50%);width:80px;height:96px;display:flex;align-items:center;justify-content:center;z-index:30;transition:left 0.2s ease-out}
@@ -512,6 +534,7 @@
             </div>
         </div>
     </div>
+    <div class="rally-vignette" id="rallyVignette"></div>
     <div class="game-court" id="gameCourt">
         <div class="court">
             <div class="court-lines">
@@ -1272,11 +1295,33 @@ function initAudio(){
 
     // Rally tension system - crowd gets louder with rally length
     sounds.rallyTension=(rallyLength)=>{
-        if(rallyLength < 3) return; // No crowd noise for short rallies
+        // Visual rally tension effects
+        const vignette = safeGetElement('rallyVignette');
+        const court = safeGetElement('gameCourt');
+
+        if(rallyLength < 3) {
+            // Reset visual effects for short rallies
+            if(vignette) { vignette.classList.remove('active'); vignette.style.opacity = '0'; }
+            if(court) court.style.transform = '';
+            return;
+        }
+
+        // Vignette intensifies with rally length
+        if(vignette) {
+            vignette.classList.add('active');
+            const vignetteIntensity = Math.min((rallyLength - 3) * 0.12, 0.8);
+            vignette.style.opacity = vignetteIntensity;
+        }
+
+        // Subtle zoom as tension builds (starting at rally 5)
+        if(court && rallyLength >= 5){
+            const zoom = 1 + Math.min((rallyLength - 5) * 0.003, 0.025);
+            court.style.transition = 'transform 0.8s ease';
+            court.style.transform = `scale(${zoom})`;
+        }
 
         // Screen shake intensifies with rally length
         if(rallyLength >= 5){
-            const court = document.querySelector('.game-court');
             if(court){
                 const shakeClass = rallyLength >= 10 ? 'shake' : 'micro-shake';
                 court.classList.remove('micro-shake', 'shake');
@@ -1286,6 +1331,7 @@ function initAudio(){
             }
         }
 
+        // Crowd murmur increases with rally length
         const volume = Math.min(0.15 + (rallyLength - 3) * 0.03, 0.4);
         const intensity = Math.min(rallyLength - 2, 8);
 
@@ -1293,6 +1339,14 @@ function initAudio(){
             setTimeout(() => {
                 playTone(400 + Math.floor(Math.random() * 600), 0.05 + Math.random() * 0.05, volume);
             }, i * 30 + Math.floor(Math.random() * 50));
+        }
+
+        // Extra crowd excitement at high rally counts
+        if(rallyLength >= 8){
+            setTimeout(() => sounds.crowdOoh(), 200);
+        }
+        if(rallyLength >= 12){
+            setTimeout(() => sounds.crowdCheer(), 300);
         }
     };
 
@@ -2812,6 +2866,12 @@ function startNextPoint(){
     M.rally = 0;
     M.canHit = false;
 
+    // Reset rally tension visuals
+    const vignette = safeGetElement('rallyVignette');
+    if(vignette) { vignette.classList.remove('active'); vignette.style.opacity = '0'; }
+    const court = safeGetElement('gameCourt');
+    if(court) { court.style.transform = ''; court.style.transition = ''; }
+
     // Clear serve speed display
     { const _el = safeGetElement('serveSpeed'); if(_el) _el.textContent = ''; }
 
@@ -3355,6 +3415,12 @@ function ballMissed(){
     M.rally = 0;
     sounds.miss();
 
+    // Reset rally tension visuals
+    const vignette = safeGetElement('rallyVignette');
+    if(vignette) { vignette.classList.remove('active'); vignette.style.opacity = '0'; }
+    const court = safeGetElement('gameCourt');
+    if(court) { court.style.transform = ''; court.style.transition = ''; }
+
     M.streak = 0;
     updateStreakDisplay();
 
@@ -3444,22 +3510,28 @@ function powerShake(duration = 200) {
     setTimeout(() => court.classList.remove('power-shake'), duration);
 }
 
-// Hitstop effect - brief pause for impact
-function hitstop(duration = 150) {
+// Hitstop effect - brief frame freeze (2-3 frames ~33-50ms) for powerful hits
+function hitstop(duration = 50) {
     const court = safeGetElement('gameCourt');
     if(!court) return;
 
-    // Flash white for impact
-    court.style.filter = 'brightness(1.3) contrast(1.15)';
-    setTimeout(() => {
-        court.style.filter = '';
-    }, duration);
-
-    // Briefly pause ball animation (if in rally mode)
+    // Frame freeze: pause all animation for 2-3 frames
     if(M.ballActive && window.animationPaused !== true) {
         window.animationPaused = true;
+
+        // Flash + contrast boost during freeze
+        court.style.filter = 'brightness(1.4) contrast(1.2) saturate(1.3)';
+        court.style.transform = 'scale(1.008)';
+
+        // Brief time-dilated unfreeze
+        setTimeout(() => {
+            court.style.filter = 'brightness(1.15)';
+            court.style.transform = '';
+        }, duration * 0.6);
+
         setTimeout(() => {
             window.animationPaused = false;
+            court.style.filter = '';
         }, duration);
     }
 }
@@ -3486,8 +3558,8 @@ function createBallTrail() {
     if(!M.ballActive || window.animationPaused) return;
     if(isPerformanceMode()) return;
 
-    // Only update every 3rd frame to reduce overhead
-    if(++trailFrameSkip % 3 !== 0) return;
+    // Update every 2nd frame for smoother trail
+    if(++trailFrameSkip % 2 !== 0) return;
 
     if(ballTrailElements.length === 0) initBallTrailPool();
 
@@ -3502,40 +3574,56 @@ function createBallTrail() {
     const relX = ((ballRect.left + ballRect.width/2 - courtRect.left) / courtRect.width) * 100;
     const relY = ((ballRect.top + ballRect.height/2 - courtRect.top) / courtRect.height) * 100;
 
-    ballTrailPositions.push({x: relX, y: relY, time: Date.now()});
+    // Detect ball speed for trail intensity
+    const speed = M.ballVel ? Math.sqrt(M.ballVel.x*M.ballVel.x + M.ballVel.y*M.ballVel.y) : 0;
+    const isPowerShot = speed > 1.5;
+
+    ballTrailPositions.push({x: relX, y: relY, time: Date.now(), power: isPowerShot});
     if(ballTrailPositions.length > MAX_TRAIL_ELEMENTS) ballTrailPositions.shift();
 
     const now = Date.now();
+    const trailDuration = isPowerShot ? 400 : 300;
     for(let i = 0; i < MAX_TRAIL_ELEMENTS; i++) {
         const el = ballTrailElements[i];
         const pos = ballTrailPositions[ballTrailPositions.length - 1 - i];
-        if(!pos || now - pos.time > 300) {
+        if(!pos || now - pos.time > trailDuration) {
             el.style.display = 'none';
             continue;
         }
         const age = now - pos.time;
+        const progress = 1 - age / trailDuration;
         el.style.display = 'block';
         el.style.left = pos.x + '%';
         el.style.top = pos.y + '%';
-        el.style.opacity = (1 - age / 300) * 0.6;
+        el.style.opacity = progress * (isPowerShot ? 0.8 : 0.5);
+        el.style.width = el.style.height = (isPowerShot ? 14 - i * 1.5 : 10 - i) + 'px';
+        // Add power class for hot trail
+        if(pos.power) { el.classList.add('power'); } else { el.classList.remove('power'); }
     }
 }
 
-// Swipe trail visualization
+// Swipe trail visualization - shows curved swipe path with gradient
 function createSwipeTrail(startX, startY, endX, endY) {
     if(isPerformanceMode()) return;
     const court = getCourtElement();
     if(!court) return;
     const courtRect = court.getBoundingClientRect();
 
-    // Convert screen coordinates to court relative
     const startRelX = ((startX - courtRect.left) / courtRect.width) * 100;
     const startRelY = ((startY - courtRect.top) / courtRect.height) * 100;
     const endRelX = ((endX - courtRect.left) / courtRect.width) * 100;
     const endRelY = ((endY - courtRect.top) / courtRect.height) * 100;
 
-    // Create trail segments
-    const segments = 12;
+    // Calculate swipe power for visual intensity
+    const swipeDist = Math.sqrt((endX - startX)**2 + (endY - startY)**2);
+    const isPowerSwipe = swipeDist > 150;
+
+    const container = document.createElement('div');
+    container.className = 'swipe-trail active';
+    container.style.position = 'absolute';
+    container.style.inset = '0';
+
+    const segments = 16;
     for(let i = 0; i < segments; i++) {
         const progress = i / (segments - 1);
         const x = startRelX + (endRelX - startRelX) * progress;
@@ -3545,16 +3633,27 @@ function createSwipeTrail(startX, startY, endX, endY) {
         segment.className = 'swipe-trail-segment';
         segment.style.left = x + '%';
         segment.style.top = y + '%';
-        segment.style.opacity = 1 - progress * 0.7;
-        segment.style.animationDelay = (i * 20) + 'ms';
 
-        const container = document.createElement('div');
-        container.className = 'swipe-trail active';
+        // Size tapers from thick to thin along swipe
+        const size = isPowerSwipe ? (12 - progress * 8) : (8 - progress * 5);
+        segment.style.width = size + 'px';
+        segment.style.height = size + 'px';
+
+        // Color shifts from green to white along swipe
+        const r = Math.floor(76 + progress * 179);
+        const g = Math.floor(255 - progress * 55);
+        const b = Math.floor(80 + progress * 175);
+        segment.style.background = `rgba(${r},${g},${b},${1 - progress * 0.6})`;
+
+        if(isPowerSwipe) {
+            segment.style.boxShadow = `0 0 ${6 - progress * 4}px rgba(255,255,100,${0.5 - progress * 0.4})`;
+        }
+
         container.appendChild(segment);
-        court.appendChild(container);
-
-        setTimeout(() => container.remove(), 500 + i * 20);
     }
+
+    court.appendChild(container);
+    setTimeout(() => container.remove(), 600);
 }
 
 function createHitParticles(x, y, power) {
@@ -3621,7 +3720,7 @@ function showHitEffect(power){
     // Enhanced screen shake based on power
     if(power > 0.9){
         powerShake(250);
-        hitstop(120); // Brief pause for impact
+        hitstop(50); // 2-3 frame freeze for impact
         sounds.powerHit();
     } else if(power > 0.7){
         const court = safeGetElement('gameCourt');
@@ -4028,12 +4127,64 @@ function endMatch(){
         }, won ? 2000 : 1500);
     }
 
-    safeGetElement('matchResults')?.classList.add('active');
+    const resultsEl = safeGetElement('matchResults');
+    resultsEl?.classList.add('active');
+
+    // Celebratory confetti on victory
+    if(won) spawnConfetti();
+
+    // Animate reward values counting up
+    animateRewardValues(coins, skill, gems);
+}
+
+function spawnConfetti() {
+    const colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96e6a1', '#dda0dd', '#f0e68c'];
+    for(let i = 0; i < 40; i++) {
+        setTimeout(() => {
+            const piece = document.createElement('div');
+            piece.className = 'confetti-piece';
+            piece.style.left = (Math.random() * 100) + 'vw';
+            piece.style.top = '-10px';
+            piece.style.width = (6 + Math.random() * 8) + 'px';
+            piece.style.height = (6 + Math.random() * 8) + 'px';
+            piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+            piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+            piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+            piece.style.animationDelay = '0s';
+            document.body.appendChild(piece);
+            setTimeout(() => piece.remove(), 4000);
+        }, i * 60);
+    }
+}
+
+function animateRewardValues(coins, skill, gems) {
+    // Count-up animation for reward numbers
+    const targets = [
+        { id: 'coinsEarned', value: coins, prefix: '+' },
+        { id: 'skillGained', value: skill, prefix: '+' },
+        { id: 'gemsEarned', value: gems, prefix: '+' }
+    ];
+    targets.forEach((t, idx) => {
+        const el = safeGetElement(t.id);
+        if(!el) return;
+        let current = 0;
+        const step = Math.max(1, Math.floor(t.value / 20));
+        const delay = 400 + idx * 300;
+        setTimeout(() => {
+            const interval = setInterval(() => {
+                current = Math.min(current + step, t.value);
+                el.textContent = t.prefix + current;
+                if(current >= t.value) clearInterval(interval);
+            }, 30);
+        }, delay);
+    });
 }
 
 function returnToMenu(){
     safeGetElement('matchResults')?.classList.remove('active');
     safeGetElement('mainMenu')?.classList.add('active');
+    // Clean up any remaining confetti
+    document.querySelectorAll('.confetti-piece').forEach(el => el.remove());
     resetBallUI();
     updateUI();
 }
@@ -4321,19 +4472,25 @@ document.addEventListener('mouseup', e => {
     touchY = touchX = null;
 });
 
-// Smooth player movement with lerp interpolation
+// Smooth player movement with velocity-damped lerp interpolation
 let playerTargetPos = 50;
 let playerCurrentPos = 50;
 let playerLerpActive = false;
+let playerVelocity = 0;
 
 function lerpPlayerMovement() {
-    if(!M.active) { playerLerpActive = false; return; }
+    if(!M.active) { playerLerpActive = false; playerVelocity = 0; return; }
 
-    const lerpSpeed = 0.25; // Smooth interpolation factor
     const diff = playerTargetPos - playerCurrentPos;
+    // Spring-damper system for fluid motion
+    const springForce = diff * 0.15;
+    const damping = 0.75;
+    playerVelocity = playerVelocity * damping + springForce;
 
-    if(Math.abs(diff) > 0.3) {
-        playerCurrentPos += diff * lerpSpeed;
+    if(Math.abs(diff) > 0.2 || Math.abs(playerVelocity) > 0.1) {
+        playerCurrentPos += playerVelocity;
+        // Clamp to bounds
+        playerCurrentPos = Math.max(12, Math.min(88, playerCurrentPos));
         M.playerPos = playerCurrentPos;
         const paddle = safeGetElement('playerPaddle');
         if(paddle) paddle.style.left = playerCurrentPos + '%';
@@ -4341,6 +4498,7 @@ function lerpPlayerMovement() {
         requestAnimationFrame(lerpPlayerMovement);
     } else {
         playerCurrentPos = playerTargetPos;
+        playerVelocity = 0;
         M.playerPos = playerCurrentPos;
         const paddle = safeGetElement('playerPaddle');
         if(paddle) paddle.style.left = playerCurrentPos + '%';
