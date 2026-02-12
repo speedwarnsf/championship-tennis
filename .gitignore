@@ -1,2 +1,5 @@
 .vercel
 .env*.local
+sprites-v2/raw/
+sprites-v2/backup-pre-audit/
+regenerate_mismatched.py
