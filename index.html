@@ -2780,20 +2780,30 @@ function selectRandomOpponent(){
 
 function getPlayerSprites(char){
     // Get sprites for player (back view)
+    // Use multi-frame sprite sheets when available (sprites-v2/sheets/)
+    const sheetBase = 'sprites-v2/sheets/' + char.id + '-back-';
+    const hasSheet = ['player1', 'player2', 'player3'].indexOf(char.id) >= 0;
+
     if(char.id === 'player1'){
         return {
-            swing: 'player-retro-backswing.png' + V,
-            run: 'player-retro-run.png' + V,
-            idle: 'player-idle-v2.png' + V,
-            idleIsSheet: false  // player1 has a dedicated single-frame idle
+            swing: hasSheet ? sheetBase + 'swing-sheet.png' + V : 'player-retro-backswing.png' + V,
+            run: hasSheet ? sheetBase + 'run-sheet.png' + V : 'player-retro-run.png' + V,
+            idle: hasSheet ? sheetBase + 'idle-sheet.png' + V : 'player-idle-v2.png' + V,
+            idleIsSheet: hasSheet,
+            swingSingle: 'player-retro-backswing.png' + V,
+            runSingle: 'player-retro-run.png' + V,
+            idleSingle: 'player-idle-v2.png' + V
         };
     }
     const base = 'sprites-v2/characters/' + char.id + '-';
     return {
-        swing: base + 'back-swing.png' + V,
-        run: base + 'back-run.png' + V,
-        idle: base + 'back-swing.png' + V,
-        idleIsSheet: true  // other characters use swing sheet for idle (show frame 1)
+        swing: hasSheet ? sheetBase + 'swing-sheet.png' + V : base + 'back-swing.png' + V,
+        run: hasSheet ? sheetBase + 'run-sheet.png' + V : base + 'back-run.png' + V,
+        idle: hasSheet ? sheetBase + 'idle-sheet.png' + V : base + 'back-swing.png' + V,
+        idleIsSheet: hasSheet || true,
+        swingSingle: base + 'back-swing.png' + V,
+        runSingle: base + 'back-run.png' + V,
+        idleSingle: base + 'back-swing.png' + V
     };
 }
 
