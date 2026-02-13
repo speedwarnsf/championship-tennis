@@ -3026,8 +3026,41 @@ function actuallyStartMatch(){
     updateMatchUI();
     startTimer();
 
-    // Start first point
-    setTimeout(startNextPoint, 1200);
+    // Auto-show tutorial for first-time players
+    if(!G.hasPlayedBefore){
+        G.hasPlayedBefore = true;
+        save();
+        showTutorial();
+        // Delay first point until tutorial is dismissed
+        const waitForTutorial = setInterval(() => {
+            const tut = safeGetElement('tutorialOverlay');
+            if(!tut || !tut.classList.contains('active')){
+                clearInterval(waitForTutorial);
+                showFirstMatchHints();
+                setTimeout(startNextPoint, 1200);
+            }
+        }, 200);
+    } else {
+        setTimeout(startNextPoint, 1200);
+    }
+}
+
+// Show contextual hints during the first few points of a match
+function showFirstMatchHints(){
+    if((G.careerStats?.matchesPlayed || 0) > 2) return; // Only show for first 3 matches
+    M._hintShown = 0;
+    M._hintInterval = setInterval(() => {
+        if(!M.active || M._hintShown >= 3){ clearInterval(M._hintInterval); return; }
+        const hints = [
+            'SWIPE UP to return the ball!',
+            'Aim your swipe LEFT or RIGHT!',
+            'DOUBLE-TAP to rush the net!'
+        ];
+        if(M._hintShown < hints.length && M.rally === 0 && !M.isPlayerServe){
+            toast(hints[M._hintShown]);
+            M._hintShown++;
+        }
+    }, 12000);
 }
 
 let _nextPointTimer = null;
@@ -3465,6 +3498,31 @@ function animateBall(){
     const resistance = 0.9995;
     M.ballVel.x *= resistance;
     M.ballVel.y *= resistance;
+
+    // NET COLLISION CHECK: ball must have sufficient height to cross the net (y ~50-54%)
+    const prevY = M.ballPos.y - M.ballVel.y;
+    const netY = 52; // net position
+    const crossingNet = (prevY < netY && M.ballPos.y >= netY) || (prevY > netY && M.ballPos.y <= netY);
+    if(crossingNet && M.ballH < 8){
+        // Ball hit the net
+        M.ballActive = false;
+        M.canHit = false;
+        resetBallUI();
+        sounds.let();
+        showNetCordEffect();
+        if(M.lastHitBy === 'player'){
+            showCallOverlay('NET!', false);
+            M.streak = 0;
+            updateStreakDisplay();
+            if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
+        } else {
+            showCallOverlay('NET!', true);
+            M.streak++;
+            updateStreakDisplay();
+            if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
+        }
+        return;
+    }
 
     // Enhanced ground bounce with energy transfer
     if(M.ballH <= 0 && M.ballVel.z < 0){
@@ -4004,6 +4062,23 @@ function animateReturn(){
     // Spin effect
     if(M.ballSpin !== 0){
         M.ballVel.x += M.ballSpin * 0.025;
+    }
+
+    // NET COLLISION CHECK for player returns
+    const rPrevY = M.ballPos.y - M.ballVel.y;
+    const rNetY = 52;
+    const rCrossingNet = (rPrevY > rNetY && M.ballPos.y <= rNetY) || (rPrevY < rNetY && M.ballPos.y >= rNetY);
+    if(rCrossingNet && M.ballH < 8){
+        M.ballActive = false;
+        M.canHit = false;
+        resetBallUI();
+        sounds.let();
+        showNetCordEffect();
+        showCallOverlay('NET!', false);
+        M.streak = 0;
+        updateStreakDisplay();
+        if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
+        return;
     }
 
     // Ground bounce
