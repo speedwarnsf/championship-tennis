@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://championship-tennis.vercel.app/sitemap.xml

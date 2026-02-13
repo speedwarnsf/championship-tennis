@@ -14,11 +14,33 @@
     <meta property="og:image" content="https://championship-tennis.vercel.app/court.jpg" />
     <meta property="og:url" content="https://championship-tennis.vercel.app/" />
 
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://championship-tennis.vercel.app/" />
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Championship Tennis" />
     <meta name="twitter:description" content="Mobile-first tennis game with realistic serve mechanics, scoring, and AI opponent." />
     <meta name="twitter:image" content="https://championship-tennis.vercel.app/court.jpg" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": "Championship Tennis",
+      "description": "Mobile-first tennis game with realistic serve mechanics, scoring, and AI opponent.",
+      "url": "https://championship-tennis.vercel.app",
+      "genre": "Sports",
+      "gamePlatform": "Web Browser",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
 
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -403,6 +425,22 @@
         .tutorial-text{color:rgba(255,255,255,0.8);font-size:13px;line-height:1.5;margin-bottom:20px}
         .tutorial-btn{padding:14px 35px;background:linear-gradient(135deg,#4caf50,#8bc34a);border:none;border-radius:20px;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer}
 
+/* Accessibility: focus indicators */
+:focus-visible {
+    outline: 2px solid #ffd700;
+    outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+    outline: none;
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
 /* Performance optimizations */
 .performance-mode .particle-effect,
 .performance-mode .ball-trail {
@@ -429,16 +467,17 @@
     <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
+    <a href="#gameCourt" class="skip-to-content" style="position:absolute;left:-9999px;top:0;z-index:9999;padding:12px 20px;background:#ffd700;color:#1a1a2e;font-weight:700;font-size:14px;text-decoration:none" onfocus="this.style.left='0'" onblur="this.style.left='-9999px'">Skip to game</a>
     <div class="screen loading-screen active" id="loadingScreen">
         <div style="display:flex;flex-direction:column;align-items:center;margin-top:-60px;">
             <div class="hero-image">
-                <img src="hero_player.webp" alt="Tennis Player" class="hero-player">
-                <img src="hero_player.webp" alt="Tennis Ball" class="hero-ball">
+                <img src="hero_player.webp" alt="Tennis player character" class="hero-player">
+                <img src="hero_player.webp" alt="" role="presentation" class="hero-ball">
             </div>
             <div class="loading-content" id="loadingContent">
                 <div class="loading-logo">CENTRE COURT</div>
                 <div class="loading-subtitle">Championship Edition</div>
-                <button class="play-button" onclick="startGame()">PLAY NOW</button>
+                <button class="play-button" onclick="startGame()" aria-label="Start the game">PLAY NOW</button>
             </div>
         </div>
     </div>
@@ -494,11 +533,11 @@
         </div>
 
         <div class="menu-buttons">
-            <button class="menu-btn primary" onclick="startMatch()">PLAY MATCH</button>
-            <button class="menu-btn" onclick="showCharSelect()">SELECT PLAYER</button>
-            <button class="menu-btn" onclick="showShop()">PRO SHOP</button>
-            <button class="menu-btn" onclick="showTrophyCase()">TROPHY CASE</button>
-            <button class="menu-btn" onclick="showTutorial()">HOW TO PLAY</button>
+            <button class="menu-btn primary" onclick="startMatch()" aria-label="Play a match">PLAY MATCH</button>
+            <button class="menu-btn" onclick="showCharSelect()" aria-label="Select your player character">SELECT PLAYER</button>
+            <button class="menu-btn" onclick="showShop()" aria-label="Open the pro shop">PRO SHOP</button>
+            <button class="menu-btn" onclick="showTrophyCase()" aria-label="View your trophy case">TROPHY CASE</button>
+            <button class="menu-btn" onclick="showTutorial()" aria-label="Learn how to play">HOW TO PLAY</button>
         </div>
     </div>
     <div class="screen shop-screen" id="shopScreen">
@@ -541,9 +580,9 @@
     </div>
     <div class="video-intro" id="videoIntro">
         <div id="videoPlayer"></div>
-        <button class="skip-btn" onclick="transitionToCourt()">SKIP ▶</button>
+        <button class="skip-btn" onclick="transitionToCourt()" aria-label="Skip intro video">SKIP</button>
     </div>
-    <button id="muteBtn" onclick="AudioManager.toggleMute()" style="position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:12px;z-index:9000;width:36px;height:36px;background:rgba(0,0,0,0.6);border:2px solid rgba(255,215,0,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>
+    <button id="muteBtn" onclick="AudioManager.toggleMute()" aria-label="Toggle audio mute" style="position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:12px;z-index:9000;width:36px;height:36px;background:rgba(0,0,0,0.6);border:2px solid rgba(255,215,0,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>
     <div class="game-hud" id="gameHUD">
         <div class="match-info">
             <div class="player-info">
@@ -670,7 +709,7 @@
             <div class="reward-item"><span class="reward-label">Total Points</span><span class="reward-value" id="totalPoints">0</span></div>
             <div class="reward-item"><span class="reward-label">Match Time</span><span class="reward-value" id="matchDuration">0:00</span></div>
         </div>
-        <button class="continue-btn" onclick="returnToMenu()">CONTINUE</button>
+        <button class="continue-btn" onclick="returnToMenu()" aria-label="Return to main menu">CONTINUE</button>
     </div>
     <div class="tutorial-overlay" id="tutorialOverlay">
         <div class="tutorial-content">
@@ -691,7 +730,7 @@
                 <strong>GEMS:</strong><br>
                 Collect gems before they disappear! Build streaks for bonus gems!
             </p>
-            <button class="tutorial-btn" onclick="closeTutorial()">GOT IT!</button>
+            <button class="tutorial-btn" onclick="closeTutorial()" aria-label="Close tutorial">GOT IT!</button>
         </div>
     </div>
     <div class="progress-toast" id="progressToast"></div>
