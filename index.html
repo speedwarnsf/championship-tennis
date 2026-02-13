@@ -23,8 +23,9 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link rel="preload" href="court.jpg" as="image">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;800&display=swap"></noscript>
+    <link rel="preload" href="court.webp" as="image">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;border-radius:0!important}
         body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#1a1a2e,#0f0f1e);min-height:100vh;overflow:hidden;overscroll-behavior:none;width:100%}
@@ -95,7 +96,7 @@
         .serve-indicator.fault{color:#f44336;background:rgba(244,67,54,0.2)}
         .serve-speed{font-size:10px;color:#ffd700;font-weight:700;margin-top:2px}
         .tiebreak-indicator{font-size:8px;color:#ff9800;text-transform:uppercase;margin-top:2px}
-        .game-court{position:fixed;inset:0;display:none;background:url('court.jpg') center/cover no-repeat;background-color:#000}
+        .game-court{position:fixed;inset:0;display:none;background:url('court.webp') center/cover no-repeat;background-color:#000}
         .game-court.active{display:block}
         .game-court.shake{animation:screenShake 0.15s ease-in-out}
         .game-court.micro-shake{animation:microShake 0.1s ease-in-out}
@@ -431,8 +432,8 @@
     <div class="screen loading-screen active" id="loadingScreen">
         <div style="display:flex;flex-direction:column;align-items:center;margin-top:-60px;">
             <div class="hero-image">
-                <img src="hero_player.jpg" alt="Tennis Player" class="hero-player">
-                <img src="hero_player.jpg" alt="Tennis Ball" class="hero-ball">
+                <img src="hero_player.webp" alt="Tennis Player" class="hero-player">
+                <img src="hero_player.webp" alt="Tennis Ball" class="hero-ball">
             </div>
             <div class="loading-content" id="loadingContent">
                 <div class="loading-logo">CENTRE COURT</div>
@@ -542,6 +543,7 @@
         <div id="videoPlayer"></div>
         <button class="skip-btn" onclick="transitionToCourt()">SKIP ▶</button>
     </div>
+    <button id="muteBtn" onclick="AudioManager.toggleMute()" style="position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:12px;z-index:9000;width:36px;height:36px;background:rgba(0,0,0,0.6);border:2px solid rgba(255,215,0,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>
     <div class="game-hud" id="gameHUD">
         <div class="match-info">
             <div class="player-info">
@@ -1420,79 +1422,169 @@ let M={
 
 let audio,sounds={};
 
-function initAudio(){
-    audio=new(window.AudioContext||window.webkitAudioContext)();
+const AudioManager = {
+    ctx: null,
+    muted: false,
+    masterGain: null,
+    crowdNode: null,
+    crowdGain: null,
+    _crowdTarget: 0,
 
-    // Enhanced layered hit sounds for more impact
-    sounds.hit=()=>{
-        playTone(80,0.06,0.25);
-        setTimeout(()=>playTone(220,0.03,0.18),15);
+    init() {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.connect(this.ctx.destination);
+        audio = this.ctx;
+        this._initCrowdAmbience();
+    },
+
+    toggleMute() {
+        this.muted = !this.muted;
+        if (this.masterGain) {
+            this.masterGain.gain.setTargetAtTime(this.muted ? 0 : 1, this.ctx.currentTime, 0.05);
+        }
+        const btn = document.getElementById('muteBtn');
+        if (btn) btn.innerHTML = this.muted ? AudioManager._iconMuted : AudioManager._iconUnmuted;
+    },
+
+    tone(f, d, v, type) {
+        if (!this.ctx) return;
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = type || 'sine';
+        o.frequency.value = f;
+        o.connect(g);
+        g.connect(this.masterGain);
+        g.gain.setValueAtTime(v, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + d);
+        o.start();
+        o.stop(this.ctx.currentTime + d);
+    },
+
+    noise(d, v) {
+        if (!this.ctx) return;
+        const bufferSize = this.ctx.sampleRate * d;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        const src = this.ctx.createBufferSource();
+        src.buffer = buffer;
+        const g = this.ctx.createGain();
+        const lp = this.ctx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 400;
+        src.connect(lp);
+        lp.connect(g);
+        g.connect(this.masterGain);
+        g.gain.setValueAtTime(v, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + d);
+        src.start();
+        src.stop(this.ctx.currentTime + d);
+    },
+
+    _initCrowdAmbience() {
+        // Continuous low crowd white noise
+        const bufLen = 2 * this.ctx.sampleRate;
+        const buf = this.ctx.createBuffer(1, bufLen, this.ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+        this.crowdNode = this.ctx.createBufferSource();
+        this.crowdNode.buffer = buf;
+        this.crowdNode.loop = true;
+        this.crowdGain = this.ctx.createGain();
+        this.crowdGain.gain.value = 0.02;
+        const lp = this.ctx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 300;
+        this.crowdNode.connect(lp);
+        lp.connect(this.crowdGain);
+        this.crowdGain.connect(this.masterGain);
+        this.crowdNode.start();
+    },
+
+    setCrowdLevel(rallyLength) {
+        if (!this.crowdGain || !this.ctx) return;
+        // Base 0.02, ramps up with rally length
+        const target = rallyLength < 3 ? 0.02 : Math.min(0.02 + (rallyLength - 2) * 0.015, 0.18);
+        this.crowdGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.4);
+    },
+
+    // SVG icons for mute button
+    _iconUnmuted: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
+    _iconMuted: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>'
+};
+
+function initAudio(){
+    AudioManager.init();
+
+    // Ball hit - short percussive, pitch varies by power context
+    sounds.hit=(power)=>{
+        const p = power || 0.5;
+        const baseFreq = 100 + p * 200;
+        AudioManager.tone(baseFreq, 0.05, 0.3, 'triangle');
+        AudioManager.tone(baseFreq * 3, 0.02, 0.15, 'square');
     };
 
     sounds.powerHit=()=>{
-        playTone(60,0.08,0.3);
-        setTimeout(()=>playTone(280,0.04,0.2),20);
+        AudioManager.tone(60, 0.07, 0.35, 'triangle');
+        AudioManager.tone(320, 0.03, 0.2, 'square');
+        AudioManager.noise(0.04, 0.12);
     };
 
-    // Enhanced bounce sounds with variety
-    sounds.bounce=()=>playTone(120,0.03,0.35);
+    sounds.bounce=()=>AudioManager.tone(120,0.03,0.35);
     sounds.powerBounce=()=>{
-        playTone(90,0.05,0.4);
-        setTimeout(()=>playTone(180,0.03,0.3),20);
+        AudioManager.tone(90,0.05,0.4);
+        setTimeout(()=>AudioManager.tone(180,0.03,0.3),20);
     };
-    sounds.softBounce=()=>playTone(140,0.025,0.25);
+    sounds.softBounce=()=>AudioManager.tone(140,0.025,0.25);
 
-    // Crowd reactions for atmosphere
     sounds.crowdCheer=()=>{
         for(let i=0;i<5;i++){
-            setTimeout(()=>playTone(800+Math.floor(Math.random() * 400),0.1,0.1),i*50);
+            setTimeout(()=>AudioManager.tone(800+Math.floor(Math.random()*400),0.1,0.1),i*50);
         }
     };
     sounds.crowdOoh=()=>{
-        playTone(200,0.2,0.08);
-        setTimeout(()=>playTone(180,0.15,0.06),100);
+        AudioManager.tone(200,0.2,0.08);
+        setTimeout(()=>AudioManager.tone(180,0.15,0.06),100);
     };
 
-    // Point celebration sounds
+    // Point won - ascending two-note
     sounds.pointWon=()=>{
-        playTone(440,0.1,0.5);
-        setTimeout(()=>playTone(550,0.08,0.4),80);
-        setTimeout(()=>playTone(660,0.06,0.3),150);
+        AudioManager.tone(523, 0.12, 0.45);
+        setTimeout(()=>AudioManager.tone(659, 0.15, 0.4), 100);
     };
 
     sounds.pointLost=()=>{
-        playTone(220,0.08,0.4);
-        setTimeout(()=>playTone(160,0.06,0.3),60);
+        AudioManager.tone(220,0.08,0.4);
+        setTimeout(()=>AudioManager.tone(160,0.06,0.3),60);
     };
 
-    // Rally tension system - crowd gets louder with rally length
+    // Rally tension - visuals + crowd ambience ramp
     sounds.rallyTension=(rallyLength)=>{
-        // Visual rally tension effects
         const vignette = safeGetElement('rallyVignette');
         const court = safeGetElement('gameCourt');
 
+        // Set crowd ambience level
+        AudioManager.setCrowdLevel(rallyLength);
+
         if(rallyLength < 3) {
-            // Reset visual effects for short rallies
             if(vignette) { vignette.classList.remove('active'); vignette.style.opacity = '0'; }
             if(court) court.style.transform = '';
             return;
         }
 
-        // Vignette intensifies with rally length
         if(vignette) {
             vignette.classList.add('active');
             const vignetteIntensity = Math.min((rallyLength - 3) * 0.12, 0.8);
             vignette.style.opacity = vignetteIntensity;
         }
 
-        // Subtle zoom as tension builds (starting at rally 5)
         if(court && rallyLength >= 5){
             const zoom = 1 + Math.min((rallyLength - 5) * 0.003, 0.025);
             court.style.transition = 'transform 0.8s ease';
             court.style.transform = `scale(${zoom})`;
         }
 
-        // Screen shake intensifies with rally length
         if(rallyLength >= 5){
             if(court){
                 const shakeClass = rallyLength >= 10 ? 'shake' : 'micro-shake';
@@ -1503,95 +1595,101 @@ function initAudio(){
             }
         }
 
-        // Crowd murmur increases with rally length
         const volume = Math.min(0.15 + (rallyLength - 3) * 0.03, 0.4);
         const intensity = Math.min(rallyLength - 2, 8);
-
         for(let i = 0; i < intensity; i++){
             setTimeout(() => {
-                playTone(400 + Math.floor(Math.random() * 600), 0.05 + Math.random() * 0.05, volume);
+                AudioManager.tone(400 + Math.floor(Math.random() * 600), 0.05 + Math.random() * 0.05, volume);
             }, i * 30 + Math.floor(Math.random() * 50));
         }
 
-        // Extra crowd excitement at high rally counts
-        if(rallyLength >= 8){
-            setTimeout(() => sounds.crowdOoh(), 200);
-        }
-        if(rallyLength >= 12){
-            setTimeout(() => sounds.crowdCheer(), 300);
-        }
+        if(rallyLength >= 8) setTimeout(() => sounds.crowdOoh(), 200);
+        if(rallyLength >= 12) setTimeout(() => sounds.crowdCheer(), 300);
     };
 
-    // Enhanced point celebrations
     sounds.point=()=>{
-        playTone(440,0.1,0.35);
-        setTimeout(()=>playTone(660,0.1,0.35),80);
-        setTimeout(()=>playTone(880,0.15,0.35),160);
+        AudioManager.tone(440,0.1,0.35);
+        setTimeout(()=>AudioManager.tone(660,0.1,0.35),80);
+        setTimeout(()=>AudioManager.tone(880,0.15,0.35),160);
         setTimeout(()=>sounds.crowdCheer(),200);
     };
 
     sounds.miss=()=>{
-        playTone(80,0.2,0.2);
+        AudioManager.tone(80,0.2,0.2);
         setTimeout(()=>sounds.crowdOoh(),100);
     };
 
-    sounds.coin=()=>{playTone(1200,0.05,0.25);setTimeout(()=>playTone(1600,0.05,0.25),40)};
-    sounds.gem=()=>{playTone(1800,0.08,0.3);setTimeout(()=>playTone(2200,0.08,0.3),50)};
+    sounds.coin=()=>{AudioManager.tone(1200,0.05,0.25);setTimeout(()=>AudioManager.tone(1600,0.05,0.25),40)};
+    sounds.gem=()=>{AudioManager.tone(1800,0.08,0.3);setTimeout(()=>AudioManager.tone(2200,0.08,0.3),50)};
 
-    // Enhanced serve sounds
+    // Serve - rising tone during toss, sharp crack on release
     sounds.serve=()=>{
-        playTone(100,0.06,0.5);
-        setTimeout(()=>playTone(250,0.05,0.45),25);
-        setTimeout(()=>playTone(500,0.04,0.35),50);
-        setTimeout(()=>playTone(80,0.03,0.2),10); // Woosh
+        // Rising tone (toss phase)
+        if(AudioManager.ctx){
+            const o=AudioManager.ctx.createOscillator();
+            const g=AudioManager.ctx.createGain();
+            o.type='sine';
+            o.frequency.setValueAtTime(150,AudioManager.ctx.currentTime);
+            o.frequency.linearRampToValueAtTime(600,AudioManager.ctx.currentTime+0.12);
+            o.connect(g);g.connect(AudioManager.masterGain);
+            g.gain.setValueAtTime(0.3,AudioManager.ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01,AudioManager.ctx.currentTime+0.15);
+            o.start();o.stop(AudioManager.ctx.currentTime+0.15);
+        }
+        // Sharp crack on release
+        setTimeout(()=>{
+            AudioManager.noise(0.04, 0.35);
+            AudioManager.tone(500,0.03,0.4,'square');
+        },80);
     };
 
-    sounds.fault=()=>{playTone(150,0.15,0.3);setTimeout(()=>playTone(100,0.2,0.25),100)};
+    sounds.fault=()=>{AudioManager.tone(150,0.15,0.3);setTimeout(()=>AudioManager.tone(100,0.2,0.25),100)};
 
     sounds.ace=()=>{
-        playTone(600,0.1,0.4);
-        setTimeout(()=>playTone(900,0.1,0.4),80);
-        setTimeout(()=>playTone(1200,0.15,0.4),160);
+        AudioManager.tone(600,0.1,0.4);
+        setTimeout(()=>AudioManager.tone(900,0.1,0.4),80);
+        setTimeout(()=>AudioManager.tone(1200,0.15,0.4),160);
         setTimeout(()=>sounds.crowdCheer(),250);
     };
 
-    sounds.let=()=>{playTone(300,0.1,0.3);setTimeout(()=>playTone(300,0.1,0.3),150)};
-    sounds.changeover=()=>{playTone(400,0.15,0.25);setTimeout(()=>playTone(500,0.15,0.25),100);setTimeout(()=>playTone(600,0.2,0.25),200)};
+    // Net hit - dull thud
+    sounds.let=()=>{
+        AudioManager.noise(0.08, 0.25);
+        AudioManager.tone(80, 0.12, 0.3, 'sine');
+    };
+
+    sounds.changeover=()=>{AudioManager.tone(400,0.15,0.25);setTimeout(()=>AudioManager.tone(500,0.15,0.25),100);setTimeout(()=>AudioManager.tone(600,0.2,0.25),200)};
 
     sounds.winner=()=>{
-        playTone(800,0.1,0.35);
-        setTimeout(()=>playTone(1000,0.1,0.35),80);
-        setTimeout(()=>playTone(1200,0.15,0.35),160);
+        AudioManager.tone(800,0.1,0.35);
+        setTimeout(()=>AudioManager.tone(1000,0.1,0.35),80);
+        setTimeout(()=>AudioManager.tone(1200,0.15,0.35),160);
         setTimeout(()=>sounds.crowdCheer(),200);
     };
 
-    // Victory sounds
     sounds.victory=()=>{
-        playTone(523,0.15,0.4); // C
-        setTimeout(()=>playTone(659,0.15,0.4),150); // E
-        setTimeout(()=>playTone(784,0.15,0.4),300); // G
-        setTimeout(()=>playTone(1047,0.3,0.5),450); // C octave
+        AudioManager.tone(523,0.15,0.4);
+        setTimeout(()=>AudioManager.tone(659,0.15,0.4),150);
+        setTimeout(()=>AudioManager.tone(784,0.15,0.4),300);
+        setTimeout(()=>AudioManager.tone(1047,0.3,0.5),450);
         setTimeout(()=>sounds.crowdCheer(),600);
     };
 
     sounds.defeat=()=>{
-        playTone(220,0.2,0.3); // A
-        setTimeout(()=>playTone(196,0.2,0.3),200); // G
-        setTimeout(()=>playTone(174,0.3,0.3),400); // F
+        AudioManager.tone(220,0.2,0.3);
+        setTimeout(()=>AudioManager.tone(196,0.2,0.3),200);
+        setTimeout(()=>AudioManager.tone(174,0.3,0.3),400);
         setTimeout(()=>sounds.crowdOoh(),600);
+    };
+
+    // Menu/UI click - subtle tick
+    sounds.uiClick=()=>{
+        AudioManager.tone(1800, 0.015, 0.12, 'square');
     };
 }
 
 function playTone(f,d,v){
-    if(!audio)return;
-    const o=audio.createOscillator(),g=audio.createGain();
-    o.frequency.value=f;
-    o.connect(g);
-    g.connect(audio.destination);
-    g.gain.setValueAtTime(v,audio.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.01,audio.currentTime+d);
-    o.start();
-    o.stop(audio.currentTime+d);
+    AudioManager.tone(f,d,v);
 }
 
 // ========== GEM SYSTEM ==========
@@ -2431,6 +2529,12 @@ function startGame(){
         if(!audio) {
             console.log(' Initializing audio...');
             initAudio();
+            // UI click sounds on buttons
+            document.addEventListener('pointerdown', function(e) {
+                if (e.target.closest('.menu-btn,.difficulty-btn,.back-btn,.shop-tab,.buy-btn,.equip-btn,.play-button,.char-card,.tutorial-btn,.continue-btn,.skip-btn')) {
+                    sounds.uiClick && sounds.uiClick();
+                }
+            });
         }
         
         const loadingScreen = safeGetElement('loadingScreen');
