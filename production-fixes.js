@@ -5,7 +5,7 @@
 function safeGetElement(id) {
     const element = document.getElementById(id);
     if (!element) {
-        console.warn(`⚠️ Element not found: ${id}`);
+        console.warn(`Element not found: ${id}`);
         return null;
     }
     return element;
@@ -28,7 +28,7 @@ function withErrorHandling(fn, context = 'Unknown') {
         try {
             return fn.apply(this, args);
         } catch (error) {
-            console.error(`❌ Error in ${context}:`, error);
+            console.error(`Error in ${context}:`, error);
             // Optional: Send to analytics/error reporting
             return null;
         }
@@ -44,17 +44,17 @@ function loadSpriteWithRetry(src, maxRetries = 3) {
             const img = new Image();
             
             img.onload = () => {
-                console.log(`✅ Sprite loaded: ${src}`);
+                console.log(`Sprite loaded: ${src}`);
                 resolve(img);
             };
             
             img.onerror = () => {
                 attempts++;
                 if (attempts < maxRetries) {
-                    console.warn(`⚠️ Sprite load failed, retrying (${attempts}/${maxRetries}): ${src}`);
+                    console.warn(`Sprite load failed, retrying (${attempts}/${maxRetries}): ${src}`);
                     setTimeout(attemptLoad, 1000 * attempts); // Progressive delay
                 } else {
-                    console.error(`❌ Sprite load failed permanently: ${src}`);
+                    console.error(`Sprite load failed permanently: ${src}`);
                     reject(new Error(`Failed to load sprite: ${src}`));
                 }
             };
@@ -78,7 +78,7 @@ class DOMCache {
             if (element) {
                 this.cache.set(id, element);
             } else {
-                console.warn(`⚠️ Element not found for caching: ${id}`);
+                console.warn(`Element not found for caching: ${id}`);
                 return null;
             }
         }
@@ -108,7 +108,7 @@ function validateGameState() {
     const missing = required.filter(key => typeof window[key] === 'undefined');
     
     if (missing.length > 0) {
-        console.error('❌ Missing required game objects:', missing);
+        console.error('Missing required game objects:', missing);
         return false;
     }
     
@@ -118,7 +118,7 @@ function validateGameState() {
         const missingProps = requiredProps.filter(prop => typeof window.M[prop] === 'undefined');
         
         if (missingProps.length > 0) {
-            console.error('❌ Invalid match state:', missingProps);
+            console.error('Invalid match state:', missingProps);
             return false;
         }
     }
@@ -132,7 +132,7 @@ function safeLocalStorageSave(key, data) {
         localStorage.setItem(key, JSON.stringify(data));
         return true;
     } catch (error) {
-        console.error('❌ Failed to save to localStorage:', error);
+        console.error('Failed to save to localStorage:', error);
         return false;
     }
 }
@@ -142,7 +142,7 @@ function safeLocalStorageLoad(key, defaultValue = null) {
         const item = localStorage.getItem(key);
         return item ? JSON.parse(item) : defaultValue;
     } catch (error) {
-        console.error('❌ Failed to load from localStorage:', error);
+        console.error('Failed to load from localStorage:', error);
         return defaultValue;
     }
 }
@@ -169,7 +169,7 @@ class FrameRateMonitor {
         const fps = 1000 / avgFrameTime;
         
         if (fps < 30 && this.frames.length > 30) {
-            console.warn(`⚠️ Low frame rate detected: ${fps.toFixed(1)} FPS`);
+            console.warn(`Low frame rate detected: ${fps.toFixed(1)} FPS`);
         }
     }
 }
