@@ -26,7 +26,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="preload" href="court.jpg" as="image">
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;border-radius:0!important}
         body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#1a1a2e,#0f0f1e);min-height:100vh;overflow:hidden;overscroll-behavior:none;width:100%}
         .screen{position:fixed;inset:0;display:none;flex-direction:column;z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch}
         .screen.active{display:flex}
@@ -192,7 +192,7 @@
         .sprite-inner.playing-4{animation:playSprite4 0.4s steps(3) 1}
         .sprite-inner.cycling{animation:playSprite8 0.8s steps(7) infinite}
         @keyframes playSprite8{0%{background-position:0 0}100%{background-position:-560px 0}}
-        @keyframes playSprite7{0%{background-position:0 0}100%{background-position:-360px 0}}
+        @keyframes playSprite7{0%{background-position:0 0}100%{background-position:-480px 0}}
         @keyframes playSprite5{0%{background-position:0% var(--sprite-y)}100%{background-position:100% var(--sprite-y)}}
         @keyframes playSprite4{0%{background-position:0% var(--sprite-y)}100%{background-position:100% var(--sprite-y)}}
         .hit-zone{position:absolute;bottom:8%;left:8%;right:8%;top:52%;border:3px dashed rgba(255,215,0,0.2);border-radius:20px;pointer-events:none;z-index:5;display:none}
@@ -447,8 +447,8 @@
             <div class="player-level">
                 <div class="level-badge">NTRP <span id="playerNTRP">2.5</span></div>
                 <div class="currency-display">
-                    <div class="currency-item"><div class="currency-icon coins">💰</div><div class="currency-amount" id="coinAmount">500</div></div>
-                    <div class="currency-item"><div class="currency-icon gems">💎</div><div class="currency-amount" id="gemAmount">20</div></div>
+                    <div class="currency-item"><div class="currency-icon coins">C</div><div class="currency-amount" id="coinAmount">500</div></div>
+                    <div class="currency-item"><div class="currency-icon gems">G</div><div class="currency-amount" id="gemAmount">20</div></div>
                 </div>
             </div>
             <div class="skill-progress">
@@ -482,13 +482,13 @@
         <div class="challenge-banner" id="dailyChallenge">
             <div class="challenge-streak-row">
                 <div class="challenge-title" id="challengeTitle" style="margin-bottom:0">Daily Challenge: Ace Master</div>
-                <div class="challenge-streak-badge" id="streakBadge"><span class="streak-fire">🔥</span><span id="streakCount">0</span> Day Streak</div>
+                <div class="challenge-streak-badge" id="streakBadge"><span class="streak-fire" style="color:#ff6b00;font-weight:900">*</span><span id="streakCount">0</span> Day Streak</div>
             </div>
             <div class="challenge-streak-days" id="streakDays"></div>
             <div class="challenge-desc" id="challengeDesc">Score 3 aces in a single match</div>
             <div class="challenge-progress">
                 <div class="challenge-bar"><div class="challenge-fill" id="challengeFill" style="width:0%"></div></div>
-                <div class="challenge-reward" id="challengeReward">+100💰 +2💎</div>
+                <div class="challenge-reward" id="challengeReward">+100 coins +2 gems</div>
             </div>
         </div>
 
@@ -496,7 +496,7 @@
             <button class="menu-btn primary" onclick="startMatch()">PLAY MATCH</button>
             <button class="menu-btn" onclick="showCharSelect()">SELECT PLAYER</button>
             <button class="menu-btn" onclick="showShop()">PRO SHOP</button>
-            <button class="menu-btn" onclick="showTrophyCase()">🏆 TROPHY CASE</button>
+            <button class="menu-btn" onclick="showTrophyCase()">TROPHY CASE</button>
             <button class="menu-btn" onclick="showTutorial()">HOW TO PLAY</button>
         </div>
     </div>
@@ -527,12 +527,12 @@
     </div>
     <!-- Trophy Case -->
     <div class="screen trophy-screen" id="trophyScreen">
-        <div class="trophy-header"><h2 class="trophy-title">🏆 TROPHY CASE</h2><button class="back-btn" onclick="closeTrophyCase()">BACK</button></div>
+        <div class="trophy-header"><h2 class="trophy-title">TROPHY CASE</h2><button class="back-btn" onclick="closeTrophyCase()">BACK</button></div>
         <div class="trophy-grid" id="trophyGrid"></div>
     </div>
     <!-- Achievement popup -->
     <div class="achievement-popup" id="achievementPopup">
-        <div class="achievement-popup-icon" id="achievementPopupIcon">🏆</div>
+        <div class="achievement-popup-icon" id="achievementPopupIcon" style="font-weight:900;color:#ffd700;font-family:Bebas Neue">T</div>
         <div class="achievement-popup-text">
             <div class="achievement-popup-title" id="achievementPopupTitle">Achievement Unlocked!</div>
             <div class="achievement-popup-desc" id="achievementPopupDesc">Description</div>
@@ -605,7 +605,7 @@
             <div class="serve-aim" id="serveAim"><div class="serve-aim-dot"></div></div>
             <div class="serve-target-line" id="serveTargetLine"></div>
             <div class="swipe-hint" id="swipeHint">SWIPE UP!</div>
-            <div class="net-rush-indicator" id="netRushIndicator">🔥 AT NET</div>
+            <div class="net-rush-indicator" id="netRushIndicator">AT NET</div>
             <!-- Serve timing bar (right side) -->
             <div class="serve-timing" id="serveTiming">
                 <div class="serve-timing-track">
@@ -630,7 +630,7 @@
             <div class="serve-toss-ball" id="serveTossBall"></div>
             <div class="power-bar"><div class="power-fill" id="powerFill"></div></div>
             <div class="hit-effect" id="hitEffect"></div>
-            <div class="gem-drop" id="gemDrop">💎<div class="gem-timer" id="gemTimer"></div><div class="gem-multiplier" id="gemMultiplier">x1</div></div>
+            <div class="gem-drop" id="gemDrop" style="font-weight:900;color:#e74c3c;font-family:Bebas Neue;font-size:24px">GEM<div class="gem-timer" id="gemTimer"></div><div class="gem-multiplier" id="gemMultiplier">x1</div></div>
             <div class="call-overlay" id="callOverlay">OUT</div>
         </div>
     </div>
@@ -674,19 +674,19 @@
         <div class="tutorial-content">
             <h2 class="tutorial-title">HOW TO PLAY</h2>
             <p class="tutorial-text">
-                <strong>🎾 SERVING:</strong><br>
+                <strong>SERVING:</strong><br>
                 PULL DOWN to toss &amp; charge power. A timing bar shows the ball rising — RELEASE at the green sweet spot for a PERFECT serve! Your horizontal finger position controls aim. Serves must land cross-court in the opposite service box.<br><br>
-                <strong>⚡ RETURNING:</strong><br>
+                <strong>RETURNING:</strong><br>
                 Watch for the GREEN GLOW — SWIPE UP to return! Longer/faster swipes = more power. Angle your swipe left or right to aim your shot.<br><br>
-                <strong>🏃 NET RUSH:</strong><br>
+                <strong>NET RUSH:</strong><br>
                 DOUBLE-TAP during a rally to rush the net for volleys! Faster shots but less court coverage. Not allowed during serves — only after the ball is in play. Auto-retreats after a few seconds.<br><br>
-                <strong>📍 RULES:</strong><br>
+                <strong>RULES:</strong><br>
                 • Serves go cross-court (diagonally)<br>
                 • Deuce side (even points) → left box<br>
                 • Ad side (odd points) → right box<br>
                 • Ball must bounce in the service box<br>
                 • Two faults = double fault (point lost!)<br><br>
-                <strong>💎 GEMS:</strong><br>
+                <strong>GEMS:</strong><br>
                 Collect gems before they disappear! Build streaks for bonus gems!
             </p>
             <button class="tutorial-btn" onclick="closeTutorial()">GOT IT!</button>
@@ -742,9 +742,9 @@ const AudioManager = {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             this.context = new AudioContext();
             this.supported = true;
-            console.log('✅ Audio context initialized');
+            console.log('OK: Audio context initialized');
         } catch (error) {
-            console.warn('⚠️ Audio not supported or blocked:', error);
+            console.warn('WARN: Audio not supported or blocked:', error);
             this.supported = false;
         }
     },
@@ -779,7 +779,7 @@ const ErrorRecovery = {
                     this.resetGameState();
                     this.retryInitialization();
                 } catch (recoveryError) {
-                    console.error('❌ Recovery failed:', recoveryError);
+                    console.error('ERROR: Recovery failed:', recoveryError);
                     this.showErrorScreen();
                 }
             }, 1000);
@@ -815,7 +815,7 @@ const ErrorRecovery = {
                 justify-content: center; align-items: center;
                 color: white; text-align: center; padding: 20px;
             ">
-                <h1 style="font-size: 2em; margin-bottom: 20px;">🎾</h1>
+                <h1 style="font-size: 2em; margin-bottom: 20px;">GAME ERROR</h1>
                 <h2 style="margin-bottom: 20px;">Game Error</h2>
                 <p style="margin-bottom: 30px; opacity: 0.8;">
                     Something went wrong. Please refresh the page to continue playing.
@@ -867,7 +867,7 @@ const PerformanceOptimizer = {
 
     enableFrameSkipping() {
         if (!this.frameSkipping) {
-            console.log('🚀 Enabling performance optimizations');
+            console.log(' Enabling performance optimizations');
             this.frameSkipping = true;
             document.body.classList.add('performance-mode');
         }
@@ -875,7 +875,7 @@ const PerformanceOptimizer = {
 
     disableFrameSkipping() {
         if (this.frameSkipping) {
-            console.log('✨ Disabling performance optimizations');
+            console.log(' Disabling performance optimizations');
             this.frameSkipping = false;
             document.body.classList.remove('performance-mode');
         }
@@ -1011,34 +1011,34 @@ const DAILY_CHALLENGES = [
 
 // ========== ACHIEVEMENT SYSTEM ==========
 const ACHIEVEMENTS = [
-    {id:'first_ace',name:'First Ace',desc:'Score your first ace',icon:'🎯',check:s=>s.totalAces>=1},
-    {id:'ace_10',name:'Ace Machine',desc:'Score 10 total aces',icon:'🔥',check:s=>s.totalAces>=10},
-    {id:'ace_50',name:'Ace Legend',desc:'Score 50 total aces',icon:'⚡',check:s=>s.totalAces>=50},
-    {id:'first_win',name:'First Victory',desc:'Win your first match',icon:'✨',check:s=>s.matchesWon>=1},
-    {id:'win_10',name:'10 Game Win Streak',desc:'Win 10 matches total',icon:'🏅',check:s=>s.matchesWon>=10},
-    {id:'win_50',name:'Half Century',desc:'Win 50 matches',icon:'👑',check:s=>s.matchesWon>=50},
-    {id:'perfect_set',name:'Perfect Set',desc:'Win a set 6-0',icon:'💎',check:s=>s.perfectSets>=1},
-    {id:'streak_5',name:'On Fire',desc:'Get a 5-point streak',icon:'🔥',check:s=>s.bestStreak>=5},
-    {id:'streak_10',name:'Unstoppable',desc:'Get a 10-point streak',icon:'💥',check:s=>s.bestStreak>=10},
-    {id:'rally_15',name:'Rally Master',desc:'Win a 15+ shot rally',icon:'🏸',check:s=>s.longestRally>=15},
-    {id:'rally_25',name:'Marathon Rally',desc:'Win a 25+ shot rally',icon:'🎪',check:s=>s.longestRally>=25},
-    {id:'rich',name:'High Roller',desc:'Accumulate 1000 coins total',icon:'💰',check:s=>s.totalCoins>=1000},
-    {id:'wealthy',name:'Tennis Tycoon',desc:'Accumulate 5000 coins total',icon:'🤑',check:s=>s.totalCoins>=5000},
-    {id:'winner_20',name:'Winner Factory',desc:'Hit 20 winners in career',icon:'🎾',check:s=>s.totalWinners>=20},
-    {id:'matches_25',name:'Veteran',desc:'Play 25 matches',icon:'🎖️',check:s=>s.matchesPlayed>=25},
-    {id:'matches_100',name:'Centurion',desc:'Play 100 matches',icon:'🏛️',check:s=>s.matchesPlayed>=100},
-    {id:'no_double_fault',name:'Clean Server',desc:'Win a match with zero double faults',icon:'🎯',check:s=>s.cleanServeWins>=1},
-    {id:'streak_daily_3',name:'Dedicated',desc:'Complete daily challenges 3 days in a row',icon:'📅',check:s=>s.bestDailyStreak>=3},
-    {id:'streak_daily_7',name:'Weekly Warrior',desc:'Complete daily challenges 7 days in a row',icon:'🗓️',check:s=>s.bestDailyStreak>=7},
-    {id:'streak_daily_14',name:'Fortnight Force',desc:'14-day daily challenge streak',icon:'⭐',check:s=>s.bestDailyStreak>=14},
-    {id:'streak_daily_30',name:'Monthly Master',desc:'30-day daily challenge streak',icon:'🌟',check:s=>s.bestDailyStreak>=30},
-    {id:'legend_win',name:'Legend Slayer',desc:'Win a match on Legend difficulty',icon:'💀',check:s=>s.legendWins>=1},
-    {id:'legend_win_5',name:'Legend Master',desc:'Win 5 matches on Legend',icon:'🐉',check:s=>s.legendWins>=5},
-    {id:'rally_50',name:'Endurance King',desc:'50+ shot rally in a match',icon:'💪',check:s=>s.longestRally>=50},
-    {id:'bagel_3',name:'Bagel Baker',desc:'Win 3 sets 6-0',icon:'🥯',check:s=>s.perfectSets>=3},
-    {id:'win_no_game_lost',name:'Flawless',desc:'Win without losing a single game',icon:'💯',check:s=>s.flawlessWins>=1},
-    {id:'daily_10',name:'Challenge Hunter',desc:'Complete 10 daily challenges',icon:'🎯',check:s=>s.dailyChallengesCompleted>=10},
-    {id:'daily_50',name:'Challenge Legend',desc:'Complete 50 daily challenges',icon:'🏆',check:s=>s.dailyChallengesCompleted>=50},
+    {id:'first_ace',name:'First Ace',desc:'Score your first ace',icon:'[+]',check:s=>s.totalAces>=1},
+    {id:'ace_10',name:'Ace Machine',desc:'Score 10 total aces',icon:'[!]',check:s=>s.totalAces>=10},
+    {id:'ace_50',name:'Ace Legend',desc:'Score 50 total aces',icon:'[*]',check:s=>s.totalAces>=50},
+    {id:'first_win',name:'First Victory',desc:'Win your first match',icon:'[1]',check:s=>s.matchesWon>=1},
+    {id:'win_10',name:'10 Game Win Streak',desc:'Win 10 matches total',icon:'[X]',check:s=>s.matchesWon>=10},
+    {id:'win_50',name:'Half Century',desc:'Win 50 matches',icon:'[K]',check:s=>s.matchesWon>=50},
+    {id:'perfect_set',name:'Perfect Set',desc:'Win a set 6-0',icon:'[D]',check:s=>s.perfectSets>=1},
+    {id:'streak_5',name:'On Fire',desc:'Get a 5-point streak',icon:'[!]',check:s=>s.bestStreak>=5},
+    {id:'streak_10',name:'Unstoppable',desc:'Get a 10-point streak',icon:'[!!]',check:s=>s.bestStreak>=10},
+    {id:'rally_15',name:'Rally Master',desc:'Win a 15+ shot rally',icon:'[R]',check:s=>s.longestRally>=15},
+    {id:'rally_25',name:'Marathon Rally',desc:'Win a 25+ shot rally',icon:'[M]',check:s=>s.longestRally>=25},
+    {id:'rich',name:'High Roller',desc:'Accumulate 1000 coins total',icon:'[C]',check:s=>s.totalCoins>=1000},
+    {id:'wealthy',name:'Tennis Tycoon',desc:'Accumulate 5000 coins total',icon:'[$]',check:s=>s.totalCoins>=5000},
+    {id:'winner_20',name:'Winner Factory',desc:'Hit 20 winners in career',icon:'[W]',check:s=>s.totalWinners>=20},
+    {id:'matches_25',name:'Veteran',desc:'Play 25 matches',icon:'[V]',check:s=>s.matchesPlayed>=25},
+    {id:'matches_100',name:'Centurion',desc:'Play 100 matches',icon:'[100]',check:s=>s.matchesPlayed>=100},
+    {id:'no_double_fault',name:'Clean Server',desc:'Win a match with zero double faults',icon:'[+]',check:s=>s.cleanServeWins>=1},
+    {id:'streak_daily_3',name:'Dedicated',desc:'Complete daily challenges 3 days in a row',icon:'[3]',check:s=>s.bestDailyStreak>=3},
+    {id:'streak_daily_7',name:'Weekly Warrior',desc:'Complete daily challenges 7 days in a row',icon:'[7]',check:s=>s.bestDailyStreak>=7},
+    {id:'streak_daily_14',name:'Fortnight Force',desc:'14-day daily challenge streak',icon:'[14]',check:s=>s.bestDailyStreak>=14},
+    {id:'streak_daily_30',name:'Monthly Master',desc:'30-day daily challenge streak',icon:'[30]',check:s=>s.bestDailyStreak>=30},
+    {id:'legend_win',name:'Legend Slayer',desc:'Win a match on Legend difficulty',icon:'[L]',check:s=>s.legendWins>=1},
+    {id:'legend_win_5',name:'Legend Master',desc:'Win 5 matches on Legend',icon:'[L5]',check:s=>s.legendWins>=5},
+    {id:'rally_50',name:'Endurance King',desc:'50+ shot rally in a match',icon:'[50]',check:s=>s.longestRally>=50},
+    {id:'bagel_3',name:'Bagel Baker',desc:'Win 3 sets 6-0',icon:'[B]',check:s=>s.perfectSets>=3},
+    {id:'win_no_game_lost',name:'Flawless',desc:'Win without losing a single game',icon:'[F]',check:s=>s.flawlessWins>=1},
+    {id:'daily_10',name:'Challenge Hunter',desc:'Complete 10 daily challenges',icon:'[+]',check:s=>s.dailyChallengesCompleted>=10},
+    {id:'daily_50',name:'Challenge Legend',desc:'Complete 50 daily challenges',icon:'[T]',check:s=>s.dailyChallengesCompleted>=50},
 ];
 
 function initAchievements() {
@@ -1154,11 +1154,11 @@ function renderTrophyCase() {
         }
 
         card.innerHTML = `
-            <div class="trophy-icon" style="${isUnlocked ? 'filter:drop-shadow(0 0 8px rgba(255,215,0,0.6))' : ''}">${isUnlocked ? a.icon : '🔒'}</div>
+            <div class="trophy-icon" style="${isUnlocked ? 'filter:drop-shadow(0 0 8px rgba(255,215,0,0.6))' : ''}">${isUnlocked ? a.icon : 'LOCKED'}</div>
             <div class="trophy-info">
                 <div class="trophy-name">${a.name}</div>
                 <div class="trophy-desc">${a.desc}</div>
-                ${isUnlocked ? `<div class="trophy-date">✨ Unlocked ${date}</div>` : progressHTML}
+                ${isUnlocked ? `<div class="trophy-date">Unlocked ${date}</div>` : progressHTML}
             </div>
         `;
         grid.appendChild(card);
@@ -1232,7 +1232,7 @@ function updateChallengeDisplay() {
     const progress = Math.min(100, (challenge.progress / challenge.target) * 100);
     { const _el = safeGetElement('challengeFill'); if(_el) _el.style.width = progress + '%'; }
 
-    const reward = `+${challenge.reward.coins}💰 +${challenge.reward.gems}💎`;
+    const reward = `+${challenge.reward.coins} coins +${challenge.reward.gems} gems`;
     { const _el = safeGetElement('challengeReward'); if(_el) _el.textContent = challenge.completed ? 'COMPLETED!' : reward; }
 
     // Change banner color if completed
@@ -1291,8 +1291,8 @@ function checkChallengeProgress(type, value) {
         G.careerStats.dailyChallengesCompleted++;
 
         const streakMsg = streakBonus > 0 ? ` (+${streakBonus} streak bonus!)` : '';
-        toast(`🏆 Daily Challenge Complete! +${totalCoins}💰 +${challenge.reward.gems}💎${streakMsg}`);
-        if(G.dailyStreak.count >= 3) toast(`🔥 ${G.dailyStreak.count}-Day Streak!`);
+        toast(`Daily Challenge Complete! +${totalCoins} coins +${challenge.reward.gems} gems${streakMsg}`);
+        if(G.dailyStreak.count >= 3) toast(`${G.dailyStreak.count}-Day Streak!`);
         sounds.winner();
         
         updateStreakDisplay();
@@ -1691,9 +1691,9 @@ function collectGem(){
     sounds.gem();
 
     if(M.gemMultiplier > 1){
-        toast(`+${totalGems} 💎 (x${M.gemMultiplier})`);
+        toast(`+${totalGems} gems (x${M.gemMultiplier})`);
     } else {
-        toast(`+${totalGems} 💎`);
+        toast(`+${totalGems} gems`);
     }
 
     save();
@@ -2426,10 +2426,10 @@ function opponentServe(){
 // ========== CORE GAME FUNCTIONS ==========
 
 function startGame(){
-    console.log('🎾 startGame() function called');
+    console.log(' startGame() function called');
     try {
         if(!audio) {
-            console.log('🔊 Initializing audio...');
+            console.log(' Initializing audio...');
             initAudio();
         }
         
@@ -2440,30 +2440,30 @@ function startGame(){
         
         if (loadingScreen) {
             loadingScreen.classList.remove('active');
-            console.log('✅ Removed active class from loading screen');
+            console.log('OK: Removed active class from loading screen');
         } else {
-            console.warn('⚠️ Loading screen not found');
+            console.warn('WARN: Loading screen not found');
         }
         
         if (mainMenu) {
             mainMenu.classList.add('active');
-            console.log('✅ Added active class to main menu');
+            console.log('OK: Added active class to main menu');
         } else {
-            console.warn('⚠️ Main menu not found');
+            console.warn('WARN: Main menu not found');
         }
         
         // Hide any tutorial overlay that might be showing
         const tutorialOverlay = safeGetElement('tutorialOverlay');
         if (tutorialOverlay && tutorialOverlay.classList.contains('active')) {
             tutorialOverlay.classList.remove('active');
-            console.log('✅ Hidden tutorial overlay');
+            console.log('OK: Hidden tutorial overlay');
         }
         
         load();
         updateUI();
-        console.log('✅ startGame completed successfully');
+        console.log('OK: startGame completed successfully');
     } catch (error) {
-        console.error('❌ Error in startGame:', error);
+        console.error('ERROR: Error in startGame:', error);
     }
 }
 
@@ -2650,7 +2650,7 @@ function selectRandomOpponent(){
         opponentChar = allChars[selectedChar === allChars[0] ? 1 : 0];
     }
 
-    console.log(`🎾 Player: ${selectedChar.name} vs Opponent: ${opponentChar.name}`);
+    console.log(`Player: ${selectedChar.name} vs Opponent: ${opponentChar.name}`);
     return opponentChar;
 }
 
@@ -2750,8 +2750,8 @@ function renderCharGrid(){
             html += '<div class="stat-bar-row"><span class="stat-lbl">C</span><div class="stat-bar"><div class="stat-fill ctl" style="width:' + c.control + '%"></div></div></div>';
             html += '</div>';
         } else {
-            html += '<div class="char-lock">🔒</div>';
-            html += '<div class="char-name">' + c.cost + '💰</div>';
+            html += '<div class="char-lock" style="font-size:14px;color:#888;font-weight:700">LOCKED</div>';
+            html += '<div class="char-name">' + c.cost + ' coins</div>';
         }
         html += '</div>';
     }
@@ -2826,13 +2826,13 @@ function renderShop(cat){
         let purchaseHTML;
         if(isTraining){
             purchaseHTML = `
-                <div class="price-tag">${item.currency === 'gems' ? '💎' : '💰'}${item.price}</div>
+                <div class="price-tag">${item.currency === 'gems' ? 'G ' : 'C '}${item.price}</div>
                 <button class="buy-btn" ${canBuy ? `onclick="buyItem('${cat}','${item.id}')"` : 'disabled'}>
                     ${item.repeatable ? 'START' : 'BUY'}
                 </button>`;
         } else if(!owned){
             purchaseHTML = `
-                <div class="price-tag">${item.currency === 'gems' ? '💎' : '💰'}${item.price}</div>
+                <div class="price-tag">${item.currency === 'gems' ? 'G ' : 'C '}${item.price}</div>
                 <button class="buy-btn" ${canBuy ? `onclick="buyItem('${cat}','${item.id}')"` : 'disabled'}>BUY</button>`;
         } else if(equipped){
             purchaseHTML = '<div class="equipped-badge">EQUIPPED</div>';
@@ -3081,7 +3081,7 @@ function validateCriticalState() {
     if (!selectedChar) issues.push('Selected character missing');
 
     if (issues.length > 0) {
-        console.error('❌ Critical state validation failed:', issues);
+        console.error('ERROR: Critical state validation failed:', issues);
         return false;
     }
 
@@ -4143,7 +4143,7 @@ function animateReturn(){
                 sounds.coin();
             }
 
-            toast('+' + reward + ' 💰');
+            toast('+' + reward + ' coins');
 
             if(!scorePoint('p')) setTimeout(startNextPoint, 1500);
         }
@@ -4162,12 +4162,12 @@ function animateReturn(){
 function checkEnd(){
     // Quick mode: first to 6 games wins (no sets)
     if(G.matchType === 'quick'){
-        if(M.pGames >= 6){
+        if(M.pGames >= 3){
             M.pSets = 1; M.oSets = 0; // Mark as won for endMatch
             endMatch();
             return true;
         }
-        if(M.oGames >= 6){
+        if(M.oGames >= 3){
             M.pSets = 0; M.oSets = 1;
             endMatch();
             return true;
@@ -4323,7 +4323,7 @@ function endMatch(){
     // Show match performance
     if(won) {
         if(M.aces >= 5 || M.winners >= 10 || M.streak >= 5) {
-            setTimeout(() => toast('🏆 OUTSTANDING PERFORMANCE!'), 1000);
+            setTimeout(() => toast('OUTSTANDING PERFORMANCE!'), 1000);
         }
         setTimeout(() => sounds.victory(), 500);
     } else {
@@ -4332,7 +4332,7 @@ function endMatch(){
 
     if(newNTRP > oldNTRP){
         setTimeout(() => {
-            toast(`🎾 NTRP UPGRADED to ${newNTRP.toFixed(1)}!`);
+            toast(`NTRP UPGRADED to ${newNTRP.toFixed(1)}!`);
             sounds.point();
         }, won ? 2000 : 1500);
     }
@@ -4803,9 +4803,9 @@ function initSprites(){
     Promise.all(preloadImages.map(src => loadSpriteWithRetry(src, 2))).then((results) => {
         const failed = preloadImages.filter((_, idx) => !results[idx]);
         if(failed.length > 0){
-            console.warn('⚠️ Some sprites failed to preload:', failed);
+            console.warn('WARN: Some sprites failed to preload:', failed);
         } else {
-            console.log('✅ All sprites preloaded successfully');
+            console.log('OK: All sprites preloaded successfully');
         }
         LoadingManager.setState(LoadingManager.states.READY);
     });
@@ -4963,7 +4963,7 @@ function setPlayerSwinging() {
 // Enhanced initialization
 document.addEventListener('DOMContentLoaded', () => {
     try {
-        console.log('🎾 Initializing Championship Tennis...');
+        console.log(' Initializing Championship Tennis...');
 
         LoadingManager.setState(LoadingManager.states.INITIALIZING);
         MobileEnhancer.init();
@@ -4974,11 +4974,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const tutorialOverlay = safeGetElement('tutorialOverlay');
         if (tutorialOverlay && tutorialOverlay.classList.contains('active')) {
             tutorialOverlay.classList.remove('active');
-            console.log('🔧 Hidden tutorial overlay on init');
+            console.log(' Hidden tutorial overlay on init');
         }
 
         LoadingManager.setState(LoadingManager.states.READY);
-        console.log('✅ Game initialized successfully');
+        console.log('OK: Game initialized successfully');
 
     } catch (error) {
         ErrorRecovery.handleCriticalError(error, 'initialization');
