@@ -515,7 +515,7 @@
             <p class="tutorial-text">
                 <strong>🎾 SERVING:</strong><br>
                 When it's your serve, PULL DOWN to charge power, then RELEASE and swipe toward the service box!<br><br>
-                <strong>⚡ RETURNING:</strong><br>
+                <strong> RETURNING:</strong><br>
                 Watch for the GREEN GLOW - swipe up to hit!<br><br>
                 <strong>📍 COURT:</strong><br>
                 • Serve to deuce court (right) on even points<br>
@@ -577,9 +577,9 @@ const AudioManager = {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             this.context = new AudioContext();
             this.supported = true;
-            console.log('✅ Audio context initialized');
+            console.log('Audio context initialized');
         } catch (error) {
-            console.warn('⚠️ Audio not supported or blocked:', error);
+            console.warn('Audio not supported or blocked:', error);
             this.supported = false;
         }
     },
@@ -603,7 +603,7 @@ const ErrorRecovery = {
     maxRetries: 3,
 
     handleCriticalError(error, context) {
-        console.error(`❌ Critical error in ${context}:`, error);
+        console.error(`Critical error in ${context}:`, error);
 
         if (this.retryCount < this.maxRetries) {
             this.retryCount++;
@@ -614,7 +614,7 @@ const ErrorRecovery = {
                     this.resetGameState();
                     this.retryInitialization();
                 } catch (recoveryError) {
-                    console.error('❌ Recovery failed:', recoveryError);
+                    console.error('Recovery failed:', recoveryError);
                     this.showErrorScreen();
                 }
             }, 1000);
@@ -710,7 +710,7 @@ const PerformanceOptimizer = {
 
     disableFrameSkipping() {
         if (this.frameSkipping) {
-            console.log('✨ Disabling performance optimizations');
+            console.log('Disabling performance optimizations');
             this.frameSkipping = false;
             document.body.classList.remove('performance-mode');
         }
@@ -725,7 +725,7 @@ function safeGetElement(id) {
     if (!domCache.has(id)) {
         const element = document.getElementById(id);
         if (!element) {
-            console.warn(`⚠️ Element not found: ${id}`);
+            console.warn(`Element not found: ${id}`);
             return null;
         }
         domCache.set(id, element);
@@ -755,7 +755,7 @@ function withErrorHandling(fn, context = 'Unknown') {
         try {
             return fn.apply(this, args);
         } catch (error) {
-            console.error(`❌ Error in ${context}:`, error);
+            console.error(`Error in ${context}:`, error);
             return null;
         }
     };
@@ -818,10 +818,10 @@ async function loadSpriteWithRetry(src, maxRetries = 2) {
             return true;
         } catch (error) {
             if (attempt === maxRetries) {
-                console.error(`❌ Failed to load sprite after ${maxRetries} attempts: ${src}`);
+                console.error(`Failed to load sprite after ${maxRetries} attempts: ${src}`);
                 return false;
             }
-            console.warn(`⚠️ Sprite load attempt ${attempt} failed, retrying: ${src}`);
+            console.warn(`Sprite load attempt ${attempt} failed, retrying: ${src}`);
             await new Promise(resolve => setTimeout(resolve, 500 * attempt));
         }
     }
@@ -1608,9 +1608,9 @@ function animateServeBall(result){
 
             // Debug logging for precision tuning
             if(!inBox) {
-                console.log(`❌ FAULT: Ball at (${M.ballPos.x.toFixed(2)}, ${M.ballPos.y.toFixed(2)}) missed ${M.serveSide} box (${boxLeft}-${boxRight}, ${boxTop}-${boxBottom})`);
+                console.log(`FAULT: Ball at (${M.ballPos.x.toFixed(2)}, ${M.ballPos.y.toFixed(2)}) missed ${M.serveSide} box (${boxLeft}-${boxRight}, ${boxTop}-${boxBottom})`);
             } else {
-                console.log(`✅ GOOD: Ball at (${M.ballPos.x.toFixed(2)}, ${M.ballPos.y.toFixed(2)}) landed in ${M.serveSide} service box`);
+                console.log(`GOOD: Ball at (${M.ballPos.x.toFixed(2)}, ${M.ballPos.y.toFixed(2)}) landed in ${M.serveSide} service box`);
                 showCallOverlay('GOOD SERVE', true);
             }
 
@@ -1745,7 +1745,7 @@ function opponentReturn(){
 // ========== OPPONENT SERVE ==========
 
 function opponentServe(){
-    if (!validateCriticalState()) { console.error("❌ Invalid state for opponentServe"); return; }
+    if (!validateCriticalState()) { console.error("Invalid state for opponentServe"); return; }
     try {
     if(!M.active) return;
 
@@ -2412,7 +2412,7 @@ function validateCriticalState() {
     if (!selectedChar) issues.push('Selected character missing');
 
     if (issues.length > 0) {
-        console.error('❌ Critical state validation failed:', issues);
+        console.error('Critical state validation failed:', issues);
         return false;
     }
 
@@ -2421,7 +2421,7 @@ function validateCriticalState() {
 
 
 function startMatch(){
-    if (!validateCriticalState()) { console.error("❌ Invalid state for startMatch"); return; }
+    if (!validateCriticalState()) { console.error("Invalid state for startMatch"); return; }
     try {
     safeGetElement('mainMenu')?.classList.remove('active');
     safeGetElement('charSelect')?.classList.remove('active');
@@ -2532,7 +2532,7 @@ function getTennisScore(pPoints, oPoints){
 }
 
 function updateMatchUI(){
-    if (!validateCriticalState()) { console.error("❌ Invalid state for updateMatchUI"); return; }
+    if (!validateCriticalState()) { console.error("Invalid state for updateMatchUI"); return; }
     try {
     const score = getTennisScore(M.pPoints, M.oPoints);
 
@@ -3724,9 +3724,9 @@ function initSprites(){
     Promise.all(preloadImages.map(src => loadSpriteWithRetry(src, 2))).then((results) => {
         const failed = preloadImages.filter((_, idx) => !results[idx]);
         if(failed.length > 0){
-            console.warn('⚠️ Some sprites failed to preload:', failed);
+            console.warn('Some sprites failed to preload:', failed);
         } else {
-            console.log('✅ All sprites preloaded successfully');
+            console.log('All sprites preloaded successfully');
         }
         LoadingManager.setState(LoadingManager.states.READY);
     });
@@ -3892,7 +3892,7 @@ document.addEventListener('DOMContentLoaded', () => {
         PerformanceOptimizer.init();
 
         LoadingManager.setState(LoadingManager.states.READY);
-        console.log('✅ Game initialized successfully');
+        console.log('Game initialized successfully');
 
     } catch (error) {
         ErrorRecovery.handleCriticalError(error, 'initialization');
