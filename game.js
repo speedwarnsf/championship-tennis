@@ -2004,7 +2004,7 @@ function closeShop(){
 }
 
 // Character system - must be before showCharSelect
-const V = '?v=31';
+const V = '?v=32';
 
 window.CHARACTERS = [
     {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
@@ -2157,7 +2157,7 @@ function renderCharGrid(){
     var chars = window.CHARACTERS;
     if(!chars || !chars.length) return;
     var html = '';
-    var V = '?v=31';
+    var V = '?v=32';
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
@@ -2187,7 +2187,7 @@ function selectCharacter(char){
     document.querySelectorAll('.char-card').forEach((el,i) =>
         el.classList.toggle('selected', window.CHARACTERS[i].id === char.id));
     const sprites = getCharSprites(char);
-    { const _el = safeGetElement('charDetailPreview'); if(_el) { _el.style.backgroundImage = `url(sprites-v2/thumbs/${char.id}-thumb.png?v=31)`; _el.classList.remove('animating'); } }
+    { const _el = safeGetElement('charDetailPreview'); if(_el) { _el.style.backgroundImage = `url(sprites-v2/thumbs/${char.id}-thumb.png?v=32)`; _el.classList.remove('animating'); } }
     { const _el = safeGetElement('charDetailName'); if(_el) _el.textContent = char.name.toUpperCase(); }
     { const _el = safeGetElement('charPower'); if(_el) _el.textContent = char.power; }
     { const _el = safeGetElement('charSpeed'); if(_el) _el.textContent = char.speed; }
@@ -2927,12 +2927,6 @@ function animateBall(){
         return;
     }
 
-    // Performance optimization: skip frames when needed
-    if (window.PerformanceOptimizer && window.PerformanceOptimizer.shouldSkipFrame()) {
-        requestAnimationFrame(animateBall);
-        return;
-    }
-
     // Enhanced physics with momentum conservation
     const speed = Math.sqrt(M.ballVel.x*M.ballVel.x + M.ballVel.y*M.ballVel.y);
     const isHighSpeed = speed > 1.5;
@@ -3515,12 +3509,6 @@ function returnBall(qual, angle){
 function animateReturn(){
     if(!M.ballActive) return;
     if(window.animationPaused){
-        requestAnimationFrame(animateReturn);
-        return;
-    }
-
-    // Performance optimization: skip frames when needed
-    if (window.PerformanceOptimizer && window.PerformanceOptimizer.shouldSkipFrame()) {
         requestAnimationFrame(animateReturn);
         return;
     }
@@ -4247,12 +4235,6 @@ let playerVelocity = 0;
 function lerpPlayerMovement() {
     if(!M.active) { playerLerpActive = false; playerVelocity = 0; return; }
 
-    // Performance optimization: skip frames when needed
-    if (window.PerformanceOptimizer && window.PerformanceOptimizer.shouldSkipFrame()) {
-        requestAnimationFrame(lerpPlayerMovement);
-        return;
-    }
-
     const diff = playerTargetPos - playerCurrentPos;
     // Spring-damper system for fluid motion
     const springForce = diff * 0.15;
@@ -4433,7 +4415,7 @@ const _spriteSheetCache = {};
 // Pre-seed cache for known sprite dimensions to avoid async race conditions
 // All sprites are 640x96 sheets EXCEPT opponent-idle-v2.png (80x96 single frame)
 (function preseedSpriteCache() {
-    const V = '?v=31';
+    const V = '?v=32';
     const sheetEntry = { isSheet: true, frames: 8, width: 640, height: 96 };
     const singleEntry = { isSheet: false, frames: 1, width: 80, height: 96 };
     // Player1 original sprites
@@ -4624,12 +4606,6 @@ class SpriteAnimator {
     _tick(timestamp) {
         if (!this.animating) return;
 
-        // Performance optimization: skip frames when needed
-        if (window.PerformanceOptimizer && window.PerformanceOptimizer.shouldSkipFrame()) {
-            this.rafId = requestAnimationFrame((t) => this._tick(t));
-            return;
-        }
-
         const dt = timestamp - this.lastTick;
         this.lastTick = timestamp;
 
@@ -4692,30 +4668,46 @@ class SpriteAnimator {
         const url = this.getSpriteUrl(this.currentState);
         const cached = _spriteSheetCache[url];
 
-        el.classList.remove('cycling', 'playing-4', 'playing-5', 'playing-7', 'playing-8');
-        el.style.backgroundImage = `url(${url})`;
+        // Only update DOM when values actually change to prevent flickering
+        const imgVal = `url(${url})`;
+        if (this._lastBgImage !== imgVal) {
+            // Only remove animation classes on actual image change
+            el.classList.remove('cycling', 'playing-4', 'playing-5', 'playing-7', 'playing-8');
+            el.style.backgroundImage = imgVal;
+            this._lastBgImage = imgVal;
+        }
 
+        let newSize, newPos;
         if (cached && cached.isSheet && cached.frames > 1) {
             const fw = Math.floor(cached.width / cached.frames);
             const fh = cached.height;
-            el.style.backgroundSize = `${cached.width}px ${fh}px`;
-            el.style.backgroundPosition = `-${this.currentFrame * fw}px 0`;
+            newSize = `${cached.width}px ${fh}px`;
+            newPos = `-${this.currentFrame * fw}px 0px`;
         } else if (cached && !cached.isSheet) {
-            el.style.backgroundSize = `${cached.width}px ${cached.height}px`;
-            el.style.backgroundPosition = '0 0';
+            newSize = `${cached.width}px ${cached.height}px`;
+            newPos = '0px 0px';
         } else {
             // Legacy fallback for uncached images
             const animKey = this.getAnimKey(this.currentState);
             if (animKey === 'idle' && this.role === 'player' && !SPRITES.playerIdleIsSheet) {
-                el.style.backgroundSize = '80px 96px';
-                el.style.backgroundPosition = '0 0';
+                newSize = '80px 96px';
+                newPos = '0px 0px';
             } else if (animKey === 'idle' && this.role !== 'player' && !SPRITES.oppIdleIsSheet) {
-                el.style.backgroundSize = '80px 96px';
-                el.style.backgroundPosition = '0 0';
+                newSize = '80px 96px';
+                newPos = '0px 0px';
             } else {
-                el.style.backgroundSize = '640px 96px';
-                el.style.backgroundPosition = `-${this.currentFrame * 80}px 0`;
+                newSize = '640px 96px';
+                newPos = `-${this.currentFrame * 80}px 0px`;
             }
+        }
+
+        if (this._lastBgSize !== newSize) {
+            el.style.backgroundSize = newSize;
+            this._lastBgSize = newSize;
+        }
+        if (this._lastBgPos !== newPos) {
+            el.style.backgroundPosition = newPos;
+            this._lastBgPos = newPos;
         }
     }
 
