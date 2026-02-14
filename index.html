@@ -5167,12 +5167,53 @@ function getCharAnimMultipliers(char) {
 // --- Sprite Sheet Detection & Fallback ---
 const _spriteSheetCache = {};
 
+// Pre-seed cache for known sprite dimensions to avoid async race conditions
+// All sprites are 640x96 sheets EXCEPT opponent-idle-v2.png (80x96 single frame)
+(function preseedSpriteCache() {
+    const V = '?v=31';
+    const sheetEntry = { isSheet: true, frames: 8, width: 640, height: 96 };
+    const singleEntry = { isSheet: false, frames: 1, width: 80, height: 96 };
+    // Player1 original sprites
+    _spriteSheetCache['player-retro-backswing.png' + V] = sheetEntry;
+    _spriteSheetCache['player-retro-run.png' + V] = sheetEntry;
+    _spriteSheetCache['player-idle-v2.png' + V] = singleEntry;
+    _spriteSheetCache['opponent-retro-frontswing.png' + V] = sheetEntry;
+    _spriteSheetCache['opponent-retro-run.png' + V] = sheetEntry;
+    _spriteSheetCache['opponent-idle-v2.png' + V] = singleEntry;
+    // All v2 character sprites
+    var ids = ['player2','player3','player4','player5','player6','player7','player8','player9','player10','player11','player12','punk','chubby','beach','goth','anime','latino','redhead','grandpa','indian'];
+    for (var i = 0; i < ids.length; i++) {
+        var id = ids[i];
+        var base = 'sprites-v2/characters/' + id + '-';
+        _spriteSheetCache[base + 'back-swing.png' + V] = sheetEntry;
+        _spriteSheetCache[base + 'back-run.png' + V] = sheetEntry;
+        _spriteSheetCache[base + 'front-swing.png' + V] = sheetEntry;
+        _spriteSheetCache[base + 'front-run.png' + V] = sheetEntry;
+    }
+})();
+
 function detectSpriteSheet(url) {
     return new Promise((resolve) => {
-        // All game sprites are 640x96 sheets (8 frames at 80px each)
-        // Force correct dimensions so _applyFrame uses proper background-size
-        _spriteSheetCache[url] = { isSheet: true, frames: 8, width: 640, height: 96 };
-        resolve(_spriteSheetCache[url]);
+        const img = new Image();
+        img.onload = function() {
+            const w = img.naturalWidth;
+            const h = img.naturalHeight;
+            if (w > 80) {
+                // Sprite sheet: 640x96 = 8 frames at 80px each
+                const frames = Math.round(w / 80);
+                _spriteSheetCache[url] = { isSheet: true, frames: frames, width: w, height: h };
+            } else {
+                // Single frame (e.g. opponent-idle-v2.png at 80x96)
+                _spriteSheetCache[url] = { isSheet: false, frames: 1, width: w, height: h };
+            }
+            resolve(_spriteSheetCache[url]);
+        };
+        img.onerror = function() {
+            // Fallback: assume 640x96 sheet
+            _spriteSheetCache[url] = { isSheet: true, frames: 8, width: 640, height: 96 };
+            resolve(_spriteSheetCache[url]);
+        };
+        img.src = url;
     });
 }
 
