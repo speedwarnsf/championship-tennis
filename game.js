@@ -2461,6 +2461,14 @@ function actuallyStartMatch(){
         totalRallies: 0,
         pointsPlayed: 0,
         pendingAce: false,
+        lostServiceGame: false,
+        wasDown03: false,
+        bestStreak: 0,
+        playerY: 95,
+        atNet: false,
+        netRushTimer: 0,
+        oppAtNet: false,
+        oppY: 8,
         settings: s
     };
 
@@ -3652,9 +3660,10 @@ function animateReturn(){
 
                 M.ballActive = true;
                 M.canHit = false;
-                ball.classList.add('active');
-                ball.classList.remove('glowing');
-                shadow.classList.add('active');
+                const returnBall = safeGetElement('ball');
+                if(returnBall) { returnBall.classList.add('active'); returnBall.classList.remove('glowing'); }
+                const returnShadow = safeGetElement('ballShadow');
+                if(returnShadow) returnShadow.classList.add('active');
 
                 animateBall();
             }, 150);
