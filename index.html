@@ -49,9 +49,7 @@
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;800&display=swap"></noscript>
     <link rel="preload" href="court.webp" as="image">
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
-        /* Sharp edges on all UI elements */
-        .screen,.player-card,.level-badge,.skill-bar,.skill-fill,.currency-item,.currency-icon,.stat-item,.difficulty-btn,.menu-btn,.play-button,.skip-btn,.player-info,.match-timer,.serve-indicator,.rewards-container,.continue-btn,.trophy-header,.trophy-card,.achievement-popup,.challenge-banner,.challenge-streak-badge,.challenge-bar,.challenge-fill,.progress-toast,.char-grid,.char-header,.char-card,.char-detail,.shop-header,.shop-tab,.shop-item,.buy-btn,.equip-btn,.equipped-badge,.tutorial-content,.tutorial-btn,.back-btn,.hit-zone,.streak-display,.streak-day,.swipe-hint,.net-rush-indicator,.gem-multiplier,.power-bar,.service-box,.serve-timing-track,.serve-timing-cursor,.serve-power-track,.combo-text,.call-overlay,.court-change,.match-results,.reward-item,.price-tag,.item-stat,.stat-bar,.stat-fill{border-radius:0!important}
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;border-radius:0!important}
         body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#1a1a2e,#0f0f1e);min-height:100vh;overflow:hidden;overscroll-behavior:none;width:100%}
         .screen{position:fixed;inset:0;display:none;flex-direction:column;z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch}
         .screen.active{display:flex}
@@ -517,14 +515,14 @@
             <div class="difficulty-buttons">
                 <button class="difficulty-btn selected" onclick="selectMatchType('quick')" id="matchQuick">Quick<span class="difficulty-reward">First to 3 Games</span></button>
                 <button class="difficulty-btn" onclick="selectMatchType('standard')" id="matchStandard">Standard<span class="difficulty-reward">1 Set (First to 6)</span></button>
-                <button class="difficulty-btn" onclick="selectMatchType('timed')" id="matchTimed">Timed<span class="difficulty-reward">5 Minute Match</span></button>
+                <button class="difficulty-btn" onclick="selectMatchType('timed')" id="matchTimed">Timed<span class="difficulty-reward">Best of Time</span></button>
             </div>
         </div>
         <!-- Daily Challenge -->
         <div class="challenge-banner" id="dailyChallenge">
             <div class="challenge-streak-row">
                 <div class="challenge-title" id="challengeTitle" style="margin-bottom:0">Daily Challenge: Ace Master</div>
-                <div class="challenge-streak-badge" id="streakBadge"><span class="streak-fire" style="color:#ff6b00;font-weight:900;font-family:Bebas Neue;font-size:16px">X</span><span id="streakCount">0</span> Day Streak</div>
+                <div class="challenge-streak-badge" id="streakBadge"><span class="streak-fire" style="color:#ff6b00;font-weight:900">*</span><span id="streakCount">0</span> Day Streak</div>
             </div>
             <div class="challenge-streak-days" id="streakDays"></div>
             <div class="challenge-desc" id="challengeDesc">Score 3 aces in a single match</div>
@@ -584,7 +582,6 @@
         <div id="videoPlayer"></div>
         <button class="skip-btn" onclick="transitionToCourt()" aria-label="Skip intro video">SKIP</button>
     </div>
-    <button id="pauseBtn" onclick="pauseMatch()" aria-label="Pause match" style="position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:54px;z-index:9000;width:36px;height:36px;background:rgba(0,0,0,0.6);border:2px solid rgba(255,215,0,0.4);display:none;align-items:center;justify-content:center;cursor:pointer;padding:0;font-family:'Bebas Neue',sans-serif;font-size:16px;color:#ffd700">II</button>
     <button id="muteBtn" onclick="AudioManager.toggleMute()" aria-label="Toggle audio mute" style="position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:12px;z-index:9000;width:36px;height:36px;background:rgba(0,0,0,0.6);border:2px solid rgba(255,215,0,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>
     <div class="game-hud" id="gameHUD">
         <div class="match-info">
@@ -608,12 +605,6 @@
                 <div class="player-sets" id="opponentSets"></div>
             </div>
         </div>
-    </div>
-    <!-- Pause overlay -->
-    <div id="pauseOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;justify-content:center;align-items:center;z-index:2500;flex-direction:column;gap:20px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:64px;color:#ffd700;letter-spacing:6px">PAUSED</div>
-        <button onclick="resumeMatch()" style="padding:14px 50px;background:linear-gradient(180deg,#4caf50,#388e3c);border:3px solid;border-color:#66bb6a #2e7d32 #2e7d32 #66bb6a;color:#fff;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;text-shadow:1px 1px 2px #000;box-shadow:3px 3px 0 rgba(0,0,0,0.4)">RESUME</button>
-        <button onclick="forfeitMatch()" style="padding:14px 50px;background:linear-gradient(180deg,#f44336,#c62828);border:3px solid;border-color:#ef5350 #b71c1c #b71c1c #ef5350;color:#fff;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;text-shadow:1px 1px 2px #000;box-shadow:3px 3px 0 rgba(0,0,0,0.4)">FORFEIT</button>
     </div>
     <div class="rally-vignette" id="rallyVignette"></div>
     <div class="game-court" id="gameCourt">
@@ -782,7 +773,35 @@ const LoadingManager = {
 
 
 
-// AudioManager defined below with full implementation
+// Progressive audio enhancement
+const AudioManager = {
+    supported: false,
+    context: null,
+
+    init() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.context = new AudioContext();
+            this.supported = true;
+            console.log('OK: Audio context initialized');
+        } catch (error) {
+            console.warn('WARN: Audio not supported or blocked:', error);
+            this.supported = false;
+        }
+    },
+
+    playEnhanced(frequency, duration, volume) {
+        if (!this.supported || !this.context) {
+            return; // Graceful fallback to silence
+        }
+
+        try {
+            playTone(frequency, duration, volume);
+        } catch (error) {
+            console.warn('Audio playback failed:', error);
+        }
+    }
+};
 
 // Error recovery system
 const ErrorRecovery = {
@@ -794,7 +813,7 @@ const ErrorRecovery = {
 
         if (this.retryCount < this.maxRetries) {
             this.retryCount++;
-            console.log(`Attempting recovery (${this.retryCount}/${this.maxRetries})...`);
+            console.log(`🔄 Attempting recovery (${this.retryCount}/${this.maxRetries})...`);
 
             setTimeout(() => {
                 try {
@@ -1818,7 +1837,7 @@ function collectGem(){
     updateUI();
 }
 
-function updateMatchStreakDisplay(){
+function updateStreakDisplay(){
     const display = safeGetElement('streakDisplay');
     const valueEl = safeGetElement('streakValue');
     const bonusEl = safeGetElement('streakBonus');
@@ -2334,7 +2353,7 @@ function animateServeBall(result){
             sounds.ace();
             showCallOverlay('ACE!', true);
             M.streak++;
-            updateMatchStreakDisplay();
+            updateStreakDisplay();
             if(!scorePoint('p')) setTimeout(startNextPoint, 2000);
             return;
         }
@@ -2357,7 +2376,7 @@ function animateServeBall(result){
             resetBallUI();
             sounds.point();
             M.streak++;
-            updateMatchStreakDisplay();
+            updateStreakDisplay();
             if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
         }
         return;
@@ -2384,7 +2403,7 @@ function handleServeFault(type){
         M.doubleFaults++;
         showCallOverlay('DOUBLE FAULT', false);
         M.streak = 0;
-        updateMatchStreakDisplay();
+        updateStreakDisplay();
         if(!scorePoint('o')) setTimeout(startNextPoint, 2000);
     }
 }
@@ -2409,7 +2428,7 @@ function opponentReturn(){
         resetBallUI();
         sounds.point();
         M.streak++;
-        updateMatchStreakDisplay();
+        updateStreakDisplay();
         if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
         return;
     }
@@ -2481,7 +2500,7 @@ function opponentServe(){
                 sounds.fault();
                 showCallOverlay('DOUBLE FAULT', true);
                 M.streak++;
-                updateMatchStreakDisplay();
+                updateStreakDisplay();
                 clearServiceBoxHighlight();
                 if(!scorePoint('p')) setTimeout(startNextPoint, 2000);
                 return;
@@ -3061,29 +3080,6 @@ function onPlayerStateChange(event){
     if(event.data === YT.PlayerState.ENDED) transitionToCourt();
 }
 
-let gamePaused = false;
-function pauseMatch() {
-    if (!M || !M.active || gamePaused) return;
-    gamePaused = true;
-    M.active = false;
-    document.getElementById('pauseOverlay').style.display = 'flex';
-}
-function resumeMatch() {
-    if (!gamePaused) return;
-    gamePaused = false;
-    M.active = true;
-    document.getElementById('pauseOverlay').style.display = 'none';
-    if (M.time > 0) startTimer();
-}
-function forfeitMatch() {
-    gamePaused = false;
-    document.getElementById('pauseOverlay').style.display = 'none';
-    document.getElementById('pauseBtn').style.display = 'none';
-    M.active = false;
-    // Go straight to results as a loss
-    endMatch();
-}
-
 function transitionToCourt(){
     if(videoTimeout) { clearTimeout(videoTimeout); videoTimeout = null; }
     if(ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
@@ -3164,8 +3160,6 @@ function actuallyStartMatch(){
     initSprites();
 
     safeGetElement('gameHUD')?.classList.add('active');
-    const pauseBtn = document.getElementById('pauseBtn');
-    if (pauseBtn) pauseBtn.style.display = 'flex';
     safeGetElement('gameCourt')?.classList.add('active');
     { const _el = safeGetElement('playerPaddle'); if(_el) _el.style.left = '70%'; }
     safeGetElement('streakDisplay')?.classList.remove('active');
@@ -3457,7 +3451,7 @@ function scorePoint(player){
     } else {
         M.oPoints++;
         M.streak = 0;
-        updateMatchStreakDisplay();
+        updateStreakDisplay();
     }
 
     const diff = M.pPoints - M.oPoints;
@@ -3662,12 +3656,12 @@ function animateBall(){
         if(M.lastHitBy === 'player'){
             showCallOverlay('NET!', false);
             M.streak = 0;
-            updateMatchStreakDisplay();
+            updateStreakDisplay();
             if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
         } else {
             showCallOverlay('NET!', true);
             M.streak++;
-            updateMatchStreakDisplay();
+            updateStreakDisplay();
             if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
         }
         return;
@@ -3722,13 +3716,13 @@ function animateBall(){
             // Player hit it out - opponent gets point
             showCallOverlay('OUT!', false);
             M.streak = 0;
-            updateMatchStreakDisplay();
+            updateStreakDisplay();
             if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
         } else {
             // Opponent hit it out - player gets point
             showCallOverlay('OUT!', true);
             M.streak++;
-            updateMatchStreakDisplay();
+            updateStreakDisplay();
             if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
         }
         return;
@@ -3820,7 +3814,7 @@ function ballMissed(){
     if(court) { court.style.transform = ''; court.style.transition = ''; }
 
     M.streak = 0;
-    updateMatchStreakDisplay();
+    updateStreakDisplay();
 
     if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
 }
@@ -4225,7 +4219,7 @@ function animateReturn(){
         showNetCordEffect();
         showCallOverlay('NET!', false);
         M.streak = 0;
-        updateMatchStreakDisplay();
+        updateStreakDisplay();
         if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
         return;
     }
@@ -4255,7 +4249,7 @@ function animateReturn(){
             // Opponent hit it out - player gets point
             showCallOverlay('OUT!', true);
             M.streak++;
-            updateMatchStreakDisplay();
+            updateStreakDisplay();
             if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
         }
         return;
@@ -4351,7 +4345,7 @@ function animateReturn(){
             G.coins += reward;
 
             M.streak++;
-            updateMatchStreakDisplay();
+            updateStreakDisplay();
 
             // NOW show combo - shot was successful!
             if(M.pendingCombo && M.combo >= 1){
@@ -4493,8 +4487,6 @@ function endMatch(){
     safeGetElement('gameHUD')?.classList.remove('active');
     safeGetElement('gameCourt')?.classList.remove('active');
     safeGetElement('streakDisplay')?.classList.remove('active');
-    const _pb = document.getElementById('pauseBtn');
-    if (_pb) _pb.style.display = 'none';
 
     const rt = safeGetElement('resultsTitle');
     rt.textContent = won ? 'VICTORY!' : 'DEFEAT';
