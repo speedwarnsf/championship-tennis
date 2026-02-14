@@ -760,6 +760,9 @@
     <div class="progress-toast" id="progressToast"></div>
 <script>
 
+// Defer execution to allow initial paint
+setTimeout(function() {
+
 // Enhanced loading state management
 const LoadingManager = {
     states: {
@@ -5702,6 +5705,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+}, 0); // End setTimeout - defer JS to allow first paint
 </script>
 </body>
 </html>
