@@ -49,7 +49,9 @@
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;800&display=swap"></noscript>
     <link rel="preload" href="court.webp" as="image">
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;border-radius:0!important}
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+        /* Sharp edges on all UI elements */
+        .screen,.player-card,.level-badge,.skill-bar,.skill-fill,.currency-item,.currency-icon,.stat-item,.difficulty-btn,.menu-btn,.play-button,.skip-btn,.player-info,.match-timer,.serve-indicator,.rewards-container,.continue-btn,.trophy-header,.trophy-card,.achievement-popup,.challenge-banner,.challenge-streak-badge,.challenge-bar,.challenge-fill,.progress-toast,.char-grid,.char-header,.char-card,.char-detail,.shop-header,.shop-tab,.shop-item,.buy-btn,.equip-btn,.equipped-badge,.tutorial-content,.tutorial-btn,.back-btn,.hit-zone,.streak-display,.streak-day,.swipe-hint,.net-rush-indicator,.gem-multiplier,.power-bar,.service-box,.serve-timing-track,.serve-timing-cursor,.serve-power-track,.combo-text,.call-overlay,.court-change,.match-results,.reward-item,.price-tag,.item-stat,.stat-bar,.stat-fill{border-radius:0!important}
         body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#1a1a2e,#0f0f1e);min-height:100vh;overflow:hidden;overscroll-behavior:none;width:100%}
         .screen{position:fixed;inset:0;display:none;flex-direction:column;z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch}
         .screen.active{display:flex}
@@ -515,14 +517,14 @@
             <div class="difficulty-buttons">
                 <button class="difficulty-btn selected" onclick="selectMatchType('quick')" id="matchQuick">Quick<span class="difficulty-reward">First to 3 Games</span></button>
                 <button class="difficulty-btn" onclick="selectMatchType('standard')" id="matchStandard">Standard<span class="difficulty-reward">1 Set (First to 6)</span></button>
-                <button class="difficulty-btn" onclick="selectMatchType('timed')" id="matchTimed">Timed<span class="difficulty-reward">Best of Time</span></button>
+                <button class="difficulty-btn" onclick="selectMatchType('timed')" id="matchTimed">Timed<span class="difficulty-reward">5 Minute Match</span></button>
             </div>
         </div>
         <!-- Daily Challenge -->
         <div class="challenge-banner" id="dailyChallenge">
             <div class="challenge-streak-row">
                 <div class="challenge-title" id="challengeTitle" style="margin-bottom:0">Daily Challenge: Ace Master</div>
-                <div class="challenge-streak-badge" id="streakBadge"><span class="streak-fire" style="color:#ff6b00;font-weight:900">*</span><span id="streakCount">0</span> Day Streak</div>
+                <div class="challenge-streak-badge" id="streakBadge"><span class="streak-fire" style="color:#ff6b00;font-weight:900;font-family:Bebas Neue;font-size:16px">X</span><span id="streakCount">0</span> Day Streak</div>
             </div>
             <div class="challenge-streak-days" id="streakDays"></div>
             <div class="challenge-desc" id="challengeDesc">Score 3 aces in a single match</div>
@@ -582,6 +584,7 @@
         <div id="videoPlayer"></div>
         <button class="skip-btn" onclick="transitionToCourt()" aria-label="Skip intro video">SKIP</button>
     </div>
+    <button id="pauseBtn" onclick="pauseMatch()" aria-label="Pause match" style="position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:54px;z-index:9000;width:36px;height:36px;background:rgba(0,0,0,0.6);border:2px solid rgba(255,215,0,0.4);display:none;align-items:center;justify-content:center;cursor:pointer;padding:0;font-family:'Bebas Neue',sans-serif;font-size:16px;color:#ffd700">II</button>
     <button id="muteBtn" onclick="AudioManager.toggleMute()" aria-label="Toggle audio mute" style="position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:12px;z-index:9000;width:36px;height:36px;background:rgba(0,0,0,0.6);border:2px solid rgba(255,215,0,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>
     <div class="game-hud" id="gameHUD">
         <div class="match-info">
@@ -605,6 +608,12 @@
                 <div class="player-sets" id="opponentSets"></div>
             </div>
         </div>
+    </div>
+    <!-- Pause overlay -->
+    <div id="pauseOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;justify-content:center;align-items:center;z-index:2500;flex-direction:column;gap:20px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:64px;color:#ffd700;letter-spacing:6px">PAUSED</div>
+        <button onclick="resumeMatch()" style="padding:14px 50px;background:linear-gradient(180deg,#4caf50,#388e3c);border:3px solid;border-color:#66bb6a #2e7d32 #2e7d32 #66bb6a;color:#fff;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;text-shadow:1px 1px 2px #000;box-shadow:3px 3px 0 rgba(0,0,0,0.4)">RESUME</button>
+        <button onclick="forfeitMatch()" style="padding:14px 50px;background:linear-gradient(180deg,#f44336,#c62828);border:3px solid;border-color:#ef5350 #b71c1c #b71c1c #ef5350;color:#fff;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;text-shadow:1px 1px 2px #000;box-shadow:3px 3px 0 rgba(0,0,0,0.4)">FORFEIT</button>
     </div>
     <div class="rally-vignette" id="rallyVignette"></div>
     <div class="game-court" id="gameCourt">
@@ -773,35 +782,7 @@ const LoadingManager = {
 
 
 
-// Progressive audio enhancement
-const AudioManager = {
-    supported: false,
-    context: null,
-
-    init() {
-        try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            this.context = new AudioContext();
-            this.supported = true;
-            console.log('OK: Audio context initialized');
-        } catch (error) {
-            console.warn('WARN: Audio not supported or blocked:', error);
-            this.supported = false;
-        }
-    },
-
-    playEnhanced(frequency, duration, volume) {
-        if (!this.supported || !this.context) {
-            return; // Graceful fallback to silence
-        }
-
-        try {
-            playTone(frequency, duration, volume);
-        } catch (error) {
-            console.warn('Audio playback failed:', error);
-        }
-    }
-};
+// AudioManager defined below with full implementation
 
 // Error recovery system
 const ErrorRecovery = {
@@ -813,7 +794,7 @@ const ErrorRecovery = {
 
         if (this.retryCount < this.maxRetries) {
             this.retryCount++;
-            console.log(`🔄 Attempting recovery (${this.retryCount}/${this.maxRetries})...`);
+            console.log(`Attempting recovery (${this.retryCount}/${this.maxRetries})...`);
 
             setTimeout(() => {
                 try {
@@ -1837,7 +1818,7 @@ function collectGem(){
     updateUI();
 }
 
-function updateStreakDisplay(){
+function updateMatchStreakDisplay(){
     const display = safeGetElement('streakDisplay');
     const valueEl = safeGetElement('streakValue');
     const bonusEl = safeGetElement('streakBonus');
@@ -2353,7 +2334,7 @@ function animateServeBall(result){
             sounds.ace();
             showCallOverlay('ACE!', true);
             M.streak++;
-            updateStreakDisplay();
+            updateMatchStreakDisplay();
             if(!scorePoint('p')) setTimeout(startNextPoint, 2000);
             return;
         }
@@ -2376,7 +2357,7 @@ function animateServeBall(result){
             resetBallUI();
             sounds.point();
             M.streak++;
-            updateStreakDisplay();
+            updateMatchStreakDisplay();
             if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
         }
         return;
@@ -2403,7 +2384,7 @@ function handleServeFault(type){
         M.doubleFaults++;
         showCallOverlay('DOUBLE FAULT', false);
         M.streak = 0;
-        updateStreakDisplay();
+        updateMatchStreakDisplay();
         if(!scorePoint('o')) setTimeout(startNextPoint, 2000);
     }
 }
@@ -2428,7 +2409,7 @@ function opponentReturn(){
         resetBallUI();
         sounds.point();
         M.streak++;
-        updateStreakDisplay();
+        updateMatchStreakDisplay();
         if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
         return;
     }
@@ -2500,7 +2481,7 @@ function opponentServe(){
                 sounds.fault();
                 showCallOverlay('DOUBLE FAULT', true);
                 M.streak++;
-                updateStreakDisplay();
+                updateMatchStreakDisplay();
                 clearServiceBoxHighlight();
                 if(!scorePoint('p')) setTimeout(startNextPoint, 2000);
                 return;
@@ -2799,20 +2780,30 @@ function selectRandomOpponent(){
 
 function getPlayerSprites(char){
     // Get sprites for player (back view)
+    // Use multi-frame sprite sheets when available (sprites-v2/sheets/)
+    const sheetBase = 'sprites-v2/sheets/' + char.id + '-back-';
+    const hasSheet = ['player1', 'player2', 'player3', 'player4', 'player5', 'player6', 'player7', 'player8', 'player9', 'player10', 'player11', 'player12', 'punk', 'chubby', 'beach', 'goth', 'grandpa', 'indian', 'anime', 'latino', 'redhead'].indexOf(char.id) >= 0;
+
     if(char.id === 'player1'){
         return {
-            swing: 'player-retro-backswing.png' + V,
-            run: 'player-retro-run.png' + V,
-            idle: 'player-idle-v2.png' + V,
-            idleIsSheet: false  // player1 has a dedicated single-frame idle
+            swing: hasSheet ? sheetBase + 'swing-sheet.png' + V : 'player-retro-backswing.png' + V,
+            run: hasSheet ? sheetBase + 'run-sheet.png' + V : 'player-retro-run.png' + V,
+            idle: hasSheet ? sheetBase + 'idle-sheet.png' + V : 'player-idle-v2.png' + V,
+            idleIsSheet: hasSheet,
+            swingSingle: 'player-retro-backswing.png' + V,
+            runSingle: 'player-retro-run.png' + V,
+            idleSingle: 'player-idle-v2.png' + V
         };
     }
     const base = 'sprites-v2/characters/' + char.id + '-';
     return {
-        swing: base + 'back-swing.png' + V,
-        run: base + 'back-run.png' + V,
-        idle: base + 'back-swing.png' + V,
-        idleIsSheet: true  // other characters use swing sheet for idle (show frame 1)
+        swing: hasSheet ? sheetBase + 'swing-sheet.png' + V : base + 'back-swing.png' + V,
+        run: hasSheet ? sheetBase + 'run-sheet.png' + V : base + 'back-run.png' + V,
+        idle: hasSheet ? sheetBase + 'idle-sheet.png' + V : base + 'back-swing.png' + V,
+        idleIsSheet: hasSheet || true,
+        swingSingle: base + 'back-swing.png' + V,
+        runSingle: base + 'back-run.png' + V,
+        idleSingle: base + 'back-swing.png' + V
     };
 }
 
@@ -2856,6 +2847,9 @@ const SPRITES = getCharSprites(selectedChar);
 function updateSprites(){
     const s = getCharSprites(selectedChar);
     Object.assign(SPRITES, s);
+    // Update animator characters for speed multipliers
+    if (typeof playerAnimator !== 'undefined') playerAnimator.setCharacter(selectedChar);
+    if (typeof oppAnimator !== 'undefined' && opponentChar) oppAnimator.setCharacter(opponentChar);
 }
 
 function showCharSelect(){
@@ -2911,9 +2905,12 @@ function selectCharacter(char){
     { const _el = safeGetElement('charPower'); if(_el) _el.textContent = char.power; }
     { const _el = safeGetElement('charSpeed'); if(_el) _el.textContent = char.speed; }
     { const _el = safeGetElement('charControl'); if(_el) _el.textContent = char.control; }
+    // Trigger character intro animation + quip
+    if (typeof showCharacterIntro === 'function') showCharacterIntro(char);
 }
 
 function confirmCharacter(){
+    if (typeof hideCharacterIntro === 'function') hideCharacterIntro();
     updateSprites();
     closeCharSelect();
     toast(`${selectedChar.name} selected!`);
@@ -3080,6 +3077,29 @@ function onPlayerStateChange(event){
     if(event.data === YT.PlayerState.ENDED) transitionToCourt();
 }
 
+let gamePaused = false;
+function pauseMatch() {
+    if (!M || !M.active || gamePaused) return;
+    gamePaused = true;
+    M.active = false;
+    document.getElementById('pauseOverlay').style.display = 'flex';
+}
+function resumeMatch() {
+    if (!gamePaused) return;
+    gamePaused = false;
+    M.active = true;
+    document.getElementById('pauseOverlay').style.display = 'none';
+    if (M.time > 0) startTimer();
+}
+function forfeitMatch() {
+    gamePaused = false;
+    document.getElementById('pauseOverlay').style.display = 'none';
+    document.getElementById('pauseBtn').style.display = 'none';
+    M.active = false;
+    // Go straight to results as a loss
+    endMatch();
+}
+
 function transitionToCourt(){
     if(videoTimeout) { clearTimeout(videoTimeout); videoTimeout = null; }
     if(ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
@@ -3160,6 +3180,8 @@ function actuallyStartMatch(){
     initSprites();
 
     safeGetElement('gameHUD')?.classList.add('active');
+    const pauseBtn = document.getElementById('pauseBtn');
+    if (pauseBtn) pauseBtn.style.display = 'flex';
     safeGetElement('gameCourt')?.classList.add('active');
     { const _el = safeGetElement('playerPaddle'); if(_el) _el.style.left = '70%'; }
     safeGetElement('streakDisplay')?.classList.remove('active');
@@ -3451,7 +3473,7 @@ function scorePoint(player){
     } else {
         M.oPoints++;
         M.streak = 0;
-        updateStreakDisplay();
+        updateMatchStreakDisplay();
     }
 
     const diff = M.pPoints - M.oPoints;
@@ -3656,12 +3678,12 @@ function animateBall(){
         if(M.lastHitBy === 'player'){
             showCallOverlay('NET!', false);
             M.streak = 0;
-            updateStreakDisplay();
+            updateMatchStreakDisplay();
             if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
         } else {
             showCallOverlay('NET!', true);
             M.streak++;
-            updateStreakDisplay();
+            updateMatchStreakDisplay();
             if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
         }
         return;
@@ -3716,13 +3738,13 @@ function animateBall(){
             // Player hit it out - opponent gets point
             showCallOverlay('OUT!', false);
             M.streak = 0;
-            updateStreakDisplay();
+            updateMatchStreakDisplay();
             if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
         } else {
             // Opponent hit it out - player gets point
             showCallOverlay('OUT!', true);
             M.streak++;
-            updateStreakDisplay();
+            updateMatchStreakDisplay();
             if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
         }
         return;
@@ -3814,7 +3836,7 @@ function ballMissed(){
     if(court) { court.style.transform = ''; court.style.transition = ''; }
 
     M.streak = 0;
-    updateStreakDisplay();
+    updateMatchStreakDisplay();
 
     if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
 }
@@ -4219,7 +4241,7 @@ function animateReturn(){
         showNetCordEffect();
         showCallOverlay('NET!', false);
         M.streak = 0;
-        updateStreakDisplay();
+        updateMatchStreakDisplay();
         if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
         return;
     }
@@ -4249,7 +4271,7 @@ function animateReturn(){
             // Opponent hit it out - player gets point
             showCallOverlay('OUT!', true);
             M.streak++;
-            updateStreakDisplay();
+            updateMatchStreakDisplay();
             if(!scorePoint('p')) setTimeout(startNextPoint, 1200);
         }
         return;
@@ -4345,7 +4367,7 @@ function animateReturn(){
             G.coins += reward;
 
             M.streak++;
-            updateStreakDisplay();
+            updateMatchStreakDisplay();
 
             // NOW show combo - shot was successful!
             if(M.pendingCombo && M.combo >= 1){
@@ -4487,6 +4509,8 @@ function endMatch(){
     safeGetElement('gameHUD')?.classList.remove('active');
     safeGetElement('gameCourt')?.classList.remove('active');
     safeGetElement('streakDisplay')?.classList.remove('active');
+    const _pb = document.getElementById('pauseBtn');
+    if (_pb) _pb.style.display = 'none';
 
     const rt = safeGetElement('resultsTitle');
     rt.textContent = won ? 'VICTORY!' : 'DEFEAT';
@@ -4984,199 +5008,569 @@ window.addEventListener('load', () => {
     initSprites();
 });
 
-// ========== ENHANCED SPRITE SYSTEM - NO MORE FLICKERING ==========
+// ========== SPRITE ANIMATION ENGINE v2 ==========
+// Multi-frame sprite sheet support with graceful single-image fallback
+// Supports: idle, run_left, run_right, swing_forehand, swing_backhand, serve, victory_pose
 
-// Sprite state management - bulletproof against flicker
 const SpriteStates = {
     IDLE: 'idle',
     RUNNING: 'running',
+    RUN_LEFT: 'run_left',
+    RUN_RIGHT: 'run_right',
     SWINGING: 'swinging',
+    SWING_FOREHAND: 'swing_forehand',
+    SWING_BACKHAND: 'swing_backhand',
+    SERVE: 'serve',
+    VICTORY: 'victory_pose',
     TRANSITIONING: 'transitioning'
 };
 
+// --- Animation Definition Registry ---
+// Each animation state defines frame count, timing, loop behavior, and per-frame duration overrides.
+// When sprite sheets are available, the engine reads horizontal strips (each frame = frameWidth px wide).
+// When only single images exist, the engine displays frame 0 (the full image) and skips animation.
+
+const AnimationDefs = {
+    idle: {
+        frames: 4,
+        frameWidth: 80,
+        frameHeight: 96,
+        loop: true,
+        frameDurations: [200, 200, 200, 200],
+        defaultDuration: 200
+    },
+    run_left: {
+        frames: 8,
+        frameWidth: 80,
+        frameHeight: 96,
+        loop: true,
+        frameDurations: null,
+        defaultDuration: 80
+    },
+    run_right: {
+        frames: 8,
+        frameWidth: 80,
+        frameHeight: 96,
+        loop: true,
+        frameDurations: null,
+        defaultDuration: 80
+    },
+    swing_forehand: {
+        frames: 8,
+        frameWidth: 80,
+        frameHeight: 96,
+        loop: false,
+        // Variable timing: wind-up slow, contact fast, follow-through slow
+        frameDurations: [90, 80, 60, 35, 30, 50, 80, 120],
+        defaultDuration: 65,
+        returnTo: 'idle'
+    },
+    swing_backhand: {
+        frames: 8,
+        frameWidth: 80,
+        frameHeight: 96,
+        loop: false,
+        frameDurations: [90, 80, 60, 35, 30, 50, 80, 120],
+        defaultDuration: 65,
+        returnTo: 'idle'
+    },
+    serve: {
+        frames: 10,
+        frameWidth: 80,
+        frameHeight: 96,
+        loop: false,
+        // toss(slow) -> reach(med) -> contact(fast) -> follow-through(slow)
+        frameDurations: [120, 110, 100, 80, 60, 35, 30, 60, 100, 140],
+        defaultDuration: 80,
+        returnTo: 'idle'
+    },
+    victory_pose: {
+        frames: 6,
+        frameWidth: 80,
+        frameHeight: 96,
+        loop: false,
+        frameDurations: [150, 120, 100, 100, 150, 300],
+        defaultDuration: 140
+    }
+};
+
+// --- Per-character animation speed multipliers ---
+function getCharAnimMultipliers(char) {
+    if (!char) return { swing: 1, run: 1, serve: 1, idle: 1 };
+    const power = char.power || 50;
+    const speed = char.speed || 50;
+    return {
+        swing: 0.7 + (power / 100) * 0.6,
+        run: 1.3 - (speed / 100) * 0.6,
+        serve: 0.8 + (power / 100) * 0.4,
+        idle: 1.0
+    };
+}
+
+// --- Sprite Sheet Detection & Fallback ---
+const _spriteSheetCache = {};
+
+function detectSpriteSheet(url) {
+    return new Promise((resolve) => {
+        if (_spriteSheetCache[url] !== undefined) {
+            resolve(_spriteSheetCache[url]);
+            return;
+        }
+        const img = new Image();
+        img.onload = () => {
+            const w = img.naturalWidth;
+            const h = img.naturalHeight;
+            const isSheet = w > h * 1.5;
+            const frames = isSheet ? Math.round(w / h) : 1;
+            const result = { isSheet, frames, width: w, height: h };
+            _spriteSheetCache[url] = result;
+            resolve(result);
+        };
+        img.onerror = () => {
+            _spriteSheetCache[url] = { isSheet: false, frames: 1, width: 80, height: 96 };
+            resolve(_spriteSheetCache[url]);
+        };
+        img.src = url;
+    });
+}
+
+// --- Animation Controller ---
+class SpriteAnimator {
+    constructor(elementId, role) {
+        this.elementId = elementId;
+        this.role = role;
+        this.currentState = SpriteStates.IDLE;
+        this.currentFrame = 0;
+        this.frameTimer = 0;
+        this.lastTick = 0;
+        this.animating = false;
+        this.rafId = null;
+        this.sheetInfo = null;
+        this.char = null;
+        this.multipliers = { swing: 1, run: 1, serve: 1, idle: 1 };
+        this.transitioning = false;
+        this.lastChange = 0;
+        this.timers = {};
+        this.transitionAlpha = 1;
+        this.prevImage = null;
+        this.prevFrame = 0;
+        this.onStateComplete = null;
+        this.secondaryMotionCallbacks = [];
+    }
+
+    setCharacter(char) {
+        this.char = char;
+        this.multipliers = getCharAnimMultipliers(char);
+    }
+
+    addSecondaryMotion(callback) {
+        this.secondaryMotionCallbacks.push(callback);
+    }
+
+    clearSecondaryMotion() {
+        this.secondaryMotionCallbacks = [];
+    }
+
+    getElement() {
+        return document.getElementById(this.elementId);
+    }
+
+    getSpriteUrl(state) {
+        const sprites = SPRITES;
+        const prefix = this.role === 'player' ? 'player' : 'opp';
+        switch (state) {
+            case SpriteStates.RUNNING:
+            case SpriteStates.RUN_LEFT:
+            case SpriteStates.RUN_RIGHT:
+                return sprites[prefix + 'Run'];
+            case SpriteStates.SWINGING:
+            case SpriteStates.SWING_FOREHAND:
+                return sprites[prefix + 'Swing'];
+            case SpriteStates.SWING_BACKHAND:
+                return sprites[prefix + 'SwingBackhand'] || sprites[prefix + 'Swing'];
+            case SpriteStates.SERVE:
+                return sprites[prefix + 'Serve'] || sprites[prefix + 'Swing'];
+            case SpriteStates.VICTORY:
+                return sprites[prefix + 'Victory'] || sprites[prefix + 'Swing'];
+            case SpriteStates.IDLE:
+            default:
+                return sprites[prefix + 'Idle'];
+        }
+    }
+
+    getAnimKey(state) {
+        switch (state) {
+            case SpriteStates.RUN_LEFT: return 'run_left';
+            case SpriteStates.RUN_RIGHT: return 'run_right';
+            case SpriteStates.RUNNING: return 'run_left';
+            case SpriteStates.SWING_FOREHAND:
+            case SpriteStates.SWINGING: return 'swing_forehand';
+            case SpriteStates.SWING_BACKHAND: return 'swing_backhand';
+            case SpriteStates.SERVE: return 'serve';
+            case SpriteStates.VICTORY: return 'victory_pose';
+            case SpriteStates.IDLE:
+            default: return 'idle';
+        }
+    }
+
+    getFrameDuration(animKey, frameIndex) {
+        const def = AnimationDefs[animKey];
+        if (!def) return 100;
+        const baseDur = (def.frameDurations && def.frameDurations[frameIndex] !== undefined)
+            ? def.frameDurations[frameIndex]
+            : def.defaultDuration;
+        let mult = 1;
+        if (animKey.startsWith('run')) mult = this.multipliers.run;
+        else if (animKey.startsWith('swing')) mult = this.multipliers.swing;
+        else if (animKey === 'serve') mult = this.multipliers.serve;
+        else mult = this.multipliers.idle;
+        return baseDur * mult;
+    }
+
+    setState(newState, force = false) {
+        const now = Date.now();
+        if (!force && this.transitioning) return;
+        if (!force && (now - this.lastChange < 40)) return;
+        if (newState === this.currentState && !force) return;
+
+        Object.values(this.timers).forEach(t => { if (t) clearTimeout(t); });
+        this.timers = {};
+
+        this.prevImage = this.getSpriteUrl(this.currentState);
+        this.prevFrame = this.currentFrame;
+        this.transitionAlpha = 0;
+
+        this.lastChange = now;
+        this.currentState = newState;
+        this.currentFrame = 0;
+        this.frameTimer = 0;
+        this.lastTick = performance.now();
+
+        this._applyFrame();
+
+        if (!this.animating) {
+            this.animating = true;
+            this.rafId = requestAnimationFrame((t) => this._tick(t));
+        }
+
+        const animKey = this.getAnimKey(newState);
+        const def = AnimationDefs[animKey];
+        if (def && !def.loop && def.returnTo) {
+            const totalDuration = this._getTotalDuration(animKey, def);
+            this.timers.returnToIdle = setTimeout(() => {
+                this.setState(SpriteStates.IDLE, true);
+                if (this.onStateComplete) this.onStateComplete(newState);
+            }, totalDuration);
+        }
+    }
+
+    _getTotalDuration(animKey, def) {
+        const url = this.getSpriteUrl(this.currentState);
+        const cached = _spriteSheetCache[url];
+        const frameCount = (cached && cached.isSheet) ? cached.frames : def.frames;
+        let total = 0;
+        for (let i = 0; i < frameCount; i++) {
+            total += this.getFrameDuration(animKey, i);
+        }
+        return total;
+    }
+
+    _tick(timestamp) {
+        if (!this.animating) return;
+
+        const dt = timestamp - this.lastTick;
+        this.lastTick = timestamp;
+
+        const animKey = this.getAnimKey(this.currentState);
+        const def = AnimationDefs[animKey];
+        if (!def) {
+            this.rafId = requestAnimationFrame((t) => this._tick(t));
+            return;
+        }
+
+        const url = this.getSpriteUrl(this.currentState);
+        const cached = _spriteSheetCache[url];
+        const actualFrames = (cached && cached.isSheet) ? cached.frames : (this._isSingleImage() ? 1 : def.frames);
+
+        if (actualFrames <= 1) {
+            this._runSecondaryMotion(dt);
+            if (this.transitionAlpha < 1) {
+                this.transitionAlpha = Math.min(1, this.transitionAlpha + dt / 80);
+            }
+            this.rafId = requestAnimationFrame((t) => this._tick(t));
+            return;
+        }
+
+        this.frameTimer += dt;
+        const frameDur = this.getFrameDuration(animKey, this.currentFrame);
+
+        if (this.frameTimer >= frameDur) {
+            this.frameTimer -= frameDur;
+            this.currentFrame++;
+
+            if (this.currentFrame >= actualFrames) {
+                if (def.loop) {
+                    this.currentFrame = 0;
+                } else {
+                    this.currentFrame = actualFrames - 1;
+                }
+            }
+            this._applyFrame();
+        }
+
+        if (this.transitionAlpha < 1) {
+            this.transitionAlpha = Math.min(1, this.transitionAlpha + dt / 80);
+        }
+
+        this._runSecondaryMotion(dt);
+        this.rafId = requestAnimationFrame((t) => this._tick(t));
+    }
+
+    _isSingleImage() {
+        const url = this.getSpriteUrl(this.currentState);
+        const cached = _spriteSheetCache[url];
+        if (cached) return !cached.isSheet;
+        return false;
+    }
+
+    _applyFrame() {
+        const el = this.getElement();
+        if (!el) return;
+
+        const url = this.getSpriteUrl(this.currentState);
+        const cached = _spriteSheetCache[url];
+
+        el.classList.remove('cycling', 'playing-4', 'playing-5', 'playing-7', 'playing-8');
+        el.style.backgroundImage = `url(${url})`;
+
+        if (cached && cached.isSheet && cached.frames > 1) {
+            const fw = Math.floor(cached.width / cached.frames);
+            const fh = cached.height;
+            el.style.backgroundSize = `${cached.width}px ${fh}px`;
+            el.style.backgroundPosition = `-${this.currentFrame * fw}px 0`;
+        } else if (cached && !cached.isSheet) {
+            el.style.backgroundSize = `${cached.width}px ${cached.height}px`;
+            el.style.backgroundPosition = '0 0';
+        } else {
+            // Legacy fallback for uncached images
+            const animKey = this.getAnimKey(this.currentState);
+            if (animKey === 'idle' && this.role === 'player' && !SPRITES.playerIdleIsSheet) {
+                el.style.backgroundSize = '80px 96px';
+                el.style.backgroundPosition = '0 0';
+            } else if (animKey === 'idle' && this.role !== 'player' && !SPRITES.oppIdleIsSheet) {
+                el.style.backgroundSize = '80px 96px';
+                el.style.backgroundPosition = '0 0';
+            } else {
+                el.style.backgroundSize = '640px 96px';
+                el.style.backgroundPosition = `-${this.currentFrame * 80}px 0`;
+            }
+        }
+    }
+
+    _runSecondaryMotion(dt) {
+        for (const cb of this.secondaryMotionCallbacks) {
+            try { cb(this, dt); } catch(e) { /* silent */ }
+        }
+    }
+
+    stop() {
+        this.animating = false;
+        if (this.rafId) cancelAnimationFrame(this.rafId);
+        Object.values(this.timers).forEach(t => { if (t) clearTimeout(t); });
+        this.timers = {};
+    }
+
+    destroy() {
+        this.stop();
+        this.secondaryMotionCallbacks = [];
+    }
+}
+
+// --- Global Animator Instances ---
+let playerAnimator = new SpriteAnimator('playerSprite', 'player');
+let oppAnimator = new SpriteAnimator('opponentSprite', 'opponent');
+
+// Legacy state objects for backward compatibility
 let playerState = {
-    current: SpriteStates.IDLE,
+    get current() { return playerAnimator.currentState; },
+    set current(v) { playerAnimator.currentState = v; },
     transitioning: false,
     lastChange: 0
 };
 
 let oppState = {
-    current: SpriteStates.IDLE,
+    get current() { return oppAnimator.currentState; },
+    set current(v) { oppAnimator.currentState = v; },
     transitioning: false,
     lastChange: 0,
-    timers: {
-        start: null,
-        stop: null,
-        swing: null
-    }
+    timers: {}
 };
 
-function initSprites(){
+// --- Initialization ---
+async function initSprites() {
     const opp = safeGetElement('opponentSprite');
     const player = safeGetElement('playerSprite');
 
-    // Create image preloader with proper error handling
-    const preloadImages = [SPRITES.playerRun, SPRITES.playerSwing, SPRITES.oppRun, SPRITES.oppSwing, SPRITES.playerIdle, SPRITES.oppIdle];
+    playerAnimator.setCharacter(selectedChar);
+    oppAnimator.setCharacter(opponentChar || window.CHARACTERS[1]);
+
+    const preloadImages = [
+        SPRITES.playerRun, SPRITES.playerSwing, SPRITES.oppRun,
+        SPRITES.oppSwing, SPRITES.playerIdle, SPRITES.oppIdle
+    ];
+
     LoadingManager.setState(LoadingManager.states.LOADING_SPRITES);
-    Promise.all(preloadImages.map(src => loadSpriteWithRetry(src, 2))).then((results) => {
-        const failed = preloadImages.filter((_, idx) => !results[idx]);
-        if(failed.length > 0){
-            console.warn('WARN: Some sprites failed to preload:', failed);
-        } else {
-            console.log('OK: All sprites preloaded successfully');
+
+    const results = await Promise.all(preloadImages.map(async (src) => {
+        const loaded = await loadSpriteWithRetry(src, 2);
+        if (loaded) {
+            await detectSpriteSheet(src);
         }
-        LoadingManager.setState(LoadingManager.states.READY);
-    });
+        return loaded;
+    }));
 
-    // Initialize with stable state
-    if(opp && player) {
-        setOpponentSprite(SpriteStates.IDLE, true);
-        setPlayerSprite(SpriteStates.IDLE, true);
+    const failed = preloadImages.filter((_, idx) => !results[idx]);
+    if (failed.length > 0) {
+        console.warn('WARN: Some sprites failed to preload:', failed);
+    } else {
+        console.log('OK: All sprites preloaded + sheet detection complete');
+    }
+
+    LoadingManager.setState(LoadingManager.states.READY);
+
+    if (opp && player) {
+        playerAnimator.setState(SpriteStates.IDLE, true);
+        oppAnimator.setState(SpriteStates.IDLE, true);
     }
 }
 
-function setPlayerSprite(newState, force = false) {
-    const now = Date.now();
-    if(!force && (playerState.transitioning || (now - playerState.lastChange < 50))) return;
-    if(newState === playerState.current && !force) return;
-
-    playerState.transitioning = true;
-    playerState.lastChange = now;
-
-    const sprite = safeGetElement('playerSprite');
-    if(!sprite) return;
-
-    // Clear any existing animations
-    sprite.classList.remove('cycling', 'playing-4', 'playing-5', 'playing-7', 'playing-8');
-
-    switch(newState) {
-        case SpriteStates.RUNNING:
-            sprite.style.backgroundImage = `url(${SPRITES.playerRun})`;
-            sprite.style.backgroundSize = '640px 96px';
-            sprite.style.backgroundPosition = '0 0';
-            sprite.classList.add('cycling');
-            break;
-
-        case SpriteStates.SWINGING:
-            sprite.style.backgroundImage = `url(${SPRITES.playerSwing})`;
-            sprite.style.backgroundSize = '640px 96px';
-            sprite.style.backgroundPosition = '0 0';
-            playSprite('playerSprite', 8);
-            // Auto-return to idle after swing
-            setTimeout(() => setPlayerSprite(SpriteStates.IDLE), 500);
-            break;
-
-        case SpriteStates.IDLE:
-        default:
-            sprite.style.backgroundImage = `url(${SPRITES.playerIdle})`;
-            // If idle is a sprite sheet (8 frames), show just frame 1
-            if(SPRITES.playerIdleIsSheet) {
-                sprite.style.backgroundSize = '640px 96px';
-                sprite.style.backgroundPosition = '0 0';
-            } else {
-                sprite.style.backgroundSize = '80px 96px';
-                sprite.style.backgroundPosition = '0 0';
-            }
-            break;
-    }
-
-    playerState.current = newState;
-    playerState.transitioning = false;
+// --- Legacy-Compatible Wrapper Functions ---
+function setPlayerSprite(newState, force) {
+    playerAnimator.setState(newState, force);
+}
+function setOpponentSprite(newState, force) {
+    oppAnimator.setState(newState, force);
+}
+function playSprite(spriteId, frames) {
+    // No-op: SpriteAnimator drives its own frame playback
 }
 
-function setOpponentSprite(newState, force = false) {
-    const now = Date.now();
-    if(!force && (oppState.transitioning || (now - oppState.lastChange < 80))) return;
-    if(newState === oppState.current && !force) return;
-
-    // Clear existing timers to prevent conflicts
-    Object.values(oppState.timers).forEach(timer => {
-        if(timer) clearTimeout(timer);
-    });
-    oppState.timers = { start: null, stop: null, swing: null };
-
-    oppState.transitioning = true;
-    oppState.lastChange = now;
-
-    const sprite = safeGetElement('opponentSprite');
-    if(!sprite) return;
-
-    // Clear animations
-    sprite.classList.remove('cycling', 'playing-4', 'playing-5', 'playing-7', 'playing-8');
-
-    switch(newState) {
-        case SpriteStates.RUNNING:
-            sprite.style.backgroundImage = `url(${SPRITES.oppRun})`;
-            sprite.style.backgroundSize = '640px 96px';
-            sprite.style.backgroundPosition = '0 0';
-            sprite.classList.add('cycling');
-            break;
-
-        case SpriteStates.SWINGING:
-            sprite.style.backgroundImage = `url(${SPRITES.oppSwing})`;
-            sprite.style.backgroundSize = '640px 96px';
-            sprite.style.backgroundPosition = '0 0';
-            playSprite('opponentSprite', 8);
-            // Auto-return to idle after swing
-            oppState.timers.swing = setTimeout(() => {
-                setOpponentSprite(SpriteStates.IDLE, true);
-            }, 500);
-            break;
-
-        case SpriteStates.IDLE:
-        default:
-            sprite.style.backgroundImage = `url(${SPRITES.oppIdle})`;
-            // If idle is a sprite sheet (8 frames), show just frame 1
-            if(SPRITES.oppIdleIsSheet) {
-                sprite.style.backgroundSize = '640px 96px';
-                sprite.style.backgroundPosition = '0 0';
-            } else {
-                sprite.style.backgroundSize = '80px 96px';
-                sprite.style.backgroundPosition = '0 0';
-            }
-            break;
-    }
-
-    oppState.current = newState;
-    oppState.transitioning = false;
-}
-
-function playSprite(spriteId, frames){
-    const sprite = document.getElementById(spriteId);
-    if(!sprite) return;
-
-    // Remove all animation classes
-    sprite.classList.remove('playing-4', 'playing-5', 'playing-7', 'playing-8');
-
-    // Force reflow to ensure clean state
-    void sprite.offsetWidth;
-
-    // Add appropriate animation class
-    const animClass = frames === 8 ? 'playing-8' :
-                      frames === 7 ? 'playing-7' :
-                      frames === 4 ? 'playing-4' : 'playing-5';
-    sprite.classList.add(animClass);
-}
-
-// Simplified, bulletproof wrapper functions
 function setPlayerRunning(running) {
-    setPlayerSprite(running ? SpriteStates.RUNNING : SpriteStates.IDLE);
+    playerAnimator.setState(running ? SpriteStates.RUNNING : SpriteStates.IDLE);
 }
 
 function setOppRunning(running) {
-    // Only change if not currently swinging
-    if(oppState.current !== SpriteStates.SWINGING) {
-        setOpponentSprite(running ? SpriteStates.RUNNING : SpriteStates.IDLE);
+    if (oppAnimator.currentState !== SpriteStates.SWINGING &&
+        oppAnimator.currentState !== SpriteStates.SWING_FOREHAND &&
+        oppAnimator.currentState !== SpriteStates.SWING_BACKHAND &&
+        oppAnimator.currentState !== SpriteStates.SERVE) {
+        oppAnimator.setState(running ? SpriteStates.RUNNING : SpriteStates.IDLE);
     }
 }
 
 function setOppSwinging() {
-    setOpponentSprite(SpriteStates.SWINGING, true);
+    oppAnimator.setState(SpriteStates.SWINGING, true);
 }
 
 function setPlayerSwinging() {
-    setPlayerSprite(SpriteStates.SWINGING, true);
+    playerAnimator.setState(SpriteStates.SWINGING, true);
 }
+
+// --- Character Intro System for Selection Screen ---
+const CHARACTER_QUIPS = {
+    'player1': "Elegance is not optional.",
+    'player2': "You cannot be serious... wait, wrong player.",
+    'player3': "I will grind you down. Every. Single. Point.",
+    'player4': "Forehand? Backhand? Both are weapons.",
+    'player5': "No? This ball says YES.",
+    'player6': "Left-handed and relentless.",
+    'player7': "Ice cold. Every match.",
+    'player8': "Power comes standard.",
+    'player9': "BOOM. That is all.",
+    'player10': "Baseline is my kingdom.",
+    'player11': "Return of serve specialist.",
+    'player12': "Calm under pressure. Always.",
+    'punk': "You CANNOT be serious! That ball was IN!",
+    'chubby': "Heavy hands, heavier topspin.",
+    'beach': "Graceful destruction.",
+    'goth': "Darkness on the court.",
+    'anime': "Full send, no regrets!",
+    'latino': "VAMOS! Every single point!",
+    'redhead': "Equal rights, equal lefts.",
+    'grandpa': "Experience beats youth. Always.",
+    'indian': "Precision is an art form."
+};
+
+// Audio hooks for future ElevenLabs voice integration
+const CharacterVoiceHooks = {
+    _audioCache: {},
+    _speaking: false,
+
+    prepVoice(charId) {
+        // Future: preload ElevenLabs voice clip for character
+        // const voiceId = CHARACTER_VOICES[charId];
+        // if (voiceId) this._preloadClip(charId, voiceId);
+    },
+
+    playQuip(charId) {
+        if (this._speaking) return;
+        // Future: play preloaded ElevenLabs clip
+        console.log(`[VoiceHook] Would play quip for ${charId}`);
+    },
+
+    stop() {
+        this._speaking = false;
+    }
+};
+
+let _introAnimTimer = null;
+let _quipTimer = null;
+let _activeQuipEl = null;
+
+function showCharacterIntro(char) {
+    if (!char) return;
+    hideCharacterIntro();
+
+    const preview = safeGetElement('charDetailPreview');
+    if (!preview) return;
+
+    preview.classList.add('animating');
+
+    _quipTimer = setTimeout(() => {
+        const quip = CHARACTER_QUIPS[char.id] || "Let us play.";
+        let bubble = document.getElementById('charQuipBubble');
+        if (!bubble) {
+            bubble = document.createElement('div');
+            bubble.id = 'charQuipBubble';
+            bubble.style.cssText = 'position:absolute;top:-36px;left:50%;transform:translateX(-50%);' +
+                'background:#0a0a1a;color:#ffd700;border:2px solid #ffd700;padding:4px 10px;' +
+                'font-family:"Press Start 2P",monospace;font-size:8px;white-space:nowrap;' +
+                'z-index:10;opacity:0;transition:opacity 0.15s;pointer-events:none;' +
+                'box-shadow:2px 2px 0 #000;border-radius:0';
+            const detail = safeGetElement('charDetail');
+            if (detail) {
+                detail.style.position = 'relative';
+                detail.appendChild(bubble);
+            }
+        }
+        bubble.textContent = quip;
+        bubble.style.opacity = '1';
+        _activeQuipEl = bubble;
+
+        CharacterVoiceHooks.prepVoice(char.id);
+        CharacterVoiceHooks.playQuip(char.id);
+    }, 200);
+}
+
+function hideCharacterIntro() {
+    if (_introAnimTimer) { clearTimeout(_introAnimTimer); _introAnimTimer = null; }
+    if (_quipTimer) { clearTimeout(_quipTimer); _quipTimer = null; }
+    if (_activeQuipEl) { _activeQuipEl.style.opacity = '0'; }
+    CharacterVoiceHooks.stop();
+    const preview = safeGetElement('charDetailPreview');
+    if (preview) preview.classList.remove('animating');
+}
+
 
 // Enhanced initialization
 document.addEventListener('DOMContentLoaded', () => {
