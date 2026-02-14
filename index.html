@@ -79,7 +79,7 @@
         .skill-fill{height:100%;background:linear-gradient(90deg,#667eea,#764ba2);width:0%;transition:width 0.3s}
         .currency-display{display:flex;gap:15px}
         .currency-item{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.3);padding:6px 12px;border-radius:0}
-        .currency-icon{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px}
+        .currency-icon{width:24px;height:24px;border-radius:0;display:flex;align-items:center;justify-content:center;font-size:14px}
         .coins{background:linear-gradient(135deg,#ffd700,#ffed4e)}
         .gems{background:linear-gradient(135deg,#e74c3c,#c0392b)}
         .currency-amount{font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff}
@@ -105,7 +105,7 @@
         .video-intro.fade-out{opacity:0}
         .skip-btn{position:absolute;bottom:30px;right:20px;padding:12px 24px;background:rgba(255,215,0,0.9);border:none;border-radius:0;color:#1a1a2e;font-weight:700;font-size:14px;cursor:pointer;z-index:5001}
         #videoPlayer{width:100vw;height:100vh;object-fit:cover}
-        .game-hud{position:fixed;top:0;left:0;right:0;padding:calc(10px + env(safe-area-inset-top, 0px)) 15px 10px;display:none;z-index:100;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent)}
+        .game-hud{position:fixed;top:0;left:0;right:0;padding:calc(10px + env(safe-area-inset-top, 0px)) 90px 10px 15px;display:none;z-index:100;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent)}
         .game-hud.active{display:block}
         .match-info{display:flex;justify-content:space-between;align-items:flex-start}
         .player-info{background:rgba(0,0,0,0.5);padding:10px 15px;border-radius:0;border:1px solid rgba(255,215,0,0.3);text-align:center;min-width:80px}
@@ -354,10 +354,11 @@
         .challenge-streak-badge .streak-fire{font-size:14px;animation:firePulse 1s ease-in-out infinite}
         @keyframes firePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
         .challenge-streak-days{display:flex;gap:3px;margin-top:6px;margin-bottom:8px}
-        .streak-day{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,0.4);font-weight:700}
+        .streak-day{width:28px;height:28px;border-radius:0;border:2px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,0.4);font-weight:700}
         .streak-day.completed{border-color:#ffd700;background:rgba(255,215,0,0.3);color:#ffd700}
         .streak-day.today{border-color:#4caf50;box-shadow:0 0 8px rgba(76,175,80,0.5)}
         .streak-day.today.completed{border-color:#ffd700;background:linear-gradient(135deg,#ffd700,#ff9800);color:#1a1a2e}
+        .confetti-piece{border-radius:0!important}
         .challenge-title{font-family:'Bebas Neue',sans-serif;font-size:18px;color:#e8d5ff;margin-bottom:5px}
         .challenge-desc{font-size:11px;color:rgba(255,255,255,0.8);margin-bottom:8px}
         .challenge-progress{display:flex;justify-content:space-between;align-items:center}
@@ -557,7 +558,7 @@
         </div>
     </div>
     <div class="screen shop-screen" id="shopScreen">
-        <div class="shop-header"><h2 class="shop-title">PRO SHOP</h2><button class="back-btn" onclick="closeShop()">BACK</button></div>
+        <div class="shop-header"><h2 class="shop-title">PRO SHOP</h2><button class="back-btn" onclick="closeShop()" style="margin-right:40px">BACK</button></div>
         <div class="shop-tabs">
             <button class="shop-tab active" onclick="switchTab('training',this)">Training</button>
             <button class="shop-tab" onclick="switchTab('serve',this)">Serve</button>
@@ -568,9 +569,9 @@
         <div class="shop-items" id="shopItems"></div>
     </div>
     <div class="screen char-select" id="charSelect">
-        <div class="char-header"><h2 class="char-title">SELECT PLAYER</h2><button class="back-btn" onclick="closeCharSelect()">BACK</button></div>
+        <div class="char-header"><h2 class="char-title">SELECT PLAYER</h2><button class="back-btn" onclick="closeCharSelect()" style="margin-right:40px">BACK</button></div>
         <div class="char-detail" id="charDetail">
-            <div class="char-detail-preview animating" id="charDetailPreview"></div>
+            <div class="char-detail-preview" id="charDetailPreview"></div>
             <div class="char-detail-name" id="charDetailName">ROGER FEDORA</div>
             <div class="char-detail-stats">
                 <div class="char-stat"><div class="char-stat-label">Power</div><div class="char-stat-value" id="charPower">50</div></div>
@@ -583,7 +584,7 @@
     </div>
     <!-- Trophy Case -->
     <div class="screen trophy-screen" id="trophyScreen">
-        <div class="trophy-header"><h2 class="trophy-title">TROPHY CASE</h2><button class="back-btn" onclick="closeTrophyCase()">BACK</button></div>
+        <div class="trophy-header"><h2 class="trophy-title">TROPHY CASE</h2><button class="back-btn" onclick="closeTrophyCase()" style="margin-right:40px">BACK</button></div>
         <div class="trophy-grid" id="trophyGrid"></div>
     </div>
     <!-- Achievement popup -->
@@ -1412,9 +1413,9 @@ const SHOP={
 
 // Difficulty settings with serve parameters
 const DIFF={
-    rookie:{speed:1.1,oppSpeed:0.07,hitWindow:0.38,oppAcc:0.65,mult:1,time:120,serveFaultChance:0.15,oppServeSpeed:0.8},
-    pro:{speed:1.5,oppSpeed:0.11,hitWindow:0.28,oppAcc:0.8,mult:2,time:150,serveFaultChance:0.25,oppServeSpeed:1.0},
-    legend:{speed:1.85,oppSpeed:0.16,hitWindow:0.18,oppAcc:0.92,mult:3,time:180,serveFaultChance:0.35,oppServeSpeed:1.2}
+    rookie:{speed:1.2,oppSpeed:0.08,hitWindow:0.38,oppAcc:0.6,mult:1,time:120,serveFaultChance:0.15,oppServeSpeed:0.85},
+    pro:{speed:1.55,oppSpeed:0.12,hitWindow:0.28,oppAcc:0.78,mult:2,time:150,serveFaultChance:0.25,oppServeSpeed:1.0},
+    legend:{speed:1.9,oppSpeed:0.17,hitWindow:0.18,oppAcc:0.9,mult:3,time:180,serveFaultChance:0.35,oppServeSpeed:1.2}
 };
 
 // Match state with proper tennis rules
@@ -2468,13 +2469,13 @@ function opponentReturn(){
     }, 120);
 
     M.ballBounces = 0;
-    M.ballH = 50;
+    M.ballH = 45;
 
     const targetX = M.playerPos + (Math.random() - 0.5) * 40;
     M.ballVel = {
-        x: (targetX - M.ballPos.x) / 90,
-        y: M.settings.speed * 0.55,
-        z: 1.8
+        x: (targetX - M.ballPos.x) / 85,
+        y: M.settings.speed * 0.7,
+        z: 1.9
     };
 
     // Now normal rally begins
@@ -2939,7 +2940,7 @@ function selectCharacter(char){
     document.querySelectorAll('.char-card').forEach((el,i) =>
         el.classList.toggle('selected', window.CHARACTERS[i].id === char.id));
     const sprites = getCharSprites(char);
-    { const _el = safeGetElement('charDetailPreview'); if(_el) _el.style.backgroundImage = `url(sprites-v2/thumbs/${char.id}-thumb.png?v=31)`; }
+    { const _el = safeGetElement('charDetailPreview'); if(_el) { _el.style.backgroundImage = `url(sprites-v2/thumbs/${char.id}-thumb.png?v=31)`; _el.classList.remove('animating'); } }
     { const _el = safeGetElement('charDetailName'); if(_el) _el.textContent = char.name.toUpperCase(); }
     { const _el = safeGetElement('charPower'); if(_el) _el.textContent = char.power; }
     { const _el = safeGetElement('charSpeed'); if(_el) _el.textContent = char.speed; }
@@ -3705,9 +3706,13 @@ function animateBall(){
     }
 
     // Air resistance for realistic deceleration
-    const resistance = 0.9995;
+    const resistance = 0.998;
     M.ballVel.x *= resistance;
     M.ballVel.y *= resistance;
+
+    // Visual speed indicator
+    const ball = safeGetElement('ball');
+    if(ball) ball.classList.toggle('fast', isHighSpeed);
 
     // NET COLLISION CHECK: ball must have sufficient height to cross the net (y ~50-54%)
     const prevY = M.ballPos.y - M.ballVel.y;
@@ -3795,12 +3800,15 @@ function animateBall(){
         return;
     }
 
-    const ball = safeGetElement('ball');
     const shadow = safeGetElement('ballShadow');
-    ball.style.left = M.ballPos.x + '%';
-    ball.style.top = (M.ballPos.y - M.ballH/10) + '%';
-    shadow.style.left = M.ballPos.x + '%';
-    shadow.style.top = M.ballPos.y + '%';
+    if(ball) {
+        ball.style.left = M.ballPos.x + '%';
+        ball.style.top = (M.ballPos.y - M.ballH/10) + '%';
+    }
+    if(shadow) {
+        shadow.style.left = M.ballPos.x + '%';
+        shadow.style.top = M.ballPos.y + '%';
+    }
 
     // Check if ball is in player's hit zone (adjusted for net position)
     const st = getStats();
@@ -4241,16 +4249,16 @@ function returnBall(qual, angle){
     if (M.atNet) {
         M.ballH = 15;
         M.ballVel = {
-            x: Math.max(-1.6, Math.min(1.6, (ang + pos) * 0.9)),
-            y: -2.2 * spd * qual * 0.7,
-            z: 1.2 * qual  // Much flatter trajectory
+            x: Math.max(-1.8, Math.min(1.8, (ang + pos) * 1.0)),
+            y: -2.6 * spd * qual * 0.7,
+            z: 1.0 * qual  // Much flatter trajectory
         };
     } else {
-        M.ballH = 30;
+        M.ballH = 25;
         M.ballVel = {
-            x: Math.max(-1.3, Math.min(1.3, (ang + pos) * 0.75)),
-            y: -1.6 * spd * qual * (0.55 + Math.random() * 0.2),
-            z: 2.5 * qual
+            x: Math.max(-1.5, Math.min(1.5, (ang + pos) * 0.85)),
+            y: -2.0 * spd * qual * (0.6 + Math.random() * 0.2),
+            z: 2.2 * qual
         };
     }
 
@@ -4317,6 +4325,7 @@ function animateReturn(){
             // Player hit it out - opponent gets point
             showCallOverlay('OUT!', false);
             M.streak = 0;
+            updateMatchStreakDisplay();
             if(!scorePoint('o')) setTimeout(startNextPoint, 1200);
         } else {
             // Opponent hit it out - player gets point
@@ -4328,12 +4337,19 @@ function animateReturn(){
         return;
     }
 
-    const ball = safeGetElement('ball');
-    const shadow = safeGetElement('ballShadow');
-    ball.style.left = M.ballPos.x + '%';
-    ball.style.top = (M.ballPos.y - M.ballH/10) + '%';
-    shadow.style.left = M.ballPos.x + '%';
-    shadow.style.top = M.ballPos.y + '%';
+    const rBall = safeGetElement('ball');
+    const rShadow = safeGetElement('ballShadow');
+    if(rBall) {
+        rBall.style.left = M.ballPos.x + '%';
+        rBall.style.top = (M.ballPos.y - M.ballH/10) + '%';
+        // Speed visual
+        const rSpeed = Math.sqrt(M.ballVel.x*M.ballVel.x + M.ballVel.y*M.ballVel.y);
+        rBall.classList.toggle('fast', rSpeed > 1.5);
+    }
+    if(rShadow) {
+        rShadow.style.left = M.ballPos.x + '%';
+        rShadow.style.top = M.ballPos.y + '%';
+    }
 
     // Ball reached opponent's side (adjusted for net position)
     const oppReachY = M.oppAtNet ? (M.oppY + 5) : 12;
@@ -4364,25 +4380,25 @@ function animateReturn(){
             updateMatchUI();
 
             M.ballPos = {x: M.oppPos, y: 12};
-            M.ballH = 60;
+            M.ballH = 50;
 
             const tx = M.playerPos > 50 ? 25 + Math.floor(Math.random() * 25) : 50 + Math.floor(Math.random() * 25);
             M.ballVel = {
-                x: (tx - M.ballPos.x) / 100 * 1.8,
-                y: M.settings.speed * 0.6,
-                z: 1.5
+                x: (tx - M.ballPos.x) / 90 * 1.8,
+                y: M.settings.speed * 0.75,
+                z: 1.8
             };
             M.ballSpin = (Math.random() - 0.5) * 0.3;
 
             // Opponent volley: faster/flatter when at net
             if (M.oppAtNet) {
                 M.ballPos = {x: M.oppPos, y: M.oppY + 3};
-                M.ballH = 20;
+                M.ballH = 18;
                 const tx2 = M.playerPos > 50 ? 25 + Math.floor(Math.random() * 25) : 50 + Math.floor(Math.random() * 25);
                 M.ballVel = {
-                    x: (tx2 - M.ballPos.x) / 100 * 2.2,
-                    y: M.settings.speed * 0.85,
-                    z: 0.8
+                    x: (tx2 - M.ballPos.x) / 80 * 2.2,
+                    y: M.settings.speed * 1.0,
+                    z: 0.6
                 };
             }
 
@@ -4651,7 +4667,7 @@ function spawnConfetti() {
             piece.style.width = (6 + Math.random() * 8) + 'px';
             piece.style.height = (6 + Math.random() * 8) + 'px';
             piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-            piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+            piece.style.borderRadius = '0';
             piece.style.animationDuration = (2 + Math.random() * 2) + 's';
             piece.style.animationDelay = '0s';
             document.body.appendChild(piece);
