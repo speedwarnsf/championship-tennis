@@ -2064,52 +2064,59 @@ function selectRandomOpponent(){
     return opponentChar;
 }
 
+// Characters that have dedicated idle sprites
+const CHARS_WITH_IDLE = ['player1', 'player2', 'player4'];
+
 function getPlayerSprites(char){
     // Get sprites for player (back view)
-    // Use multi-frame sprite sheets when available (sprites-v2/sheets/)
-    const sheetBase = 'sprites-v2/sheets/' + char.id + '-back-';
-    // Disable sprite sheets — current sheets are wrong dimensions (2816x1536 vs expected 640x96) and lack alpha transparency
     const hasSheet = false;
+    const hasIdle = CHARS_WITH_IDLE.includes(char.id);
 
     if(char.id === 'player1'){
         return {
-            swing: hasSheet ? sheetBase + 'swing-sheet.png' + V : 'player-retro-backswing.png' + V,
-            run: hasSheet ? sheetBase + 'run-sheet.png' + V : 'player-retro-run.png' + V,
-            idle: hasSheet ? sheetBase + 'idle-sheet.png' + V : 'player-idle-v2.png' + V,
-            idleIsSheet: hasSheet,
+            swing: 'player-retro-backswing.png' + V,
+            run: 'player-retro-run.png' + V,
+            idle: 'player-idle-v2.png' + V,
+            idleIsSheet: false,
             swingSingle: 'player-retro-backswing.png' + V,
             runSingle: 'player-retro-run.png' + V,
             idleSingle: 'player-idle-v2.png' + V
         };
     }
     const base = 'sprites-v2/characters/' + char.id + '-';
+    // Fall back to run sprite for idle if no dedicated idle exists
+    const idleSrc = hasIdle ? base + 'back-idle.png' + V : base + 'back-run.png' + V;
     return {
-        swing: hasSheet ? sheetBase + 'swing-sheet.png' + V : base + 'back-swing.png' + V,
-        run: hasSheet ? sheetBase + 'run-sheet.png' + V : base + 'back-run.png' + V,
-        idle: base + 'back-idle.png' + V,
-        idleIsSheet: false,
+        swing: base + 'back-swing.png' + V,
+        run: base + 'back-run.png' + V,
+        idle: idleSrc,
+        idleIsSheet: !hasIdle, // run sprite is a sheet; idle-only sprites are single frame
         swingSingle: base + 'back-swing.png' + V,
         runSingle: base + 'back-run.png' + V,
-        idleSingle: base + 'back-idle.png' + V
+        idleSingle: hasIdle ? base + 'back-idle.png' + V : base + 'back-run.png' + V
     };
 }
 
 function getOpponentSprites(char){
     // Get sprites for opponent (front view)
+    const hasIdle = CHARS_WITH_IDLE.includes(char.id);
+
     if(char.id === 'player1'){
         return {
             swing: 'opponent-retro-frontswing.png' + V,
             run: 'opponent-retro-run.png' + V,
             idle: 'opponent-idle-v2.png' + V,
-            idleIsSheet: false  // player1 has a dedicated single-frame idle
+            idleIsSheet: false
         };
     }
     const base = 'sprites-v2/characters/' + char.id + '-';
+    // Fall back to run sprite for idle if no dedicated idle exists
+    const idleSrc = hasIdle ? base + 'front-idle.png' + V : base + 'front-run.png' + V;
     return {
         swing: base + 'front-swing.png' + V,
         run: base + 'front-run.png' + V,
-        idle: base + 'front-idle.png' + V,
-        idleIsSheet: false
+        idle: idleSrc,
+        idleIsSheet: !hasIdle // run sprite is a sheet
     };
 }
 
