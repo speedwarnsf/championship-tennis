@@ -112,9 +112,16 @@ const PerformanceOptimizer = {
     frameSkipCount: 0,
     consecutiveLowFPS: 0,
 
+    _monitoring: false,
+
     init() {
-        this.monitorPerformance();
         this.optimizeForDevice();
+    },
+
+    startMonitoring() {
+        if (this._monitoring) return;
+        this._monitoring = true;
+        this.monitorPerformance();
     },
 
     monitorPerformance() {
@@ -1823,6 +1830,7 @@ function opponentServe(){
 
 function startGame(){
     console.log(' startGame() function called');
+    PerformanceOptimizer.startMonitoring();
     try {
         if(!audio) {
             console.log(' Initializing audio...');
