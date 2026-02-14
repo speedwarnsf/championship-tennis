@@ -368,17 +368,17 @@
         .progress-toast.show{top:40px}
         .shop-screen{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:12px;overflow-y:auto;z-index:1100;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
         /* ARCADE STYLE CHARACTER SELECT */
-        .char-select{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:10px 10px 80px;overflow-y:auto;z-index:1100;flex-direction:column;position:relative;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+        .char-select{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:10px 10px 80px;overflow-y:scroll;overflow-x:hidden;z-index:1100;flex-direction:column;position:relative;touch-action:pan-y;-webkit-overflow-scrolling:touch;-ms-overflow-style:none;scrollbar-width:none}
         .char-select::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.1) 2px,rgba(0,0,0,0.1) 4px);pointer-events:none;z-index:9999}
-        .char-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;flex:1;padding:10px;background:linear-gradient(135deg,#2a3a5a 0%,#1a2a4a 100%);border:3px solid #4a6a9a;border-radius:8px;box-shadow:inset 0 2px 4px rgba(0,0,0,0.5),0 4px 8px rgba(0,0,0,0.3);max-height:calc(100vh - 280px);min-height:200px}
+        .char-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;-webkit-overflow-scrolling:touch;flex:1;padding:10px;background:linear-gradient(135deg,#2a3a5a 0%,#1a2a4a 100%);border:3px solid #4a6a9a;box-shadow:inset 0 2px 4px rgba(0,0,0,0.5),0 4px 8px rgba(0,0,0,0.3);max-height:calc(100vh - 280px);min-height:200px}
         .char-select-btn{position:fixed;bottom:15px;left:15px;right:15px;z-index:1101;background:linear-gradient(180deg,#ffd700 0%,#cc9900 50%,#aa7700 100%)!important;border:3px solid!important;border-color:#ffed4e #886600 #886600 #ffed4e!important;color:#000!important;text-shadow:none!important;box-shadow:3px 3px 0 #0a1a2a!important;font-size:16px!important;letter-spacing:3px!important}
         .char-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:8px 12px;background:linear-gradient(180deg,#4a6a9a 0%,#3a5a8a 50%,#2a4a7a 100%);border:2px solid #6a8aba;border-radius:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 2px 4px rgba(0,0,0,0.3)}
         .char-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;text-shadow:2px 2px 0 #000,0 0 10px rgba(100,200,255,0.5);letter-spacing:3px}
-        .char-card{background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 50%,#1a2a4a 100%);border:3px solid;border-color:#6a8aba #2a3a5a #2a3a5a #6a8aba;border-radius:4px;padding:6px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:2px 2px 0 #0a1a2a}
+        .char-card{background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 50%,#1a2a4a 100%);border:3px solid;border-color:#6a8aba #2a3a5a #2a3a5a #6a8aba;padding:6px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:2px 2px 0 #0a1a2a;overflow:hidden;min-width:0}
         .char-card:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #0a1a2a}
         .char-card.selected{border-color:#ffd700 #aa8800 #aa8800 #ffd700;background:linear-gradient(180deg,#4a5a7a 0%,#3a4a6a 50%,#2a3a5a 100%);box-shadow:2px 2px 0 #0a1a2a,0 0 8px rgba(255,215,0,0.2)}
         .char-card.locked{opacity:0.6;filter:grayscale(0.5) brightness(0.7)}
-        .char-preview{width:64px;height:77px;margin:0 auto 4px;background-size:512px 77px;background-repeat:no-repeat;background-position:0 0;image-rendering:pixelated;border:2px solid #1a2a4a;background-color:#0a0a1a}
+        .char-preview{width:64px;height:96px;margin:0 auto 4px;background-size:640px 96px;background-repeat:no-repeat;background-position:0 0;image-rendering:pixelated;border:2px solid #1a2a4a;background-color:#0a0a1a}
         .char-name{font-size:9px;color:#8ac;font-weight:700;text-transform:uppercase;text-shadow:1px 1px 0 #000;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .char-stats{font-size:8px;color:#6a8aba;margin-top:2px;font-family:monospace}
         .char-stat-bars{margin-top:4px}
