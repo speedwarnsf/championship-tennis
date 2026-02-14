@@ -736,6 +736,7 @@ const AudioManager = {
     _crowdTarget: 0,
 
     init() {
+        if (this.ctx) return; // Already initialized
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         this.masterGain = this.ctx.createGain();
         this.masterGain.connect(this.ctx.destination);
