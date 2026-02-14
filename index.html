@@ -5169,26 +5169,10 @@ const _spriteSheetCache = {};
 
 function detectSpriteSheet(url) {
     return new Promise((resolve) => {
-        // Detect actual image dimensions to handle sprite sheets properly
-        const img = new Image();
-        img.onload = function() {
-            const w = img.naturalWidth;
-            const h = img.naturalHeight;
-            if (w > 100 && h <= 128) {
-                // Wide image = sprite sheet (e.g. 640x96 = 8 frames at 80px each)
-                const frameW = 80;
-                const frames = Math.round(w / frameW);
-                _spriteSheetCache[url] = { isSheet: true, frames: frames, width: w, height: h };
-            } else {
-                _spriteSheetCache[url] = { isSheet: false, frames: 1, width: w || 80, height: h || 96 };
-            }
-            resolve(_spriteSheetCache[url]);
-        };
-        img.onerror = function() {
-            _spriteSheetCache[url] = { isSheet: false, frames: 1, width: 80, height: 96 };
-            resolve(_spriteSheetCache[url]);
-        };
-        img.src = url;
+        // All game sprites are 640x96 sheets (8 frames at 80px each)
+        // Force correct dimensions so _applyFrame uses proper background-size
+        _spriteSheetCache[url] = { isSheet: true, frames: 8, width: 640, height: 96 };
+        resolve(_spriteSheetCache[url]);
     });
 }
 
