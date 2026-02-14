@@ -2839,11 +2839,11 @@ function getPlayerSprites(char){
     return {
         swing: hasSheet ? sheetBase + 'swing-sheet.png' + V : base + 'back-swing.png' + V,
         run: hasSheet ? sheetBase + 'run-sheet.png' + V : base + 'back-run.png' + V,
-        idle: hasSheet ? sheetBase + 'idle-sheet.png' + V : base + 'back-swing.png' + V,
+        idle: base + 'back-idle.png' + V,
         idleIsSheet: false,
         swingSingle: base + 'back-swing.png' + V,
         runSingle: base + 'back-run.png' + V,
-        idleSingle: base + 'back-swing.png' + V
+        idleSingle: base + 'back-idle.png' + V
     };
 }
 
@@ -2861,8 +2861,8 @@ function getOpponentSprites(char){
     return {
         swing: base + 'front-swing.png' + V,
         run: base + 'front-run.png' + V,
-        idle: base + 'front-swing.png' + V,
-        idleIsSheet: false  // disabled until proper sheets generated
+        idle: base + 'front-idle.png' + V,
+        idleIsSheet: false
     };
 }
 
