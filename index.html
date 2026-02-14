@@ -443,16 +443,24 @@
     }
 }
 
-/* Performance optimizations */
+/* Enhanced performance optimizations */
 .performance-mode .particle-effect,
-.performance-mode .ball-trail {
+.performance-mode .ball-trail,
+.performance-mode .screen-shake-container {
     display: none !important;
 }
 
 .performance-mode .court-animation,
-.performance-mode .screen-shake {
+.performance-mode .screen-shake,
+.performance-mode .sprite-inner {
     animation: none !important;
+    transition: none !important;
+}
+
+.performance-mode .player-sprite,
+.performance-mode .opponent {
     transform: none !important;
+    transition: none !important;
 }
 
 .low-performance .complex-gradient {
@@ -460,9 +468,15 @@
 }
 
 .low-performance .text-shadow,
-.low-performance .box-shadow {
+.low-performance .box-shadow,
+.low-performance .filter {
     text-shadow: none !important;
     box-shadow: none !important;
+    filter: none !important;
+}
+
+.low-performance * {
+    transition-duration: 0.01ms !important;
 }
 
 </style>
@@ -852,12 +866,15 @@ const ErrorRecovery = {
     }
 };
 
-// Performance optimizations
+// Enhanced performance optimization system
 const PerformanceOptimizer = {
     frameSkipping: false,
+    frameSkipCount: 0,
+    consecutiveLowFPS: 0,
 
     init() {
         this.monitorPerformance();
+        this.optimizeForDevice();
     },
 
     monitorPerformance() {
@@ -871,10 +888,16 @@ const PerformanceOptimizer = {
             if (now - lastCheck >= 1000) {
                 const fps = frameCount * 1000 / (now - lastCheck);
 
-                if (fps < 25) {
-                    this.enableFrameSkipping();
-                } else if (fps > 50 && this.frameSkipping) {
-                    this.disableFrameSkipping();
+                if (fps < 30) {
+                    this.consecutiveLowFPS++;
+                    if (this.consecutiveLowFPS >= 2) {
+                        this.enableFrameSkipping();
+                    }
+                } else if (fps > 50) {
+                    this.consecutiveLowFPS = 0;
+                    if (fps > 55 && this.frameSkipping) {
+                        this.disableFrameSkipping();
+                    }
                 }
 
                 frameCount = 0;
@@ -887,9 +910,23 @@ const PerformanceOptimizer = {
         requestAnimationFrame(checkPerformance);
     },
 
+    optimizeForDevice() {
+        // More aggressive optimization for lower-end devices
+        if (navigator.hardwareConcurrency <= 4 || navigator.deviceMemory < 4) {
+            document.body.classList.add('low-performance');
+            this.enableFrameSkipping();
+        }
+    },
+
+    shouldSkipFrame() {
+        if (!this.frameSkipping) return false;
+        this.frameSkipCount++;
+        return this.frameSkipCount % 2 === 0;
+    },
+
     enableFrameSkipping() {
         if (!this.frameSkipping) {
-            console.log(' Enabling performance optimizations');
+            console.log('⚡ Enabling performance optimizations - frame skipping active');
             this.frameSkipping = true;
             document.body.classList.add('performance-mode');
         }
@@ -897,8 +934,9 @@ const PerformanceOptimizer = {
 
     disableFrameSkipping() {
         if (this.frameSkipping) {
-            console.log(' Disabling performance optimizations');
+            console.log('🔥 Disabling performance optimizations - full frame rate');
             this.frameSkipping = false;
+            this.frameSkipCount = 0;
             document.body.classList.remove('performance-mode');
         }
     }
@@ -3641,6 +3679,12 @@ function animateBall(){
         return;
     }
 
+    // Performance optimization: skip frames when needed
+    if (window.PerformanceOptimizer && window.PerformanceOptimizer.shouldSkipFrame()) {
+        requestAnimationFrame(animateBall);
+        return;
+    }
+
     // Enhanced physics with momentum conservation
     const speed = Math.sqrt(M.ballVel.x*M.ballVel.x + M.ballVel.y*M.ballVel.y);
     const isHighSpeed = speed > 1.5;
@@ -4216,6 +4260,12 @@ function returnBall(qual, angle){
 function animateReturn(){
     if(!M.ballActive) return;
     if(window.animationPaused){
+        requestAnimationFrame(animateReturn);
+        return;
+    }
+
+    // Performance optimization: skip frames when needed
+    if (window.PerformanceOptimizer && window.PerformanceOptimizer.shouldSkipFrame()) {
         requestAnimationFrame(animateReturn);
         return;
     }
@@ -4934,6 +4984,12 @@ let playerVelocity = 0;
 function lerpPlayerMovement() {
     if(!M.active) { playerLerpActive = false; playerVelocity = 0; return; }
 
+    // Performance optimization: skip frames when needed
+    if (window.PerformanceOptimizer && window.PerformanceOptimizer.shouldSkipFrame()) {
+        requestAnimationFrame(lerpPlayerMovement);
+        return;
+    }
+
     const diff = playerTargetPos - playerCurrentPos;
     // Spring-damper system for fluid motion
     const springForce = diff * 0.15;
@@ -5263,6 +5319,12 @@ class SpriteAnimator {
 
     _tick(timestamp) {
         if (!this.animating) return;
+
+        // Performance optimization: skip frames when needed
+        if (window.PerformanceOptimizer && window.PerformanceOptimizer.shouldSkipFrame()) {
+            this.rafId = requestAnimationFrame((t) => this._tick(t));
+            return;
+        }
 
         const dt = timestamp - this.lastTick;
         this.lastTick = timestamp;
