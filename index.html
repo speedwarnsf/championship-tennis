@@ -378,7 +378,7 @@
         .char-card:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #0a1a2a}
         .char-card.selected{border-color:#ffd700 #aa8800 #aa8800 #ffd700;background:linear-gradient(180deg,#4a5a7a 0%,#3a4a6a 50%,#2a3a5a 100%);box-shadow:2px 2px 0 #0a1a2a,0 0 8px rgba(255,215,0,0.2)}
         .char-card.locked{opacity:0.6;filter:grayscale(0.5) brightness(0.7)}
-        .char-preview{width:80px;height:96px;margin:0 auto 4px;background-size:640px 96px;background-repeat:no-repeat;background-position:0 0;image-rendering:pixelated;border:2px solid #1a2a4a;background-color:#0a0a1a}
+        .char-preview{width:80px;height:96px;margin:0 auto 4px;background-size:80px 96px;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;border:2px solid #1a2a4a;background-color:#0a0a1a}
         .char-name{font-size:9px;color:#8ac;font-weight:700;text-transform:uppercase;text-shadow:1px 1px 0 #000;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .char-stats{font-size:8px;color:#6a8aba;margin-top:2px;font-family:monospace}
         .char-stat-bars{margin-top:4px}
@@ -391,7 +391,7 @@
         .stat-fill.ctl{background:linear-gradient(90deg,#45aaf2,#2d98da)}
         .char-lock{font-size:16px;margin-bottom:3px;filter:drop-shadow(0 0 3px #000)}
         .char-detail{background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 100%);border:3px solid;border-color:#6a8aba #2a3a5a #2a3a5a #6a8aba;border-radius:0;padding:12px;margin-bottom:10px;box-shadow:3px 3px 0 #0a1a2a}
-        .char-detail-preview{width:80px;height:96px;margin:0 auto 8px;background-size:640px 96px;background-repeat:no-repeat;background-position:0 0;image-rendering:pixelated;border:2px solid #1a2a4a;background-color:#0a0a1a}
+        .char-detail-preview{width:80px;height:96px;margin:0 auto 8px;background-size:80px 96px;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;border:2px solid #1a2a4a;background-color:#0a0a1a}
         .char-detail-preview.animating{animation:charPreview 1.2s steps(7) infinite}
         @keyframes charPreview{0%{background-position:0 0}100%{background-position:-504px 0}}
         .char-detail-name{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#ffd700;text-align:center;text-shadow:2px 2px 0 #000;letter-spacing:2px}
@@ -2913,7 +2913,7 @@ function renderCharGrid(){
     for(var i = 0; i < chars.length; i++){
         var c = chars[i];
         var unlocked = c.unlocked || (window.G && window.G.unlockedChars && window.G.unlockedChars.indexOf(c.id) >= 0);
-        var spriteUrl = c.id === 'player1' ? 'player-retro-backswing.png' + V : 'sprites-v2/characters/' + c.id + '-back-swing.png' + V;
+        var spriteUrl = 'sprites-v2/thumbs/' + c.id + '-thumb.png' + V;
         var isSelected = selectedChar && selectedChar.id === c.id;
         html += '<div class="char-card' + (isSelected ? ' selected' : '') + (unlocked ? '' : ' locked') + '" ';
         html += 'onclick="' + (unlocked ? 'selectCharacter(window.CHARACTERS[' + i + '])' : 'tryUnlock(\'' + c.id + '\')') + '">';
@@ -2939,7 +2939,7 @@ function selectCharacter(char){
     document.querySelectorAll('.char-card').forEach((el,i) =>
         el.classList.toggle('selected', window.CHARACTERS[i].id === char.id));
     const sprites = getCharSprites(char);
-    { const _el = safeGetElement('charDetailPreview'); if(_el) _el.style.backgroundImage = `url(${sprites.playerSwing})`; }
+    { const _el = safeGetElement('charDetailPreview'); if(_el) _el.style.backgroundImage = `url(sprites-v2/thumbs/${char.id}-thumb.png?v=31)`; }
     { const _el = safeGetElement('charDetailName'); if(_el) _el.textContent = char.name.toUpperCase(); }
     { const _el = safeGetElement('charPower'); if(_el) _el.textContent = char.power; }
     { const _el = safeGetElement('charSpeed'); if(_el) _el.textContent = char.speed; }
