@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Championship Tennis - Sprite Animation Showcase</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; border-radius: 0 !important; }
+body { background: #1a1a2e; color: #e0e0e0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; }
+h1 { font-size: 24px; color: #00ff88; margin-bottom: 4px; letter-spacing: 2px; }
+.subtitle { color: #666; font-size: 12px; margin-bottom: 20px; }
+.court { width: 400px; height: 360px; background: linear-gradient(180deg, #2d5a1e 0%, #3a7a28 40%, #c4956a 60%, #b8845c 100%); border: 3px solid #444; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.court::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: #fff; opacity: 0.4; }
+.court::after { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #fff; opacity: 0.15; }
+.net { position: absolute; top: 48%; left: 10%; right: 10%; height: 6px; background: repeating-linear-gradient(90deg, #fff 0px, #fff 4px, transparent 4px, transparent 8px); opacity: 0.5; }
+#sprite { width: 320px; height: 384px; image-rendering: pixelated; image-rendering: crisp-edges; background-repeat: no-repeat; position: relative; z-index: 1; }
+#sprite.mirrored { transform: scaleX(-1); }
+.info { margin: 16px 0 8px; text-align: center; }
+#charName { font-size: 20px; color: #00ff88; font-weight: bold; }
+#animName { font-size: 16px; color: #ffaa00; margin-top: 4px; }
+#frameInfo { font-size: 12px; color: #666; margin-top: 2px; }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 10px 0; max-width: 500px; }
+button { background: #2a2a4a; color: #e0e0e0; border: 2px solid #444; padding: 8px 14px; font-family: 'Courier New', monospace; font-size: 13px; cursor: pointer; transition: background 0.15s; }
+button:hover { background: #3a3a6a; border-color: #00ff88; }
+button.active { background: #00ff88; color: #1a1a2e; border-color: #00ff88; font-weight: bold; }
+select { background: #2a2a4a; color: #e0e0e0; border: 2px solid #444; padding: 8px 12px; font-family: 'Courier New', monospace; font-size: 13px; cursor: pointer; }
+.row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+label { font-size: 12px; color: #888; }
+.speed-controls button { padding: 6px 10px; font-size: 11px; }
+</style>
+</head>
+<body>
+<h1>SPRITE ANIMATION SHOWCASE</h1>
+<div class="subtitle">Championship Tennis - Animation Test Page</div>
+
+<div class="row">
+  <label>CHARACTER:</label>
+  <select id="charSelect"></select>
+</div>
+
+<div class="court">
+  <div class="net"></div>
+  <div id="sprite"></div>
+</div>
+
+<div class="info">
+  <div id="charName">player2</div>
+  <div id="animName">Idle</div>
+  <div id="frameInfo">Frame 0/0</div>
+</div>
+
+<div class="controls" id="animButtons"></div>
+
+<div class="row">
+  <label>SPEED:</label>
+  <div class="controls speed-controls">
+    <button onclick="setSpeed(200)" id="speed-slow">Slow</button>
+    <button onclick="setSpeed(100)" id="speed-normal" class="active">Normal</button>
+    <button onclick="setSpeed(50)" id="speed-fast">Fast</button>
+  </div>
+  <button id="autoBtn" onclick="toggleAuto()">AUTO CYCLE: OFF</button>
+</div>
+
+<script>
+const CHARACTERS = [
+  'player2','player3','player4','player5','player6','player7','player8','player9',
+  'player10','player11','player12',
+  'punk','chubby','beach','goth','anime','latino','redhead','grandpa','indian'
+];
+
+const ANIMATIONS = [
+  { name: 'Idle', sheet: 'front-run', frames: 1, mirror: false },
+  { name: 'Run Forward', sheet: 'front-run', frames: 8, mirror: false },
+  { name: 'Run Back', sheet: 'back-run', frames: 8, mirror: false },
+  { name: 'Swing Forehand', sheet: 'front-swing', frames: 8, mirror: false },
+  { name: 'Swing Backhand', sheet: 'back-swing', frames: 8, mirror: true },
+  { name: 'Serve', sheet: 'back-swing', frames: 8, mirror: false },
+];
+
+const SCALE = 4;
+const FRAME_W = 80, FRAME_H = 96;
+const SW = FRAME_W * SCALE, SH = FRAME_H * SCALE;
+const SHEET_W = 640 * SCALE;
+
+let currentChar = 'player2';
+let currentAnim = 0;
+let currentFrame = 0;
+let frameInterval = 100;
+let animTimer = null;
+let autoMode = false;
+let autoTimer = null;
+
+const sprite = document.getElementById('sprite');
+const charSelect = document.getElementById('charSelect');
+const charNameEl = document.getElementById('charName');
+const animNameEl = document.getElementById('animName');
+const frameInfoEl = document.getElementById('frameInfo');
+const animButtonsEl = document.getElementById('animButtons');
+
+// Populate character select
+CHARACTERS.forEach(c => {
+  const o = document.createElement('option');
+  o.value = c; o.textContent = c;
+  charSelect.appendChild(o);
+});
+charSelect.value = currentChar;
+charSelect.addEventListener('change', () => { currentChar = charSelect.value; setAnim(currentAnim); });
+
+// Populate animation buttons
+ANIMATIONS.forEach((a, i) => {
+  const b = document.createElement('button');
+  b.textContent = a.name;
+  b.id = 'anim-btn-' + i;
+  b.onclick = () => { autoMode = false; updateAutoBtn(); setAnim(i); };
+  animButtonsEl.appendChild(b);
+});
+
+function sheetUrl(char, sheet) {
+  return 'sprites-v2/characters/' + char + '-' + sheet + '.png';
+}
+
+function setAnim(idx) {
+  currentAnim = idx;
+  currentFrame = 0;
+  const a = ANIMATIONS[idx];
+  
+  sprite.style.width = SW + 'px';
+  sprite.style.height = SH + 'px';
+  sprite.style.backgroundImage = 'url(' + sheetUrl(currentChar, a.sheet) + ')';
+  sprite.style.backgroundSize = SHEET_W + 'px ' + SH + 'px';
+  sprite.className = a.mirror ? 'mirrored' : '';
+  
+  charNameEl.textContent = currentChar;
+  animNameEl.textContent = a.name;
+  
+  // Update button highlights
+  ANIMATIONS.forEach((_, i) => {
+    document.getElementById('anim-btn-' + i).className = i === idx ? 'active' : '';
+  });
+  
+  clearInterval(animTimer);
+  if (a.frames === 1) {
+    sprite.style.backgroundPositionX = '0px';
+    frameInfoEl.textContent = 'Frame 1/1 (static)';
+  } else {
+    updateFrame();
+    animTimer = setInterval(() => {
+      currentFrame = (currentFrame + 1) % a.frames;
+      updateFrame();
+    }, frameInterval);
+  }
+}
+
+function updateFrame() {
+  sprite.style.backgroundPositionX = -(currentFrame * FRAME_W * SCALE) + 'px';
+  frameInfoEl.textContent = 'Frame ' + (currentFrame + 1) + '/' + ANIMATIONS[currentAnim].frames;
+}
+
+function setSpeed(ms) {
+  frameInterval = ms;
+  document.getElementById('speed-slow').className = ms === 200 ? 'active' : '';
+  document.getElementById('speed-normal').className = ms === 100 ? 'active' : '';
+  document.getElementById('speed-fast').className = ms === 50 ? 'active' : '';
+  setAnim(currentAnim); // restart with new speed
+}
+
+function toggleAuto() {
+  autoMode = !autoMode;
+  updateAutoBtn();
+  if (autoMode) {
+    setAnim(0);
+    autoTimer = setInterval(() => {
+      setAnim((currentAnim + 1) % ANIMATIONS.length);
+    }, 2000);
+  } else {
+    clearInterval(autoTimer);
+  }
+}
+
+function updateAutoBtn() {
+  const btn = document.getElementById('autoBtn');
+  btn.textContent = 'AUTO CYCLE: ' + (autoMode ? 'ON' : 'OFF');
+  btn.className = autoMode ? 'active' : '';
+}
+
+// Start
+setAnim(0);
+</script>
+</body>
+</html>
