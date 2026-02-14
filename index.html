@@ -2782,7 +2782,8 @@ function getPlayerSprites(char){
     // Get sprites for player (back view)
     // Use multi-frame sprite sheets when available (sprites-v2/sheets/)
     const sheetBase = 'sprites-v2/sheets/' + char.id + '-back-';
-    const hasSheet = ['player1', 'player2', 'player3', 'player4', 'player5', 'player6', 'player7', 'player8', 'player9', 'player10', 'player11', 'player12', 'punk', 'chubby', 'beach', 'goth', 'grandpa', 'indian', 'anime', 'latino', 'redhead'].indexOf(char.id) >= 0;
+    // Disable sprite sheets — current sheets are wrong dimensions (2816x1536 vs expected 640x96) and lack alpha transparency
+    const hasSheet = false;
 
     if(char.id === 'player1'){
         return {
@@ -2800,7 +2801,7 @@ function getPlayerSprites(char){
         swing: hasSheet ? sheetBase + 'swing-sheet.png' + V : base + 'back-swing.png' + V,
         run: hasSheet ? sheetBase + 'run-sheet.png' + V : base + 'back-run.png' + V,
         idle: hasSheet ? sheetBase + 'idle-sheet.png' + V : base + 'back-swing.png' + V,
-        idleIsSheet: hasSheet || true,
+        idleIsSheet: false,
         swingSingle: base + 'back-swing.png' + V,
         runSingle: base + 'back-run.png' + V,
         idleSingle: base + 'back-swing.png' + V
@@ -2822,7 +2823,7 @@ function getOpponentSprites(char){
         swing: base + 'front-swing.png' + V,
         run: base + 'front-run.png' + V,
         idle: base + 'front-swing.png' + V,
-        idleIsSheet: true  // other characters use swing sheet for idle (show frame 1)
+        idleIsSheet: false  // disabled until proper sheets generated
     };
 }
 
@@ -5112,25 +5113,10 @@ const _spriteSheetCache = {};
 
 function detectSpriteSheet(url) {
     return new Promise((resolve) => {
-        if (_spriteSheetCache[url] !== undefined) {
-            resolve(_spriteSheetCache[url]);
-            return;
-        }
-        const img = new Image();
-        img.onload = () => {
-            const w = img.naturalWidth;
-            const h = img.naturalHeight;
-            const isSheet = w > h * 1.5;
-            const frames = isSheet ? Math.round(w / h) : 1;
-            const result = { isSheet, frames, width: w, height: h };
-            _spriteSheetCache[url] = result;
-            resolve(result);
-        };
-        img.onerror = () => {
-            _spriteSheetCache[url] = { isSheet: false, frames: 1, width: 80, height: 96 };
-            resolve(_spriteSheetCache[url]);
-        };
-        img.src = url;
+        // Force single-frame mode until proper sprite sheets are generated
+        // (current sheets are 2816x1536 but code expects 640x96, and lack alpha transparency)
+        _spriteSheetCache[url] = { isSheet: false, frames: 1, width: 80, height: 96 };
+        resolve(_spriteSheetCache[url]);
     });
 }
 
