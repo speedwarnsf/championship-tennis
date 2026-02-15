@@ -973,6 +973,17 @@ function initAudio(){
         setTimeout(()=>sounds.crowdCheer(),200);
     };
 
+    sounds.gameWon=()=>{
+        AudioManager.tone(600,0.08,0.3);
+        setTimeout(()=>AudioManager.tone(800,0.1,0.3),70);
+        setTimeout(()=>AudioManager.tone(1000,0.12,0.3),140);
+    };
+
+    sounds.gameLost=()=>{
+        AudioManager.tone(300,0.1,0.25);
+        setTimeout(()=>AudioManager.tone(250,0.12,0.2),80);
+    };
+
     sounds.victory=()=>{
         AudioManager.tone(523,0.15,0.4);
         setTimeout(()=>AudioManager.tone(659,0.15,0.4),150);
@@ -1236,6 +1247,9 @@ function clearServiceBoxHighlight(){
 function startPlayerServe(){
     M.isPlayerServe = true;
     M.servePhase = 'ready';  // waiting for tap to toss
+    // Subtle zoom in for serve
+    const gc = safeGetElement('gameCourt');
+    if(gc) { gc.classList.remove('serve-zoom-out'); gc.classList.add('serve-zoom'); }
     M.servePower = 0;
     M.serveStartY = null;
     M.serveStartX = null;
@@ -1389,6 +1403,9 @@ function updateServeCharge(clientY, clientX){
 function releaseServe(){
     if(M.servePhase !== 'charging') return;
     M.servePhase = 'swing';
+    // Zoom out on serve release
+    const gc = safeGetElement('gameCourt');
+    if(gc) { gc.classList.remove('serve-zoom'); gc.classList.add('serve-zoom-out'); setTimeout(() => gc.classList.remove('serve-zoom-out'), 400); }
 
     const progress = M.serveTossProgress; // Where the ball is when released
 
@@ -2035,6 +2052,31 @@ window.CHARACTERS = [
     {id:'indian', name:'Sania Mirror', power:45, speed:60, control:50, unlocked:false, cost:2500, special:true}
 ];
 
+// Character play style descriptions
+const CHAR_DESCRIPTIONS = {
+    'player1': 'All-rounder with balanced game',
+    'player2': 'Powerful baseline aggressor',
+    'player3': 'Athletic all-court player',
+    'player4': 'Quick mover with finesse',
+    'player5': 'Heavy topspin specialist',
+    'player6': 'Tactical serve-and-volley',
+    'player7': 'Consistent counterpuncher',
+    'player8': 'Explosive power serves',
+    'player9': 'Big serve, big forehand',
+    'player10': 'Defensive wall, never misses',
+    'player11': 'Aggressive returner',
+    'player12': 'Calm under pressure',
+    'punk': 'Volatile genius - fire or ice',
+    'chubby': 'Raw power, limited mobility',
+    'beach': 'Graceful and precise',
+    'goth': 'Relentless with loud grunts',
+    'anime': 'Unpredictable shot selection',
+    'latino': 'Explosive athleticism',
+    'redhead': 'Pioneer of the modern game',
+    'grandpa': 'Master tactician, reads the game',
+    'indian': 'Lightning reflexes at the net'
+};
+
 var selectedChar = window.CHARACTERS[0];
 var opponentChar = null; // Selected randomly, different from player
 
@@ -2201,9 +2243,13 @@ function selectCharacter(char){
     const sprites = getCharSprites(char);
     { const _el = safeGetElement('charDetailPreview'); if(_el) { _el.style.backgroundImage = `url(sprites-v2/thumbs/${char.id}-thumb.png?v=32)`; _el.classList.remove('animating'); } }
     { const _el = safeGetElement('charDetailName'); if(_el) _el.textContent = char.name.toUpperCase(); }
+    { const _el = safeGetElement('charDetailDesc'); if(_el) _el.textContent = CHAR_DESCRIPTIONS[char.id] || 'Ready to compete'; }
     { const _el = safeGetElement('charPower'); if(_el) _el.textContent = char.power; }
     { const _el = safeGetElement('charSpeed'); if(_el) _el.textContent = char.speed; }
     { const _el = safeGetElement('charControl'); if(_el) _el.textContent = char.control; }
+    { const _el = safeGetElement('charBarPower'); if(_el) _el.style.width = char.power + '%'; }
+    { const _el = safeGetElement('charBarSpeed'); if(_el) _el.style.width = char.speed + '%'; }
+    { const _el = safeGetElement('charBarControl'); if(_el) _el.style.width = char.control + '%'; }
     // Trigger character intro animation + quip
     if (typeof showCharacterIntro === 'function') showCharacterIntro(char);
 }
@@ -2839,9 +2885,11 @@ function scorePoint(player){
         if(M.pPoints > M.oPoints){
             M.pGames++;
             toast('GAME! You won the game!');
+            sounds.gameWon?.();
         } else {
             M.oGames++;
             toast('GAME! Opponent won');
+            sounds.gameLost?.();
             // Track if player lost their own service game
             if(M.servingPlayer === 'player') M.lostServiceGame = true;
         }
@@ -3244,6 +3292,50 @@ function createBounceParticles(x, y) {
     }
 }
 
+// Player movement dust - kicked up when running
+let _dustThrottle = 0;
+function createMovementDust(xPct) {
+    const now = Date.now();
+    if(now - _dustThrottle < 120) return;
+    _dustThrottle = now;
+    const court = getCourtElement();
+    if(!court) return;
+    const count = 2 + Math.floor(Math.random() * 2);
+    for(let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'move-dust';
+        const size = 3 + Math.random() * 4;
+        p.style.cssText = `left:${xPct + (Math.random()-0.5)*3}%;bottom:${5 + Math.random()*2}%;width:${size}px;height:${size*0.6}px;background:rgba(194,162,120,${0.35+Math.random()*0.2})`;
+        court.appendChild(p);
+        const dx = (Math.random()-0.5) * 12;
+        p.animate([
+            {transform:'translate(0,0) scale(1)',opacity:0.6},
+            {transform:`translate(${dx}px,-${6+Math.random()*8}px) scale(0.3)`,opacity:0}
+        ],{duration:250+Math.random()*150,easing:'ease-out'}).onfinish = () => p.remove();
+    }
+}
+
+// Impact spark lines - radiate from hit point
+function createImpactSparks(x, y, power) {
+    if(isPerformanceMode() || power < 0.5) return;
+    const court = getCourtElement();
+    if(!court) return;
+    const sparkCount = Math.floor(3 + power * 5);
+    for(let i = 0; i < sparkCount; i++) {
+        const spark = document.createElement('div');
+        spark.className = 'spark-line';
+        const angle = (Math.PI * 2 * i) / sparkCount + (Math.random()-0.5)*0.3;
+        const len = 8 + power * 20 + Math.random() * 10;
+        const color = power > 0.8 ? `hsl(${40+Math.random()*20},100%,${60+Math.random()*20}%)` : `hsl(${180+Math.random()*40},80%,${60+Math.random()*20}%)`;
+        spark.style.cssText = `left:${x}%;top:${y}%;height:${len}px;background:${color};transform:translate(-50%,-100%) rotate(${angle}rad)`;
+        court.appendChild(spark);
+        spark.animate([
+            {opacity:1,transform:`translate(-50%,-100%) rotate(${angle}rad) scaleY(1)`},
+            {opacity:0,transform:`translate(-50%,-100%) rotate(${angle}rad) scaleY(0)`}
+        ],{duration:200+Math.random()*150,easing:'ease-out'}).onfinish = () => spark.remove();
+    }
+}
+
 // Timing quality flash - shows how well-timed the hit was
 function showTimingQuality(quality) {
     if(quality < 0.3) return; // Don't show for weak hits
@@ -3489,6 +3581,7 @@ function showHitEffect(power){
     const ballX = parseFloat(b.style.left);
     const ballY = parseFloat(b.style.top);
     createHitParticles(ballX, ballY, power);
+    createImpactSparks(ballX, ballY, power);
 
     // Enhanced screen shake based on power
     if(power > 0.9){
@@ -4351,6 +4444,8 @@ function lerpPlayerMovement() {
         const paddle = safeGetElement('playerPaddle');
         if(paddle) paddle.style.left = playerCurrentPos + '%';
         updatePlayerDirection();
+        // Movement dust when moving fast
+        if(Math.abs(playerVelocity) > 1.5 && !isPerformanceMode()) createMovementDust(playerCurrentPos);
         requestAnimationFrame(lerpPlayerMovement);
     } else {
         playerCurrentPos = playerTargetPos;

@@ -109,14 +109,18 @@
         .video-intro.fade-out{opacity:0}
         .skip-btn{position:absolute;bottom:30px;right:20px;padding:12px 24px;background:rgba(255,215,0,0.9);border:none;border-radius:0;color:#1a1a2e;font-weight:700;font-size:14px;cursor:pointer;z-index:5001}
         #videoPlayer{width:100vw;height:100vh;object-fit:cover}
-        .game-hud{position:fixed;top:0;left:0;right:0;padding:calc(10px + env(safe-area-inset-top, 0px)) 90px 10px 15px;display:none;z-index:100;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent)}
+        .game-hud{position:fixed;top:0;left:0;right:0;padding:calc(6px + env(safe-area-inset-top, 0px)) 90px 6px 10px;display:none;z-index:100;background:linear-gradient(to bottom,rgba(0,0,0,0.85),rgba(0,0,0,0.4),transparent)}
         .game-hud.active{display:block}
         .match-info{display:flex;justify-content:space-between;align-items:flex-start}
-        .player-info{background:rgba(0,0,0,0.5);padding:10px 15px;border-radius:0;border:1px solid rgba(255,215,0,0.3);text-align:center;min-width:80px}
-        .player-name{font-size:9px;text-transform:uppercase;color:rgba(255,215,0,0.8)}
-        .player-points{font-family:'Bebas Neue',sans-serif;font-size:32px;background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-        .player-games{font-size:9px;color:rgba(255,255,255,0.7);margin-top:2px}
+        .player-info{background:rgba(0,0,0,0.6);padding:8px 12px;border-radius:0;border:1px solid rgba(255,215,0,0.3);text-align:center;min-width:80px}
+        .player-name{font-size:9px;text-transform:uppercase;color:rgba(255,215,0,0.8);letter-spacing:1px}
+        .player-points{font-family:'Bebas Neue',sans-serif;font-size:36px;background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+        .player-games{font-size:10px;color:rgba(255,255,255,0.85);margin-top:3px;font-weight:600}
         .player-sets{font-size:10px;color:#4caf50;font-weight:700;margin-top:2px}
+        .scoreboard-row{display:flex;align-items:center;gap:3px;justify-content:center;margin-top:2px}
+        .set-score-box{width:18px;height:18px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);font-size:11px;font-weight:700;color:#fff;font-family:'Bebas Neue',sans-serif;border:1px solid rgba(255,255,255,0.15)}
+        .set-score-box.current{border-color:rgba(255,215,0,0.5);color:#ffd700}
+        .set-score-box.won{background:rgba(76,175,80,0.3);border-color:#4caf50;color:#4caf50}
         .match-center{display:flex;flex-direction:column;align-items:center;gap:4px}
         .match-timer{background:rgba(255,215,0,0.2);padding:6px 16px;border-radius:0;color:#fff;font-size:13px;font-weight:700}
         .rally-counter{font-size:9px;color:rgba(255,255,255,0.7);text-transform:uppercase}
@@ -381,8 +385,11 @@
         .char-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;text-shadow:2px 2px 0 #000,0 0 10px rgba(100,200,255,0.5);letter-spacing:3px}
         .char-card{background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 50%,#1a2a4a 100%);border:3px solid;border-color:#6a8aba #2a3a5a #2a3a5a #6a8aba;padding:6px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:2px 2px 0 #0a1a2a;min-width:0}
         .char-card:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #0a1a2a}
+        .char-card:hover:not(.locked){border-color:#8ab #4a6a9a #4a6a9a #8ab;background:linear-gradient(180deg,#4a5a7a 0%,#3a4a6a 50%,#2a3a5a 100%);transform:translateY(-2px);box-shadow:2px 4px 0 #0a1a2a,0 0 12px rgba(100,180,255,0.15);transition:all 0.15s}
+        .char-card:hover:not(.locked) .char-preview{filter:brightness(1.15)}
         .char-card.selected{border-color:#ffd700 #aa8800 #aa8800 #ffd700;background:linear-gradient(180deg,#4a5a7a 0%,#3a4a6a 50%,#2a3a5a 100%);box-shadow:2px 2px 0 #0a1a2a,0 0 8px rgba(255,215,0,0.2)}
         .char-card.locked{opacity:0.6;filter:grayscale(0.5) brightness(0.7)}
+        .char-card.locked:hover{opacity:0.75;filter:grayscale(0.3) brightness(0.8)}
         .char-preview{width:80px;height:96px;margin:0 auto 4px;background-size:80px 96px;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;border:2px solid #1a2a4a;background-color:#0a0a1a}
         .char-name{font-size:9px;color:#8ac;font-weight:700;text-transform:uppercase;text-shadow:1px 1px 0 #000;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .char-stats{font-size:8px;color:#6a8aba;margin-top:2px;font-family:monospace}
@@ -400,6 +407,16 @@
         .char-detail-preview.animating{animation:charPreview 1.2s steps(7) infinite}
         @keyframes charPreview{0%{background-position:0 0}100%{background-position:-504px 0}}
         .char-detail-name{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#ffd700;text-align:center;text-shadow:2px 2px 0 #000;letter-spacing:2px}
+        .char-detail-desc{font-size:10px;color:#8ab;text-align:center;margin-top:4px;font-style:italic;letter-spacing:1px}
+        .char-detail-stat-bars{display:flex;flex-direction:column;gap:4px;margin-top:8px;padding:0 10px}
+        .char-detail-bar-row{display:flex;align-items:center;gap:6px}
+        .char-detail-bar-label{font-size:9px;color:#6a8aba;width:50px;text-transform:uppercase;letter-spacing:1px;text-align:right}
+        .char-detail-bar{flex:1;height:8px;background:#1a2a4a;overflow:hidden}
+        .char-detail-bar-fill{height:100%;transition:width 0.4s ease-out}
+        .char-detail-bar-fill.pwr{background:linear-gradient(90deg,#ff6b6b,#ff4757)}
+        .char-detail-bar-fill.spd{background:linear-gradient(90deg,#4ecdc4,#26de81)}
+        .char-detail-bar-fill.ctl{background:linear-gradient(90deg,#45aaf2,#2d98da)}
+        .char-detail-bar-val{font-size:9px;color:#8cf;width:24px;font-family:'Bebas Neue',sans-serif}
         .char-detail-stats{display:flex;justify-content:center;gap:15px;margin-top:8px}
         .char-stat{text-align:center}
         .char-stat-label{font-size:8px;color:#6a8aba;text-transform:uppercase;letter-spacing:1px}
@@ -432,6 +449,13 @@
         .tutorial-text{color:rgba(255,255,255,0.8);font-size:13px;line-height:1.5;margin-bottom:20px}
         .tutorial-btn{padding:14px 35px;background:linear-gradient(135deg,#4caf50,#8bc34a);border:none;border-radius:0;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer}
 
+/* Player movement dust */
+        .move-dust{position:absolute;pointer-events:none;z-index:29;opacity:0.6}
+        /* Impact spark lines */
+        .spark-line{position:absolute;width:2px;pointer-events:none;z-index:201;transform-origin:center bottom}
+        /* Serve zoom effect */
+        .game-court.serve-zoom{transition:transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94);transform:scale(1.03) translateY(1%)}
+        .game-court.serve-zoom-out{transition:transform 0.3s ease-out;transform:scale(1) translateY(0)}
 /* Accessibility: focus indicators */
 :focus-visible {
     outline: 2px solid #ffd700;
@@ -578,10 +602,16 @@
         <div class="char-detail" id="charDetail">
             <div class="char-detail-preview" id="charDetailPreview"></div>
             <div class="char-detail-name" id="charDetailName">ROGER FEDORA</div>
-            <div class="char-detail-stats">
-                <div class="char-stat"><div class="char-stat-label">Power</div><div class="char-stat-value" id="charPower">50</div></div>
-                <div class="char-stat"><div class="char-stat-label">Speed</div><div class="char-stat-value" id="charSpeed">50</div></div>
-                <div class="char-stat"><div class="char-stat-label">Control</div><div class="char-stat-value" id="charControl">50</div></div>
+            <div class="char-detail-desc" id="charDetailDesc">All-rounder with balanced game</div>
+            <div class="char-detail-stat-bars">
+                <div class="char-detail-bar-row"><span class="char-detail-bar-label">Power</span><div class="char-detail-bar"><div class="char-detail-bar-fill pwr" id="charBarPower" style="width:50%"></div></div><span class="char-detail-bar-val" id="charPower">50</span></div>
+                <div class="char-detail-bar-row"><span class="char-detail-bar-label">Speed</span><div class="char-detail-bar"><div class="char-detail-bar-fill spd" id="charBarSpeed" style="width:50%"></div></div><span class="char-detail-bar-val" id="charSpeed">50</span></div>
+                <div class="char-detail-bar-row"><span class="char-detail-bar-label">Control</span><div class="char-detail-bar"><div class="char-detail-bar-fill ctl" id="charBarControl" style="width:50%"></div></div><span class="char-detail-bar-val" id="charControl">50</span></div>
+            </div>
+            <div class="char-detail-stats" style="display:none">
+                <div class="char-stat"><div class="char-stat-label">Power</div><div class="char-stat-value">50</div></div>
+                <div class="char-stat"><div class="char-stat-label">Speed</div><div class="char-stat-value">50</div></div>
+                <div class="char-stat"><div class="char-stat-label">Control</div><div class="char-stat-value">50</div></div>
             </div>
         </div>
         <div class="char-grid" id="charGrid"></div>
