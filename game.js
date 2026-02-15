@@ -2825,11 +2825,16 @@ function scorePoint(player){
             practiceHits++;
             { const _el = safeGetElement('practiceHits'); if(_el) _el.textContent = practiceHits; }
             sounds.pointWon?.();
+            if(typeof miniGameOnPlayerHit === 'function') miniGameOnPlayerHit();
         }
         M.rally = 0;
         M.ballActive = false;
         const ball = safeGetElement('ball');
         if(ball) ball.classList.remove('active');
+        // Mini-game may handle its own ball feed
+        if(typeof miniGameFeedBall === 'function' && miniGameFeedBall()) {
+            return false;
+        }
         // Feed next ball after short delay
         setTimeout(() => feedPracticeBall(), 1200);
         return false;
@@ -3198,6 +3203,9 @@ function animateBall(){
         return;
     }
 
+    // Mini-game ball tracking
+    if(typeof miniGameBallUpdate === 'function') miniGameBallUpdate(M.ballPos.x, M.ballPos.y);
+
     // Update opponent position when ball is on their side
     if(M.ballPos.y < 50) updateOpp();
 
@@ -3231,6 +3239,9 @@ function ballMissed(){
     M.pendingCombo = false;
     M.rally = 0;
     sounds.miss();
+
+    // Mini-game miss hook
+    if(typeof miniGameOnBallMiss === 'function') miniGameOnBallMiss();
 
     // Reset rally tension visuals
     const vignette = safeGetElement('rallyVignette');

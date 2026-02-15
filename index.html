@@ -736,7 +736,7 @@
             <button class="menu-btn" onclick="showSpectatorSelect()" aria-label="Watch AI vs AI" style="background:linear-gradient(180deg,#2196f3 0%,#1565c0 50%,#0d47a1 100%);border-color:#42a5f5 #0d47a1 #0d47a1 #42a5f5;color:#fff">WATCH AI VS AI</button>
             <button class="menu-btn" onclick="showReplayFromMenu()" aria-label="Watch last match replay" style="background:linear-gradient(180deg,#9c27b0 0%,#7b1fa2 50%,#6a1b9a 100%);border-color:#ba68c8 #4a148c #4a148c #ba68c8;color:#fff">MATCH REPLAY</button>
             <button class="menu-btn tournament-btn" onclick="showTournamentScreen()" aria-label="Enter tournament mode" style="background:linear-gradient(180deg,#ffd700 0%,#b8860b 50%,#8b6914 100%);border-color:#ffed4e #6b4e00 #6b4e00 #ffed4e;color:#000;text-shadow:none">TOURNAMENT</button>
-            <button class="menu-btn" onclick="startPracticeMode()" aria-label="Practice mode">PRACTICE</button>
+            <button class="menu-btn" onclick="showPracticeMenu()" aria-label="Practice and mini-games">PRACTICE</button>
             <button class="menu-btn" onclick="showCharSelect()" aria-label="Select your player character">SELECT PLAYER</button>
             <button class="menu-btn" onclick="showShop()" aria-label="Open the pro shop">PRO SHOP</button>
             <button class="menu-btn" onclick="showCareerDashboard()" aria-label="View career stats">CAREER STATS</button>
@@ -1110,7 +1110,22 @@
         <button class="menu-btn primary" onclick="confirmSpectatorMatch()" style="position:fixed;bottom:15px;left:15px;right:15px;z-index:1101">WATCH MATCH</button>
     </div>
 
+    <!-- Practice Menu Screen -->
+    <div class="screen" id="practiceMenuScreen" style="background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:calc(15px + env(safe-area-inset-top,0px)) 15px calc(15px + env(safe-area-inset-bottom,0px));overflow-y:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+            <h2 style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:#ffd700;letter-spacing:4px">PRACTICE</h2>
+            <button class="back-btn" onclick="closePracticeMenu()">BACK</button>
+        </div>
+        <div id="practiceMenuContent"></div>
+    </div>
+
+    <!-- Mini-Game Results Screen -->
+    <div class="screen" id="miniGameResultsScreen" style="background:#000;justify-content:center;align-items:center;padding:20px;z-index:2000">
+        <div id="miniGameResultsContent" style="display:flex;flex-direction:column;align-items:center;text-align:center"></div>
+    </div>
+
 <script defer src="game.js"></script>
+<script defer src="minigames.js"></script>
 
 </body>
 </html>
