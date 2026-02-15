@@ -6598,7 +6598,7 @@ transitionToCourt = function() {
 };
 
 // Hook into scorePoint for umpire voice
-const _origScorePoint = scorePoint;
+const _origScorePointVoice = scorePoint;
 scorePoint = function(player) {
     const prevPPoints = M.pPoints;
     const prevOPoints = M.oPoints;
@@ -6607,7 +6607,7 @@ scorePoint = function(player) {
     const prevPSets = M.pSets;
     const prevOSets = M.oSets;
 
-    const result = _origScorePoint(player);
+    const result = _origScorePointVoice(player);
 
     // Determine what happened and announce
     if (G.voiceUmpire && !practiceMode) {
@@ -6991,3 +6991,998 @@ function renderSeasonalChallenges() {
 
     el.innerHTML = html;
 }
+
+// ========== MULTIPLAYER & FINAL POLISH ==========
+// Features: 2-Player Local, AI vs AI Spectator, Full Match Replay, Loading Tips
+
+// ---- GAME MODE TRACKING ----
+let gameMode = 'solo'; // 'solo', '2player', 'spectator'
+let player2Char = null;
+
+// ---- LOADING SCREEN TIPS ----
+const LOADING_TIPS = [
+    'Pull back and release to serve -- timing is everything!',
+    'Swipe up to return the ball. Longer swipes = more power.',
+    'Angle your swipe left or right to aim your shots.',
+    'Double-tap during a rally to rush the net for volleys.',
+    'Collect gems during rallies to earn bonus currency.',
+    'Build point streaks for multiplied gem rewards.',
+    'Deuce side serves go to the left box, Ad side to the right.',
+    'Two faults in a row means a double fault -- point lost!',
+    'Net volleys are faster but give you less court coverage.',
+    'Longer rallies increase your chance of gem spawns.',
+    'Different characters have different power, speed, and control.',
+    'Win tournaments to earn Hall of Fame entries.',
+    'Try Legend difficulty for 3x match rewards.',
+    'Perfect serve timing lands in the green zone.',
+    'Watch your opponent lean to predict their next shot.',
+    'Court surfaces affect ball speed and bounce height.',
+    'Clay courts slow the ball; grass courts speed it up.',
+    'In tiebreaks, first to 7 points wins (must lead by 2).',
+    'Changeovers happen after every odd game.',
+    'Practice mode lets you train without scoring pressure.',
+];
+
+let _tipRotationInterval = null;
+
+function startLoadingTips() {
+    const subtitle = document.querySelector('.loading-subtitle');
+    if (!subtitle) return;
+    let tipIdx = Math.floor(Math.random() * LOADING_TIPS.length);
+    subtitle.textContent = 'TIP: ' + LOADING_TIPS[tipIdx];
+    _tipRotationInterval = setInterval(() => {
+        tipIdx = (tipIdx + 1) % LOADING_TIPS.length;
+        subtitle.style.opacity = '0';
+        setTimeout(() => {
+            subtitle.textContent = 'TIP: ' + LOADING_TIPS[tipIdx];
+            subtitle.style.opacity = '1';
+        }, 300);
+    }, 4000);
+}
+
+function stopLoadingTips() {
+    if (_tipRotationInterval) {
+        clearInterval(_tipRotationInterval);
+        _tipRotationInterval = null;
+    }
+}
+
+// Start tips on page load
+window.addEventListener('load', () => {
+    startLoadingTips();
+});
+
+// Stop tips when game starts
+const _origStartGame = startGame;
+startGame = function() {
+    stopLoadingTips();
+    _origStartGame();
+};
+
+// ---- FULL MATCH REPLAY SYSTEM ----
+let fullMatchReplay = [];
+let fullMatchReplayMeta = null;
+let isPlayingFullReplay = false;
+
+function recordFullMatchFrame() {
+    if (!M || !M.active || isPlayingFullReplay) return;
+    if (gameMode === 'spectator' && !M.active) return;
+    fullMatchReplay.push({
+        ballPos: M.ballPos ? { ...M.ballPos } : {x:50,y:50},
+        ballH: M.ballH || 0,
+        ballActive: M.ballActive,
+        oppPos: M.oppPos,
+        playerPos: M.playerPos,
+        canHit: M.canHit,
+        pPoints: M.pPoints,
+        oPoints: M.oPoints,
+        pGames: M.pGames,
+        oGames: M.oGames,
+        rally: M.rally,
+        timestamp: Date.now()
+    });
+    // Cap at ~5 minutes of frames at 60fps = 18000 frames
+    if (fullMatchReplay.length > 18000) fullMatchReplay.shift();
+}
+
+// Hook into animateBall and animateReturn for full replay recording
+const _origAnimateBall2 = animateBall;
+animateBall = function() {
+    recordFullMatchFrame();
+    return _origAnimateBall2.call(this);
+};
+
+const _origAnimateReturn2 = animateReturn;
+animateReturn = function() {
+    recordFullMatchFrame();
+    return _origAnimateReturn2.call(this);
+};
+
+// Save replay metadata when match ends
+const _origEndMatch4 = endMatch;
+endMatch = function() {
+    if (fullMatchReplay.length > 30) {
+        const won = M.pSets > M.oSets || (M.pSets === M.oSets && M.pGames > M.oGames);
+        fullMatchReplayMeta = {
+            playerChar: selectedChar ? selectedChar.name : 'Player',
+            opponentChar: opponentChar ? opponentChar.name : 'CPU',
+            playerScore: M.pGames,
+            opponentScore: M.oGames,
+            won: won,
+            frameCount: fullMatchReplay.length,
+            date: new Date().toISOString(),
+            mode: gameMode
+        };
+        // Store in localStorage (compressed - only keep every 3rd frame to save space)
+        try {
+            const compressed = fullMatchReplay.filter((_, i) => i % 3 === 0);
+            localStorage.setItem('ct_lastReplay', JSON.stringify(compressed));
+            localStorage.setItem('ct_lastReplayMeta', JSON.stringify(fullMatchReplayMeta));
+        } catch(e) {
+            console.warn('Could not save replay:', e);
+        }
+    }
+    return _origEndMatch4.call(this);
+};
+
+function hasStoredReplay() {
+    return !!localStorage.getItem('ct_lastReplayMeta');
+}
+
+function showReplayFromMenu() {
+    const meta = JSON.parse(localStorage.getItem('ct_lastReplayMeta') || 'null');
+    const frames = JSON.parse(localStorage.getItem('ct_lastReplay') || '[]');
+    if (!meta || frames.length < 10) {
+        toast('No replay available. Play a match first!');
+        return;
+    }
+    playFullReplay(frames, meta);
+}
+
+function playFullReplay(frames, meta) {
+    isPlayingFullReplay = true;
+    gameMode = 'replay';
+
+    // Hide menu, show court and HUD
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('gameCourt')?.classList.add('active');
+    safeGetElement('gameHUD')?.classList.add('active');
+
+    // Show replay overlay
+    const overlay = safeGetElement('replayOverlay');
+    if (overlay) {
+        overlay.innerHTML = 'REPLAY <span class="replay-slow">' + meta.playerChar + ' vs ' + meta.opponentChar + '</span>';
+        overlay.classList.add('active');
+    }
+
+    // Show exit button
+    let exitBtn = document.getElementById('replayExitBtn');
+    if (!exitBtn) {
+        exitBtn = document.createElement('button');
+        exitBtn.id = 'replayExitBtn';
+        exitBtn.textContent = 'EXIT REPLAY';
+        exitBtn.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9001;padding:12px 30px;background:rgba(244,67,54,0.9);border:2px solid #f44336;color:#fff;font-size:13px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:2px;font-family:Inter,sans-serif';
+        document.body.appendChild(exitBtn);
+    }
+    exitBtn.style.display = 'block';
+    exitBtn.onclick = () => exitFullReplay();
+
+    let idx = 0;
+    const speed = 3; // Play back at 3x frame skip (since we saved every 3rd frame)
+
+    function replayTick() {
+        if (!isPlayingFullReplay || idx >= frames.length) {
+            exitFullReplay();
+            return;
+        }
+
+        const f = frames[idx];
+        const ball = safeGetElement('ball');
+        const shadow = safeGetElement('ballShadow');
+        const opp = safeGetElement('opponent');
+        const paddle = safeGetElement('playerPaddle');
+
+        if (ball) {
+            if (f.ballActive) {
+                ball.classList.add('active');
+                ball.style.left = f.ballPos.x + '%';
+                ball.style.top = (f.ballPos.y - (f.ballH || 0) / 10) + '%';
+            } else {
+                ball.classList.remove('active');
+            }
+        }
+        if (shadow) {
+            if (f.ballActive) {
+                shadow.classList.add('active');
+                shadow.style.left = f.ballPos.x + '%';
+                shadow.style.top = f.ballPos.y + '%';
+            } else {
+                shadow.classList.remove('active');
+            }
+        }
+        if (opp) opp.style.left = f.oppPos + '%';
+        if (paddle) paddle.style.left = f.playerPos + '%';
+
+        // Update score display
+        if (f.pGames !== undefined) {
+            const pe = safeGetElement('playerGames'); if(pe) pe.textContent = f.pGames;
+            const oe = safeGetElement('opponentGames'); if(oe) oe.textContent = f.oGames;
+        }
+        if (f.rally !== undefined) {
+            const re = safeGetElement('rallyCount'); if(re) re.textContent = f.rally;
+        }
+
+        idx++;
+        requestAnimationFrame(replayTick);
+    }
+
+    requestAnimationFrame(replayTick);
+}
+
+function exitFullReplay() {
+    isPlayingFullReplay = false;
+    gameMode = 'solo';
+
+    const overlay = safeGetElement('replayOverlay');
+    if (overlay) overlay.classList.remove('active');
+
+    const exitBtn = document.getElementById('replayExitBtn');
+    if (exitBtn) exitBtn.style.display = 'none';
+
+    safeGetElement('gameCourt')?.classList.remove('active');
+    safeGetElement('gameHUD')?.classList.remove('active');
+
+    resetBallUI();
+    safeGetElement('mainMenu')?.classList.add('active');
+}
+
+// ---- 2-PLAYER LOCAL MODE ----
+
+let p2Keys = { up: false, down: false, left: false, right: false, swing: false };
+let p1Keys = { up: false, down: false, left: false, right: false, swing: false };
+let p2TargetPos = 50;
+let p2CurrentPos = 50;
+let p2Velocity = 0;
+let p2LerpActive = false;
+
+// Keyboard handler for both players
+document.addEventListener('keydown', e => {
+    if (!M || !M.active) return;
+
+    // Player 1: WASD + Space
+    if (gameMode === '2player' || gameMode === 'solo') {
+        switch(e.key.toLowerCase()) {
+            case 'w': p1Keys.up = true; break;
+            case 's': p1Keys.down = true; break;
+            case 'a': p1Keys.left = true; break;
+            case 'd': p1Keys.right = true; break;
+            case ' ':
+                e.preventDefault();
+                if (gameMode === '2player' || gameMode === 'solo') {
+                    handleP1Action();
+                }
+                break;
+        }
+    }
+
+    // Player 2: Arrow keys + Enter (only in 2player mode)
+    if (gameMode === '2player') {
+        switch(e.key) {
+            case 'ArrowUp': p2Keys.up = true; e.preventDefault(); break;
+            case 'ArrowDown': p2Keys.down = true; e.preventDefault(); break;
+            case 'ArrowLeft': p2Keys.left = true; e.preventDefault(); break;
+            case 'ArrowRight': p2Keys.right = true; e.preventDefault(); break;
+            case 'Enter':
+                e.preventDefault();
+                handleP2Action();
+                break;
+        }
+    }
+});
+
+document.addEventListener('keyup', e => {
+    // Player 1: WASD
+    switch(e.key.toLowerCase()) {
+        case 'w': p1Keys.up = false; break;
+        case 's': p1Keys.down = false; break;
+        case 'a': p1Keys.left = false; break;
+        case 'd': p1Keys.right = false; break;
+    }
+    // Player 2: Arrow keys
+    switch(e.key) {
+        case 'ArrowUp': p2Keys.up = false; break;
+        case 'ArrowDown': p2Keys.down = false; break;
+        case 'ArrowLeft': p2Keys.left = false; break;
+        case 'ArrowRight': p2Keys.right = false; break;
+    }
+});
+
+function handleP1Action() {
+    if (!M || !M.active) return;
+
+    // Solo mode: handle serve or hit
+    if (gameMode === 'solo' || gameMode === '2player') {
+        if (M.isPlayerServe && M.servePhase === 'ready') {
+            serveToss();
+            // Auto-charge and release after a short delay
+            setTimeout(() => {
+                if (M.servePhase === 'toss') {
+                    M.servePhase = 'charging';
+                    M.servePower = 0;
+                    M.serveStartY = window.innerHeight * 0.8;
+                    M.serveStartX = window.innerWidth * 0.5;
+                    // Auto-release at good timing
+                    setTimeout(() => {
+                        if (M.servePhase === 'charging') {
+                            releaseServe();
+                        }
+                    }, 400);
+                }
+            }, 100);
+            return;
+        }
+        if (M.canHit) {
+            // Determine angle from P1 keys
+            let ang = 0;
+            if (p1Keys.left) ang = -0.5;
+            if (p1Keys.right) ang = 0.5;
+            hitBall(0.7, ang);
+        }
+    }
+}
+
+function handleP2Action() {
+    if (!M || !M.active || gameMode !== '2player') return;
+
+    // P2 controls opponent side
+    if (M.servingPlayer === 'opp' && M.servePhase === 'none' && !M.ballActive) {
+        // P2 initiates serve
+        p2Serve();
+        return;
+    }
+
+    // P2 return: intercept ball when it reaches their side
+    if (M.ballActive && M.ballPos.y < 25 && M.lastHitBy === 'player') {
+        p2HitBall();
+    }
+}
+
+function p2Serve() {
+    // Manual P2 serve (replaces AI opponent serve)
+    if (!M.active) return;
+
+    highlightServiceBox();
+    updateServeIndicator();
+
+    const servePosX = M.serveSide === 'deuce' ? 40 : 60;
+    M.oppPos = servePosX;
+    const oppEl = safeGetElement('opponent');
+    if (oppEl) oppEl.style.left = servePosX + '%';
+
+    setTimeout(() => {
+        if (!M.active) return;
+
+        clearServiceBoxHighlight();
+
+        M.ballActive = true;
+        M.lastHitBy = 'opp';
+        M.ballPos = {x: M.oppPos, y: 10};
+        M.ballH = 100;
+        M.ballBounces = 0;
+
+        const isDeuceCourt = M.serveSide === 'deuce';
+        let targetX = isDeuceCourt ? 60 + Math.floor(Math.random() * 15) : 25 + Math.floor(Math.random() * 15);
+        // Allow P2 aim with arrow keys
+        if (p2Keys.left) targetX -= 10;
+        if (p2Keys.right) targetX += 10;
+
+        const serveSpd = 0.8;
+        const targetBounceY = 65;
+        const framesToBounce = (targetBounceY - 10) / (serveSpd * 1.2);
+        const z0 = (0.07 * framesToBounce * framesToBounce - 100) / framesToBounce;
+
+        M.ballVel = {
+            x: (targetX - M.ballPos.x) / 100 * 1.1,
+            y: serveSpd * 1.2,
+            z: z0
+        };
+
+        M.lastServeSpeed = Math.round(100 + Math.random() * 20);
+        const speedEl = safeGetElement('serveSpeed');
+        if (speedEl) speedEl.textContent = M.lastServeSpeed + ' MPH';
+
+        const ball = safeGetElement('ball');
+        const shadow = safeGetElement('ballShadow');
+        if (ball) ball.classList.add('active');
+        if (shadow) shadow.classList.add('active');
+
+        oppEl?.classList.add('hitting');
+        setOppSwinging();
+        setTimeout(() => oppEl?.classList.remove('hitting'), 250);
+        sounds.serve();
+
+        M.servePhase = 'flight';
+        animateServeBall('good');
+    }, 400);
+}
+
+function p2HitBall() {
+    // P2 manually hits the ball (replaces AI return)
+    if (!M.ballActive) return;
+
+    M.lastHitBy = 'opp';
+    M.rally++;
+    sounds.rallyTension(M.rally);
+    updateMatchUI();
+
+    M.oppPos = M.ballPos.x;
+    const oppEl = safeGetElement('opponent');
+    if (oppEl) oppEl.style.left = M.oppPos + '%';
+
+    oppEl?.classList.add('hitting');
+    setOppSwinging();
+    setTimeout(() => oppEl?.classList.remove('hitting'), 250);
+    sounds.hit();
+
+    M.ballBounces = 0;
+    M.ballH = 45;
+
+    // Aim based on P2 arrow keys
+    let targetX = M.playerPos + (Math.random() - 0.5) * 30;
+    if (p2Keys.left) targetX -= 15;
+    if (p2Keys.right) targetX += 15;
+    targetX = Math.max(15, Math.min(85, targetX));
+
+    M.ballVel = {
+        x: (targetX - M.ballPos.x) / 85,
+        y: 0.7 * 0.7,
+        z: 1.8 + Math.random() * 0.4
+    };
+    M.ballSpin = (Math.random() - 0.5) * 0.3;
+
+    M.ballActive = true;
+    animateBall();
+}
+
+// P1/P2 keyboard movement loop
+let _kbMoveInterval = null;
+
+function startKeyboardMovement() {
+    if (_kbMoveInterval) return;
+    _kbMoveInterval = setInterval(() => {
+        if (!M || !M.active) return;
+
+        // P1 movement (WASD) - moves player paddle
+        if (gameMode === '2player' || gameMode === 'solo') {
+            const moveSpeed = 2.5;
+            if (p1Keys.left) {
+                playerTargetPos = Math.max(12, playerTargetPos - moveSpeed);
+                if (!playerLerpActive) { playerLerpActive = true; requestAnimationFrame(lerpPlayerMovement); }
+            }
+            if (p1Keys.right) {
+                playerTargetPos = Math.min(88, playerTargetPos + moveSpeed);
+                if (!playerLerpActive) { playerLerpActive = true; requestAnimationFrame(lerpPlayerMovement); }
+            }
+        }
+
+        // P2 movement (Arrow keys) - moves opponent
+        if (gameMode === '2player') {
+            const moveSpeed = 2.5;
+            if (p2Keys.left) M.oppPos = Math.max(12, M.oppPos - moveSpeed);
+            if (p2Keys.right) M.oppPos = Math.min(88, M.oppPos + moveSpeed);
+            const oppEl = safeGetElement('opponent');
+            if (oppEl) oppEl.style.left = M.oppPos + '%';
+        }
+    }, 16);
+}
+
+function stopKeyboardMovement() {
+    if (_kbMoveInterval) {
+        clearInterval(_kbMoveInterval);
+        _kbMoveInterval = null;
+    }
+}
+
+// ---- AI VS AI SPECTATOR MODE ----
+
+let spectatorInterval = null;
+
+function startSpectatorMode(char1, char2) {
+    gameMode = 'spectator';
+    selectedChar = char1;
+    opponentChar = char2;
+    player2Char = char2;
+
+    // Use the existing startMatch flow but bypass video
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('spectatorSelectScreen')?.classList.remove('active');
+
+    // Directly start the match
+    spectatorStartMatch();
+}
+
+async function spectatorStartMatch() {
+    const s = DIFF[G.difficulty];
+    updateSprites();
+
+    const surface = typeof selectRandomCourt === 'function' ? selectRandomCourt() : 'hard';
+    if (typeof applyCourtSurface === 'function') applyCourtSurface(surface);
+
+    await showVsIntro(selectedChar, opponentChar, surface);
+
+    fullMatchReplay = [];
+
+    let matchTime = 300;
+
+    const playerServesFirst = Math.random() < 0.5;
+
+    M = {
+        active: true, startTime: Date.now(),
+        pPoints: 0, oPoints: 0, pGames: 0, oGames: 0, pSets: 0, oSets: 0,
+        time: matchTime, matchLimit: null, timeExpired: false,
+        isTiebreak: false, tiebreakServer: 'player',
+        servingPlayer: playerServesFirst ? 'player' : 'opp',
+        serveNum: 1, serveSide: 'deuce', isPlayerServe: false, servePhase: 'none',
+        servePower: 0, serveAimX: 50, serveAimY: 25, serveStartY: null, serveStartX: null,
+        lastServeSpeed: 0, rally: 0, ballActive: false,
+        ballPos: {x: 50, y: 10}, ballVel: {x: 0, y: 0, z: 0}, ballH: 100,
+        ballBounces: 0, ballSpin: 0, lastHitBy: 'player', canHit: false,
+        combo: 0, pendingCombo: false, streak: 0, bestStreak: 0,
+        oppPos: 50, playerPos: 70,
+        gemActive: false, gemPos: {x: 50, y: 70}, gemTimer: 0, gemMultiplier: 1,
+        aces: 0, doubleFaults: 0, winners: 0, longestRally: 0, totalRallies: 0,
+        pointsPlayed: 0, pendingAce: false, lostServiceGame: false, wasDown03: false,
+        playerY: 95, atNet: false, netRushTimer: 0, oppAtNet: false, oppY: 8,
+        settings: s
+    };
+
+    initSprites();
+    safeGetElement('gameHUD')?.classList.add('active');
+    safeGetElement('gameCourt')?.classList.add('active');
+    const pauseBtn = document.getElementById('pauseBtn');
+    if (pauseBtn) pauseBtn.style.display = 'flex';
+
+    // Update HUD labels for spectator mode
+    const pName = document.querySelector('.player-info .player-name');
+    const oName = document.querySelectorAll('.player-info .player-name')[1];
+    if (pName) pName.textContent = selectedChar.name.split(' ')[0].toUpperCase();
+    if (oName) oName.textContent = opponentChar.name.split(' ')[0].toUpperCase();
+
+    // Show spectator indicator
+    let specLabel = document.getElementById('spectatorLabel');
+    if (!specLabel) {
+        specLabel = document.createElement('div');
+        specLabel.id = 'spectatorLabel';
+        specLabel.style.cssText = 'position:fixed;bottom:15px;left:50%;transform:translateX(-50%);z-index:400;padding:8px 20px;background:rgba(0,0,0,0.8);border:2px solid rgba(255,215,0,0.4);color:#ffd700;font-family:Bebas Neue,sans-serif;font-size:16px;letter-spacing:3px;text-transform:uppercase';
+        document.body.appendChild(specLabel);
+    }
+    specLabel.textContent = 'SPECTATOR MODE';
+    specLabel.style.display = 'block';
+
+    // Show exit button for spectator
+    let exitBtn = document.getElementById('spectatorExitBtn');
+    if (!exitBtn) {
+        exitBtn = document.createElement('button');
+        exitBtn.id = 'spectatorExitBtn';
+        exitBtn.textContent = 'EXIT';
+        exitBtn.style.cssText = 'position:fixed;bottom:15px;right:15px;z-index:9001;padding:10px 24px;background:rgba(244,67,54,0.9);border:2px solid #f44336;color:#fff;font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:2px;font-family:Inter,sans-serif';
+        document.body.appendChild(exitBtn);
+    }
+    exitBtn.style.display = 'block';
+    exitBtn.onclick = () => exitSpectatorMode();
+
+    updateMatchUI();
+    startTimer();
+
+    // Start AI control loop for "player" side
+    startSpectatorAI();
+
+    setTimeout(startNextPoint, 1200);
+}
+
+function startSpectatorAI() {
+    if (spectatorInterval) clearInterval(spectatorInterval);
+
+    spectatorInterval = setInterval(() => {
+        if (!M || !M.active || gameMode !== 'spectator') {
+            clearInterval(spectatorInterval);
+            spectatorInterval = null;
+            return;
+        }
+
+        // AI controls the player side: move toward ball
+        if (M.ballActive && M.ballPos.y > 50) {
+            const diff = M.ballPos.x - M.playerPos;
+            const aiSpeed = 0.08 + (selectedChar.speed / 500);
+            playerTargetPos = Math.max(12, Math.min(88, M.playerPos + diff * aiSpeed));
+            if (!playerLerpActive) {
+                playerLerpActive = true;
+                requestAnimationFrame(lerpPlayerMovement);
+            }
+        }
+
+        // AI serve handling
+        if (M.isPlayerServe && M.servePhase === 'ready') {
+            // Wait a moment, then auto-serve
+            setTimeout(() => {
+                if (M.servePhase === 'ready') {
+                    serveToss();
+                    setTimeout(() => {
+                        if (M.servePhase === 'toss') {
+                            M.servePhase = 'charging';
+                            M.servePower = 0;
+                            M.serveStartY = window.innerHeight * 0.8;
+                            M.serveStartX = window.innerWidth * 0.5;
+                            setTimeout(() => {
+                                if (M.servePhase === 'charging') {
+                                    releaseServe();
+                                }
+                            }, 300 + Math.random() * 200);
+                        }
+                    }, 100);
+                }
+            }, 500 + Math.random() * 500);
+        }
+
+        // AI hit handling
+        if (M.canHit) {
+            const ang = (Math.random() - 0.5) * 0.8;
+            const pwr = 0.5 + Math.random() * 0.4;
+            setTimeout(() => {
+                if (M.canHit) hitBall(pwr, ang);
+            }, 80 + Math.random() * 120);
+        }
+
+        // AI net rush occasionally
+        if (M.ballActive && M.rally > 3 && !M.atNet && Math.random() < 0.02) {
+            if (typeof triggerNetRush === 'function') triggerNetRush();
+        }
+    }, 50);
+}
+
+function exitSpectatorMode() {
+    gameMode = 'solo';
+    M.active = false;
+
+    if (spectatorInterval) {
+        clearInterval(spectatorInterval);
+        spectatorInterval = null;
+    }
+
+    // Restore HUD labels
+    const pName = document.querySelector('.player-info .player-name');
+    const oName = document.querySelectorAll('.player-info .player-name')[1];
+    if (pName) pName.textContent = 'YOU';
+    if (oName) oName.textContent = 'CPU';
+
+    const specLabel = document.getElementById('spectatorLabel');
+    if (specLabel) specLabel.style.display = 'none';
+    const exitBtn = document.getElementById('spectatorExitBtn');
+    if (exitBtn) exitBtn.style.display = 'none';
+
+    safeGetElement('gameCourt')?.classList.remove('active');
+    safeGetElement('gameHUD')?.classList.remove('active');
+    document.getElementById('pauseBtn').style.display = 'none';
+
+    resetBallUI();
+    safeGetElement('mainMenu')?.classList.add('active');
+    updateUI();
+}
+
+// ---- SPECTATOR SELECT SCREEN ----
+
+function showSpectatorSelect() {
+    safeGetElement('mainMenu')?.classList.remove('active');
+    const screen = safeGetElement('spectatorSelectScreen');
+    if (!screen) return;
+    screen.classList.add('active');
+    renderSpectatorSelect();
+}
+
+function closeSpectatorSelect() {
+    safeGetElement('spectatorSelectScreen')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
+}
+
+let specChar1 = null;
+let specChar2 = null;
+
+function renderSpectatorSelect() {
+    const container = document.getElementById('spectatorCharGrid');
+    if (!container) return;
+
+    const chars = window.CHARACTERS.filter(c => c.unlocked);
+    if (!specChar1 && chars.length > 0) specChar1 = chars[0];
+    if (!specChar2 && chars.length > 1) specChar2 = chars[1];
+
+    container.innerHTML = chars.map(c => {
+        const sel1 = specChar1 && specChar1.id === c.id;
+        const sel2 = specChar2 && specChar2.id === c.id;
+        let borderStyle = '';
+        if (sel1) borderStyle = 'border-color:#4caf50 #2a6a2a #2a6a2a #4caf50;';
+        else if (sel2) borderStyle = 'border-color:#2196f3 #0d47a1 #0d47a1 #2196f3;';
+
+        const sprites = typeof getCharSprites === 'function' ? getCharSprites(c) : {};
+        const idleImg = sprites.idle || '';
+
+        return `<div class="char-card" style="${borderStyle}" onclick="selectSpectatorChar('${c.id}')">
+            <div class="char-preview" style="background-image:url('${idleImg}')"></div>
+            <div class="char-name">${c.name}</div>
+            ${sel1 ? '<div style="font-size:8px;color:#4caf50;font-weight:700;margin-top:2px">P1 (GREEN)</div>' : ''}
+            ${sel2 ? '<div style="font-size:8px;color:#2196f3;font-weight:700;margin-top:2px">P2 (BLUE)</div>' : ''}
+        </div>`;
+    }).join('');
+
+    // Update detail panel
+    const detail = document.getElementById('spectatorDetail');
+    if (detail && specChar1 && specChar2) {
+        detail.innerHTML = `
+            <div style="display:flex;justify-content:space-around;align-items:center;padding:10px">
+                <div style="text-align:center">
+                    <div style="font-family:Bebas Neue,sans-serif;font-size:18px;color:#4caf50;letter-spacing:2px">${specChar1.name}</div>
+                    <div style="font-size:9px;color:#8ac">P:${specChar1.power} S:${specChar1.speed} C:${specChar1.control}</div>
+                </div>
+                <div style="font-family:Bebas Neue,sans-serif;font-size:28px;color:#ffd700">VS</div>
+                <div style="text-align:center">
+                    <div style="font-family:Bebas Neue,sans-serif;font-size:18px;color:#2196f3;letter-spacing:2px">${specChar2.name}</div>
+                    <div style="font-size:9px;color:#8ac">P:${specChar2.power} S:${specChar2.speed} C:${specChar2.control}</div>
+                </div>
+            </div>`;
+    }
+}
+
+function selectSpectatorChar(id) {
+    const c = window.CHARACTERS.find(ch => ch.id === id);
+    if (!c) return;
+
+    if (!specChar1 || (specChar1 && specChar2)) {
+        specChar1 = c;
+        specChar2 = null;
+    } else {
+        if (c.id === specChar1.id) return; // Can't pick same
+        specChar2 = c;
+    }
+    renderSpectatorSelect();
+}
+
+function confirmSpectatorMatch() {
+    if (!specChar1 || !specChar2) {
+        toast('Select two different characters');
+        return;
+    }
+    startSpectatorMode(specChar1, specChar2);
+}
+
+// ---- 2-PLAYER SELECT SCREEN ----
+
+function show2PlayerSelect() {
+    safeGetElement('mainMenu')?.classList.remove('active');
+    const screen = safeGetElement('twoPlayerSelectScreen');
+    if (!screen) return;
+    screen.classList.add('active');
+    render2PlayerSelect();
+}
+
+function close2PlayerSelect() {
+    safeGetElement('twoPlayerSelectScreen')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
+}
+
+let p2SelectChar1 = null;
+let p2SelectChar2 = null;
+
+function render2PlayerSelect() {
+    const container = document.getElementById('twoPlayerCharGrid');
+    if (!container) return;
+
+    const chars = window.CHARACTERS.filter(c => c.unlocked);
+    if (!p2SelectChar1 && chars.length > 0) p2SelectChar1 = chars[0];
+    if (!p2SelectChar2 && chars.length > 1) p2SelectChar2 = chars[1];
+
+    container.innerHTML = chars.map(c => {
+        const sel1 = p2SelectChar1 && p2SelectChar1.id === c.id;
+        const sel2 = p2SelectChar2 && p2SelectChar2.id === c.id;
+        let borderStyle = '';
+        if (sel1) borderStyle = 'border-color:#4caf50 #2a6a2a #2a6a2a #4caf50;';
+        else if (sel2) borderStyle = 'border-color:#ff9800 #e65100 #e65100 #ff9800;';
+
+        const sprites = typeof getCharSprites === 'function' ? getCharSprites(c) : {};
+        const idleImg = sprites.idle || '';
+
+        return `<div class="char-card" style="${borderStyle}" onclick="select2PlayerChar('${c.id}')">
+            <div class="char-preview" style="background-image:url('${idleImg}')"></div>
+            <div class="char-name">${c.name}</div>
+            ${sel1 ? '<div style="font-size:8px;color:#4caf50;font-weight:700;margin-top:2px">P1 (WASD)</div>' : ''}
+            ${sel2 ? '<div style="font-size:8px;color:#ff9800;font-weight:700;margin-top:2px">P2 (ARROWS)</div>' : ''}
+        </div>`;
+    }).join('');
+
+    const detail = document.getElementById('twoPlayerDetail');
+    if (detail && p2SelectChar1 && p2SelectChar2) {
+        detail.innerHTML = `
+            <div style="display:flex;justify-content:space-around;align-items:center;padding:10px">
+                <div style="text-align:center">
+                    <div style="font-family:Bebas Neue,sans-serif;font-size:18px;color:#4caf50;letter-spacing:2px">${p2SelectChar1.name}</div>
+                    <div style="font-size:9px;color:#8ac">WASD + Space</div>
+                </div>
+                <div style="font-family:Bebas Neue,sans-serif;font-size:28px;color:#ffd700">VS</div>
+                <div style="text-align:center">
+                    <div style="font-family:Bebas Neue,sans-serif;font-size:18px;color:#ff9800;letter-spacing:2px">${p2SelectChar2.name}</div>
+                    <div style="font-size:9px;color:#8ac">Arrows + Enter</div>
+                </div>
+            </div>`;
+    }
+}
+
+function select2PlayerChar(id) {
+    const c = window.CHARACTERS.find(ch => ch.id === id);
+    if (!c) return;
+
+    if (!p2SelectChar1 || (p2SelectChar1 && p2SelectChar2)) {
+        p2SelectChar1 = c;
+        p2SelectChar2 = null;
+    } else {
+        if (c.id === p2SelectChar1.id) return;
+        p2SelectChar2 = c;
+    }
+    render2PlayerSelect();
+}
+
+function start2PlayerMatch() {
+    if (!p2SelectChar1 || !p2SelectChar2) {
+        toast('Select two different characters');
+        return;
+    }
+
+    gameMode = '2player';
+    selectedChar = p2SelectChar1;
+    opponentChar = p2SelectChar2;
+    player2Char = p2SelectChar2;
+
+    safeGetElement('twoPlayerSelectScreen')?.classList.remove('active');
+
+    // Start match directly (bypass video)
+    twoPlayerStartMatch();
+}
+
+async function twoPlayerStartMatch() {
+    const s = DIFF[G.difficulty];
+    updateSprites();
+
+    const surface = typeof selectRandomCourt === 'function' ? selectRandomCourt() : 'hard';
+    if (typeof applyCourtSurface === 'function') applyCourtSurface(surface);
+
+    await showVsIntro(selectedChar, opponentChar, surface);
+
+    fullMatchReplay = [];
+
+    let matchTime = 300;
+    const playerServesFirst = Math.random() < 0.5;
+
+    M = {
+        active: true, startTime: Date.now(),
+        pPoints: 0, oPoints: 0, pGames: 0, oGames: 0, pSets: 0, oSets: 0,
+        time: matchTime, matchLimit: null, timeExpired: false,
+        isTiebreak: false, tiebreakServer: 'player',
+        servingPlayer: playerServesFirst ? 'player' : 'opp',
+        serveNum: 1, serveSide: 'deuce', isPlayerServe: false, servePhase: 'none',
+        servePower: 0, serveAimX: 50, serveAimY: 25, serveStartY: null, serveStartX: null,
+        lastServeSpeed: 0, rally: 0, ballActive: false,
+        ballPos: {x: 50, y: 10}, ballVel: {x: 0, y: 0, z: 0}, ballH: 100,
+        ballBounces: 0, ballSpin: 0, lastHitBy: 'player', canHit: false,
+        combo: 0, pendingCombo: false, streak: 0, bestStreak: 0,
+        oppPos: 50, playerPos: 70,
+        gemActive: false, gemPos: {x: 50, y: 70}, gemTimer: 0, gemMultiplier: 1,
+        aces: 0, doubleFaults: 0, winners: 0, longestRally: 0, totalRallies: 0,
+        pointsPlayed: 0, pendingAce: false, lostServiceGame: false, wasDown03: false,
+        playerY: 95, atNet: false, netRushTimer: 0, oppAtNet: false, oppY: 8,
+        settings: s
+    };
+
+    initSprites();
+    safeGetElement('gameHUD')?.classList.add('active');
+    safeGetElement('gameCourt')?.classList.add('active');
+    const pauseBtn = document.getElementById('pauseBtn');
+    if (pauseBtn) pauseBtn.style.display = 'flex';
+
+    // Update HUD labels
+    const pName = document.querySelector('.player-info .player-name');
+    const oName = document.querySelectorAll('.player-info .player-name')[1];
+    if (pName) pName.textContent = 'P1';
+    if (oName) oName.textContent = 'P2';
+
+    startKeyboardMovement();
+
+    updateMatchUI();
+    startTimer();
+
+    setTimeout(startNextPoint, 1200);
+}
+
+// Override opponentServe and opponentReturn for 2-player mode
+const _origOpponentServe = opponentServe;
+opponentServe = function() {
+    if (gameMode === '2player') {
+        // Wait for P2 to press Enter
+        highlightServiceBox();
+        updateServeIndicator();
+        const servePosX = M.serveSide === 'deuce' ? 40 : 60;
+        M.oppPos = servePosX;
+        const oppEl = safeGetElement('opponent');
+        if (oppEl) oppEl.style.left = servePosX + '%';
+
+        toast('P2: Press ENTER to serve');
+        return;
+    }
+    return _origOpponentServe.call(this);
+};
+
+const _origOpponentReturn = opponentReturn;
+opponentReturn = function() {
+    if (gameMode === '2player') {
+        // In 2player, opponent side doesn't auto-return
+        // P2 must press Enter when ball is near
+        // But we still need the ball reaching opp side to trigger interception opportunity
+        // The existing animateReturn handles scoring when ball goes past - so this is fine
+        // Just don't auto-return
+        return;
+    }
+    return _origOpponentReturn.call(this);
+};
+
+// Patch to clean up modes on return to menu
+const _origReturnToMenu = returnToMenu;
+returnToMenu = function() {
+    // Clean up multiplayer state
+    if (gameMode === '2player') {
+        stopKeyboardMovement();
+        // Restore HUD labels
+        const pName = document.querySelector('.player-info .player-name');
+        const oName = document.querySelectorAll('.player-info .player-name')[1];
+        if (pName) pName.textContent = 'YOU';
+        if (oName) oName.textContent = 'CPU';
+    }
+    if (gameMode === 'spectator') {
+        exitSpectatorMode();
+        return;
+    }
+
+    gameMode = 'solo';
+    p1Keys = { up: false, down: false, left: false, right: false, swing: false };
+    p2Keys = { up: false, down: false, left: false, right: false, swing: false };
+
+    const specLabel = document.getElementById('spectatorLabel');
+    if (specLabel) specLabel.style.display = 'none';
+    const specExit = document.getElementById('spectatorExitBtn');
+    if (specExit) specExit.style.display = 'none';
+    const repExit = document.getElementById('replayExitBtn');
+    if (repExit) repExit.style.display = 'none';
+
+    return _origReturnToMenu.call(this);
+};
+
+// Also start keyboard movement in solo mode for WASD support
+const _origActuallyStartMatch2 = actuallyStartMatch;
+actuallyStartMatch = async function() {
+    gameMode = 'solo';
+    startKeyboardMovement();
+    return _origActuallyStartMatch2.call(this);
+};
+
+// Update credits to mention new features
+const _origRenderCredits = renderCredits;
+renderCredits = function() {
+    _origRenderCredits.call(this);
+    const el = safeGetElement('creditsContent');
+    if (!el) return;
+    // Find features div and append
+    const featDiv = el.querySelector('div:nth-child(1) div:last-child');
+    if (featDiv) {
+        featDiv.innerHTML += `
+            <div>Local 2-Player mode (WASD vs Arrow keys)</div>
+            <div>AI vs AI spectator mode</div>
+            <div>Full match replay from menu</div>
+            <div>Loading screen gameplay tips</div>
+        `;
+    }
+};
