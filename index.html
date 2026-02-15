@@ -462,6 +462,57 @@
         .buy-btn{padding:7px 14px;background:linear-gradient(135deg,#4caf50,#8bc34a);border:none;border-radius:0;color:#fff;font-size:9px;font-weight:700;text-transform:uppercase;cursor:pointer}
         .buy-btn:disabled{background:#555;opacity:0.5}
         .equip-btn{padding:7px 14px;background:linear-gradient(135deg,#2196f3,#03a9f4);border:none;border-radius:0;color:#fff;font-size:9px;font-weight:700;text-transform:uppercase;cursor:pointer}
+
+        /* === VS INTRO SCREEN === */
+        .vs-intro{position:fixed;inset:0;background:#000;z-index:6000;display:none;justify-content:center;align-items:center;overflow:hidden}
+        .vs-intro.active{display:flex}
+        .vs-intro-bg{position:absolute;inset:0;background:linear-gradient(135deg,#1a0a2e,#0a1a3e);overflow:hidden}
+        .vs-intro-bg::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 40px,rgba(255,215,0,0.03) 40px,rgba(255,215,0,0.03) 80px)}
+        .vs-player{position:absolute;top:50%;width:40%;display:flex;flex-direction:column;align-items:center;transform:translateY(-50%)}
+        .vs-player.left{left:5%;animation:vsSlideLeft 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards}
+        .vs-player.right{right:5%;animation:vsSlideRight 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards}
+        @keyframes vsSlideLeft{0%{opacity:0;transform:translateY(-50%) translateX(-100%)}100%{opacity:1;transform:translateY(-50%) translateX(0)}}
+        @keyframes vsSlideRight{0%{opacity:0;transform:translateY(-50%) translateX(100%)}100%{opacity:1;transform:translateY(-50%) translateX(0)}}
+        .vs-sprite{width:80px;height:96px;image-rendering:pixelated;background-size:80px 96px;background-repeat:no-repeat;background-position:center;margin-bottom:10px;filter:drop-shadow(0 0 15px rgba(255,215,0,0.3))}
+        .vs-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(18px,5vw,28px);color:#ffd700;text-shadow:2px 2px 0 #000;letter-spacing:2px;text-align:center}
+        .vs-nationality{font-size:10px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:2px;margin-top:4px;text-align:center}
+        .vs-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,15vw,80px);color:#fff;text-shadow:0 0 30px rgba(255,215,0,0.5),0 0 60px rgba(255,215,0,0.3);z-index:1;animation:vsPop 0.5s 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards}
+        @keyframes vsPop{0%{transform:translate(-50%,-50%) scale(0) rotate(-10deg)}100%{transform:translate(-50%,-50%) scale(1) rotate(0deg)}}
+        .vs-court-label{position:absolute;bottom:15%;left:50%;transform:translateX(-50%);font-family:'Bebas Neue',sans-serif;font-size:18px;color:rgba(255,255,255,0.5);letter-spacing:4px;text-transform:uppercase;animation:vsFadeIn 0.5s 0.8s both}
+        @keyframes vsFadeIn{0%{opacity:0}100%{opacity:1}}
+
+        /* === MATCH POINT DRAMA === */
+        .match-point-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Bebas Neue',sans-serif;font-size:clamp(36px,10vw,56px);color:#f44336;text-shadow:0 0 30px rgba(244,67,54,0.6);z-index:300;opacity:0;pointer-events:none}
+        .match-point-banner.active{animation:matchPointPop 1.5s ease-out forwards}
+        @keyframes matchPointPop{0%{opacity:0;transform:translate(-50%,-50%) scale(0.5)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}30%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-55%) scale(1)}}
+        .game-court.slow-motion{transition:none !important}
+        .game-court.slow-motion .ball,.game-court.slow-motion .opponent,.game-court.slow-motion .player-paddle{transition-duration:0.05s !important}
+        .game-court.match-point-zoom{transform:scale(1.04) !important;transition:transform 1s ease !important}
+
+        /* === TROPHY ROOM (tournaments) === */
+        .trophy-room-entry{background:linear-gradient(180deg,#3a4a6a 0%,#2a3a5a 100%);border:2px solid;border-color:#ffd700 #aa8800 #aa8800 #ffd700;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:14px;box-shadow:2px 2px 0 rgba(0,0,0,0.3)}
+        .trophy-room-icon{font-family:'Bebas Neue',sans-serif;font-size:36px;color:#ffd700;min-width:44px;text-align:center;text-shadow:0 0 10px rgba(255,215,0,0.4)}
+        .trophy-room-info{flex:1}
+        .trophy-room-title{font-family:'Bebas Neue',sans-serif;font-size:16px;color:#ffd700;letter-spacing:1px}
+        .trophy-room-detail{font-size:10px;color:#8ac;margin-top:3px}
+        .trophy-room-date{font-size:9px;color:rgba(255,215,0,0.5);margin-top:2px}
+
+        /* === VICTORY/DEFEAT POSES === */
+        .victory-pose-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1900;display:none;justify-content:center;align-items:center;flex-direction:column;gap:15px}
+        .victory-pose-overlay.active{display:flex}
+        .victory-pose-sprite{width:80px;height:96px;image-rendering:pixelated;background-size:80px 96px;background-repeat:no-repeat;margin-bottom:10px;filter:drop-shadow(0 0 20px rgba(255,215,0,0.5))}
+        .victory-pose-text{font-family:'Bebas Neue',sans-serif;font-size:clamp(14px,4vw,20px);color:#ffd700;text-align:center;letter-spacing:2px;max-width:300px;text-shadow:2px 2px 0 #000}
+        .defeat-pose-text{font-family:'Bebas Neue',sans-serif;font-size:clamp(14px,4vw,20px);color:#f44336;text-align:center;letter-spacing:2px;max-width:300px;text-shadow:2px 2px 0 #000}
+
+        /* === COURT SURFACES === */
+        .game-court.court-clay{background:linear-gradient(180deg,#c4722a 0%,#a85d1f 30%,#d4803a 60%,#b86b28 100%) !important;background-image:none !important}
+        .game-court.court-grass{background:linear-gradient(180deg,#2d7a2d 0%,#1e6b1e 30%,#3a8a3a 60%,#2a7a2a 100%) !important;background-image:none !important}
+        .game-court.court-hard{background:linear-gradient(180deg,#1a4a8a 0%,#143a6a 30%,#1e5a9a 60%,#164a7a 100%) !important;background-image:none !important}
+
+        /* === REPLAY SYSTEM === */
+        .replay-overlay{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);border:2px solid rgba(255,215,0,0.4);padding:6px 18px;z-index:400;display:none;align-items:center;gap:8px;font-family:'Bebas Neue',sans-serif;color:#ffd700;font-size:16px;letter-spacing:2px}
+        .replay-overlay.active{display:flex}
+        .replay-slow{font-size:12px;color:rgba(255,255,255,0.6);letter-spacing:1px}
         .equipped-badge{padding:7px 14px;background:linear-gradient(135deg,#ffd700,#ffed4e);border:none;border-radius:0;color:#1a1a2e;font-size:9px;font-weight:700;text-transform:uppercase}
         .tutorial-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.92);display:none;justify-content:center;align-items:center;z-index:3000;padding:20px}
         .tutorial-overlay.active{display:flex}
@@ -817,6 +868,35 @@
         </div>
     </div>
     <div class="progress-toast" id="progressToast"></div>
+
+    <!-- VS Intro Screen -->
+    <div class="vs-intro" id="vsIntro">
+        <div class="vs-intro-bg"></div>
+        <div class="vs-player left" id="vsPlayerLeft">
+            <div class="vs-sprite" id="vsPlayerSprite"></div>
+            <div class="vs-name" id="vsPlayerName">PLAYER</div>
+            <div class="vs-nationality" id="vsPlayerNat"></div>
+        </div>
+        <div class="vs-text">VS</div>
+        <div class="vs-player right" id="vsPlayerRight">
+            <div class="vs-sprite" id="vsOppSprite"></div>
+            <div class="vs-name" id="vsOppName">OPPONENT</div>
+            <div class="vs-nationality" id="vsOppNat"></div>
+        </div>
+        <div class="vs-court-label" id="vsCourtLabel">HARD COURT</div>
+    </div>
+
+    <!-- Match Point Banner -->
+    <div class="match-point-banner" id="matchPointBanner">MATCH POINT</div>
+
+    <!-- Victory/Defeat Pose Overlay -->
+    <div class="victory-pose-overlay" id="victoryPoseOverlay">
+        <div class="victory-pose-sprite" id="victoryPoseSprite"></div>
+        <div class="victory-pose-text" id="victoryPoseText"></div>
+    </div>
+
+    <!-- Replay Overlay -->
+    <div class="replay-overlay" id="replayOverlay">REPLAY <span class="replay-slow">SLOW MOTION</span></div>
 
     <!-- Tournament Screen -->
     <div class="screen tournament-screen" id="tournamentScreen" style="background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:calc(15px + env(safe-area-inset-top,0px)) 15px calc(15px + env(safe-area-inset-bottom,0px));overflow-y:auto">

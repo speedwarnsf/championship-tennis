@@ -5664,6 +5664,547 @@ function hideCharacterIntro() {
 }
 
 
+// ========== FEATURE: CHARACTER NATIONALITIES ==========
+const CHARACTER_NATIONALITIES = {
+    'player1': 'Switzerland', 'player2': 'United States', 'player3': 'Serbia',
+    'player4': 'Germany', 'player5': 'Spain', 'player6': 'Czech Republic',
+    'player7': 'Sweden', 'player8': 'United States', 'player9': 'Germany',
+    'player10': 'United States', 'player11': 'United States', 'player12': 'Japan',
+    'punk': 'United States', 'chubby': 'United States', 'beach': 'Russia',
+    'goth': 'Romania', 'anime': 'Australia', 'latino': 'Spain',
+    'redhead': 'United States', 'grandpa': 'Australia', 'indian': 'India'
+};
+
+// ========== FEATURE 1: VS INTRO SCREEN ==========
+function showVsIntro(playerChar, oppChar, courtSurface) {
+    return new Promise(resolve => {
+        const intro = safeGetElement('vsIntro');
+        if (!intro) { resolve(); return; }
+
+        const V = '?v=32';
+        const pSprite = safeGetElement('vsPlayerSprite');
+        const oSprite = safeGetElement('vsOppSprite');
+        if (pSprite) pSprite.style.backgroundImage = `url(sprites-v2/thumbs/${playerChar.id}-thumb.png${V})`;
+        if (oSprite) oSprite.style.backgroundImage = `url(sprites-v2/thumbs/${oppChar.id}-thumb.png${V})`;
+
+        { const _el = safeGetElement('vsPlayerName'); if(_el) _el.textContent = playerChar.name.toUpperCase(); }
+        { const _el = safeGetElement('vsOppName'); if(_el) _el.textContent = oppChar.name.toUpperCase(); }
+        { const _el = safeGetElement('vsPlayerNat'); if(_el) _el.textContent = CHARACTER_NATIONALITIES[playerChar.id] || ''; }
+        { const _el = safeGetElement('vsOppNat'); if(_el) _el.textContent = CHARACTER_NATIONALITIES[oppChar.id] || ''; }
+
+        const surfaceNames = { clay: 'CLAY COURT', grass: 'GRASS COURT', hard: 'HARD COURT' };
+        { const _el = safeGetElement('vsCourtLabel'); if(_el) _el.textContent = surfaceNames[courtSurface] || 'HARD COURT'; }
+
+        intro.classList.add('active');
+        sounds.changeover?.();
+
+        setTimeout(() => {
+            intro.classList.remove('active');
+            resolve();
+        }, 2800);
+    });
+}
+
+// ========== FEATURE 2: MATCH POINT DRAMA ==========
+let _matchPointActive = false;
+let _slowMotionActive = false;
+const _normalBallSpeedMult = 1.0;
+
+function isMatchPoint() {
+    if (!M || !M.active) return false;
+    // Check if someone is one point away from winning the match
+    if (G.matchType === 'quick') {
+        // Quick: first to 3 games. Check if at 2 games and 3+ points with lead
+        if (M.pGames >= 2 && M.pPoints >= 3 && M.pPoints > M.oPoints) return 'player';
+        if (M.oGames >= 2 && M.oPoints >= 3 && M.oPoints > M.pPoints) return 'opp';
+    }
+    if (M.isTiebreak) {
+        if (M.pPoints >= 6 && M.pPoints > M.oPoints) return 'player';
+        if (M.oPoints >= 6 && M.oPoints > M.pPoints) return 'opp';
+    }
+    // Standard: check if at game point that would win a set
+    const pCanWinGame = M.pPoints >= 3 && M.pPoints > M.oPoints;
+    const oCanWinGame = M.oPoints >= 3 && M.oPoints > M.pPoints;
+    if (pCanWinGame && M.pGames >= 5 && M.pGames > M.oGames) return 'player';
+    if (oCanWinGame && M.oGames >= 5 && M.oGames > M.pGames) return 'opp';
+    return false;
+}
+
+function checkMatchPointDrama() {
+    const mp = isMatchPoint();
+    if (mp && !_matchPointActive) {
+        _matchPointActive = true;
+        // Show banner
+        const banner = safeGetElement('matchPointBanner');
+        if (banner) {
+            banner.textContent = mp === 'player' ? 'MATCH POINT' : 'MATCH POINT - OPPONENT';
+            banner.classList.remove('active');
+            void banner.offsetWidth;
+            banner.classList.add('active');
+            setTimeout(() => banner.classList.remove('active'), 1500);
+        }
+        // Camera zoom
+        const court = safeGetElement('gameCourt');
+        if (court) court.classList.add('match-point-zoom');
+        // Boost crowd
+        if (AudioManager.crowdGain && AudioManager.ctx) {
+            AudioManager.crowdGain.gain.setTargetAtTime(0.15, AudioManager.ctx.currentTime, 0.3);
+        }
+    } else if (!mp && _matchPointActive) {
+        _matchPointActive = false;
+        const court = safeGetElement('gameCourt');
+        if (court) court.classList.remove('match-point-zoom');
+        _slowMotionActive = false;
+    }
+}
+
+function enableSlowMotion() {
+    if (_slowMotionActive) return;
+    _slowMotionActive = true;
+    const court = safeGetElement('gameCourt');
+    if (court) court.classList.add('slow-motion');
+}
+
+function disableSlowMotion() {
+    _slowMotionActive = false;
+    const court = safeGetElement('gameCourt');
+    if (court) court.classList.remove('slow-motion');
+}
+
+function getSlowMotionMult() {
+    return _slowMotionActive ? 0.5 : 1.0;
+}
+
+// ========== FEATURE 3: TROPHY ROOM (Tournament Wins) ==========
+function saveTournamentTrophy(opponentName, score) {
+    if (!G.trophyRoom) G.trophyRoom = [];
+    G.trophyRoom.push({
+        date: new Date().toISOString(),
+        opponent: opponentName,
+        score: score,
+        character: selectedChar.name,
+        difficulty: G.difficulty
+    });
+    save();
+}
+
+function renderTrophyRoom() {
+    const grid = safeGetElement('trophyGrid');
+    if (!grid) return;
+
+    // Render tournament trophies section first
+    let trophyHtml = '';
+    if (G.trophyRoom && G.trophyRoom.length > 0) {
+        trophyHtml += `<div style="text-align:center;margin-bottom:12px">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#ffd700;letter-spacing:3px;margin-bottom:6px">TOURNAMENT VICTORIES</div>
+        </div>`;
+        // Reverse chronological
+        const trophies = [...G.trophyRoom].reverse();
+        trophies.forEach(t => {
+            const date = new Date(t.date).toLocaleDateString();
+            trophyHtml += `<div class="trophy-room-entry">
+                <div class="trophy-room-icon">W</div>
+                <div class="trophy-room-info">
+                    <div class="trophy-room-title">CHAMPION - ${(t.difficulty || 'rookie').toUpperCase()}</div>
+                    <div class="trophy-room-detail">Defeated ${t.opponent} (${t.score}) as ${t.character}</div>
+                    <div class="trophy-room-date">${date}</div>
+                </div>
+            </div>`;
+        });
+        trophyHtml += `<div style="height:16px"></div>`;
+    }
+
+    // Now render achievements (existing logic moved inline)
+    if (!G.achievements) G.achievements = {};
+    const unlocked = ACHIEVEMENTS.filter(a => G.achievements[a.id]);
+    const locked = ACHIEVEMENTS.filter(a => !G.achievements[a.id]);
+    const pct = Math.round((unlocked.length / ACHIEVEMENTS.length) * 100);
+
+    trophyHtml += `<div style="text-align:center;margin-bottom:10px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#ffd700;letter-spacing:3px;margin-bottom:6px">ACHIEVEMENTS</div>
+        <div style="color:#ffd700;font-family:'Bebas Neue',sans-serif;font-size:28px">${unlocked.length} / ${ACHIEVEMENTS.length}</div>
+        <div style="color:rgba(255,215,0,0.5);font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Unlocked</div>
+        <div style="height:6px;background:rgba(0,0,0,0.3);overflow:hidden;margin:0 20px">
+            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#ffd700,#ff9800);transition:width 0.5s"></div>
+        </div>
+    </div>`;
+
+    grid.innerHTML = trophyHtml;
+
+    [...unlocked, ...locked].forEach(a => {
+        const isUnlocked = !!G.achievements[a.id];
+        const date = isUnlocked ? new Date(G.achievements[a.id].unlockedAt).toLocaleDateString() : '';
+        const card = document.createElement('div');
+        card.className = `trophy-card ${isUnlocked ? 'unlocked' : 'locked'}`;
+        let progressHTML = '';
+        if (!isUnlocked && G.careerStats) {
+            const s = G.careerStats;
+            const progressMap = {
+                'first_ace': {cur: s.totalAces||0, max: 1}, 'ace_10': {cur: s.totalAces||0, max: 10},
+                'ace_50': {cur: s.totalAces||0, max: 50}, 'first_win': {cur: s.matchesWon||0, max: 1},
+                'win_10': {cur: s.matchesWon||0, max: 10}, 'win_50': {cur: s.matchesWon||0, max: 50},
+                'matches_25': {cur: s.matchesPlayed||0, max: 25}, 'matches_100': {cur: s.matchesPlayed||0, max: 100},
+                'streak_5': {cur: s.bestStreak||0, max: 5}, 'streak_10': {cur: s.bestStreak||0, max: 10},
+                'rally_15': {cur: s.longestRally||0, max: 15}, 'rally_25': {cur: s.longestRally||0, max: 25},
+                'rally_50': {cur: s.longestRally||0, max: 50}, 'rich': {cur: s.totalCoins||0, max: 1000},
+                'wealthy': {cur: s.totalCoins||0, max: 5000}, 'winner_20': {cur: s.totalWinners||0, max: 20},
+            };
+            const p = progressMap[a.id];
+            if (p) {
+                const pctDone = Math.min(100, Math.round((p.cur / p.max) * 100));
+                progressHTML = `<div class="trophy-progress">${p.cur}/${p.max} (${pctDone}%)</div>`;
+            }
+        }
+        card.innerHTML = `
+            <div class="trophy-icon" style="${isUnlocked ? 'filter:drop-shadow(0 0 8px rgba(255,215,0,0.6))' : ''}">${isUnlocked ? a.icon : 'LOCKED'}</div>
+            <div class="trophy-info">
+                <div class="trophy-name">${a.name}</div>
+                <div class="trophy-desc">${a.desc}</div>
+                ${isUnlocked ? `<div class="trophy-date">Unlocked ${date}</div>` : progressHTML}
+            </div>`;
+        grid.appendChild(card);
+    });
+}
+
+// ========== FEATURE 4: CHARACTER VICTORY/DEFEAT POSES ==========
+const VICTORY_TEXTS = {
+    'player1': "Elegance wins. Every time.",
+    'player2': "Another one down!",
+    'player3': "Nobody outlasts me. Nobody.",
+    'player4': "Precision beats power.",
+    'player5': "The clay king bows to no one!",
+    'player6': "Serve and volley perfection.",
+    'player7': "Cool under fire. Always.",
+    'player8': "Power serves. Power wins.",
+    'player9': "BOOM! That is how it is done!",
+    'player10': "You will never break through.",
+    'player11': "Return that if you can!",
+    'player12': "Calm. Focused. Champion.",
+    'punk': "ARE YOU NOT ENTERTAINED?!",
+    'chubby': "Heavy hands make champions.",
+    'beach': "Grace under pressure.",
+    'goth': "Darkness prevails on the court.",
+    'anime': "LET'S GOOOOO! NO REGRETS!",
+    'latino': "VAMOS! VAMOS! VAMOS!",
+    'redhead': "History is made by the bold.",
+    'grandpa': "Experience. It never fades.",
+    'indian': "Net game? Untouchable."
+};
+
+const DEFEAT_TEXTS = {
+    'player1': "A rare stumble. Nothing more.",
+    'player2': "This is NOT over.",
+    'player3': "I will come back stronger.",
+    'player4': "A miscalculation. Next time.",
+    'player5': "The clay king will rise again.",
+    'player6': "Outplayed... this time.",
+    'player7': "Even ice cracks sometimes.",
+    'player8': "Power was not enough today.",
+    'player9': "My serve let me down.",
+    'player10': "The wall had a crack today.",
+    'player11': "Returns were not sharp enough.",
+    'player12': "Lost focus. It happens.",
+    'punk': "THAT LINE CALL WAS GARBAGE!",
+    'chubby': "My legs could not keep up.",
+    'beach': "Grace alone was not enough.",
+    'goth': "The darkness... retreats.",
+    'anime': "NEXT TIME I GO FULL SEND!",
+    'latino': "No... no... NEXT TIME!",
+    'redhead': "The fight continues.",
+    'grandpa': "These old bones need rest.",
+    'indian': "Reflexes were a step slow."
+};
+
+function showVictoryPose(won) {
+    return new Promise(resolve => {
+        const overlay = safeGetElement('victoryPoseOverlay');
+        if (!overlay) { resolve(); return; }
+
+        const char = won ? selectedChar : opponentChar;
+        if (!char) { resolve(); return; }
+
+        const V = '?v=32';
+        const sprite = safeGetElement('victoryPoseSprite');
+        if (sprite) sprite.style.backgroundImage = `url(sprites-v2/thumbs/${char.id}-thumb.png${V})`;
+
+        const textEl = safeGetElement('victoryPoseText');
+        if (textEl) {
+            const texts = won ? VICTORY_TEXTS : DEFEAT_TEXTS;
+            textEl.textContent = `"${texts[selectedChar.id] || (won ? 'Victory is mine.' : 'Next time.')}"`;
+            textEl.className = won ? 'victory-pose-text' : 'defeat-pose-text';
+        }
+
+        overlay.classList.add('active');
+
+        setTimeout(() => {
+            overlay.classList.remove('active');
+            resolve();
+        }, 2200);
+    });
+}
+
+// ========== FEATURE 5: COURT VARIETY / SURFACES ==========
+const COURT_SURFACES = {
+    clay: { name: 'Clay', color: 'court-clay', speedMult: 0.85, bounceBonus: 0.1 },
+    grass: { name: 'Grass', color: 'court-grass', speedMult: 1.15, bounceBonus: -0.08 },
+    hard: { name: 'Hard', color: 'court-hard', speedMult: 1.0, bounceBonus: 0.0 }
+};
+
+let currentSurface = 'hard';
+
+function selectRandomCourt() {
+    const surfaces = Object.keys(COURT_SURFACES);
+    currentSurface = surfaces[Math.floor(Math.random() * surfaces.length)];
+    return currentSurface;
+}
+
+function applyCourtSurface(surface) {
+    const court = safeGetElement('gameCourt');
+    if (!court) return;
+    // Remove all surface classes
+    court.classList.remove('court-clay', 'court-grass', 'court-hard');
+    const s = COURT_SURFACES[surface];
+    if (s) court.classList.add(s.color);
+}
+
+function getCourtSpeedMult() {
+    const s = COURT_SURFACES[currentSurface];
+    return s ? s.speedMult : 1.0;
+}
+
+function getCourtBounceMult() {
+    const s = COURT_SURFACES[currentSurface];
+    return s ? (0.72 + s.bounceBonus) : 0.72;
+}
+
+// ========== FEATURE 6: REPLAY SYSTEM ==========
+const REPLAY_BUFFER_SIZE = 120; // ~2 seconds at 60fps
+let replayBuffer = [];
+let replayActive = false;
+
+function recordReplayFrame() {
+    if (!M || !M.active || replayActive) return;
+    replayBuffer.push({
+        ballPos: { ...M.ballPos },
+        ballH: M.ballH,
+        ballActive: M.ballActive,
+        oppPos: M.oppPos,
+        playerPos: M.playerPos,
+        ballVel: M.ballVel ? { ...M.ballVel } : null,
+        timestamp: Date.now()
+    });
+    if (replayBuffer.length > REPLAY_BUFFER_SIZE) replayBuffer.shift();
+}
+
+function playReplay() {
+    if (replayBuffer.length < 10 || replayActive) return;
+    replayActive = true;
+
+    const overlay = safeGetElement('replayOverlay');
+    if (overlay) overlay.classList.add('active');
+
+    const frames = [...replayBuffer];
+    let idx = 0;
+    const SLOW_FACTOR = 3; // 3x slower
+
+    function replayFrame() {
+        if (idx >= frames.length) {
+            replayActive = false;
+            if (overlay) overlay.classList.remove('active');
+            return;
+        }
+
+        const f = frames[idx];
+        const ball = safeGetElement('ball');
+        const shadow = safeGetElement('ballShadow');
+        const opp = safeGetElement('opponent');
+        const paddle = safeGetElement('playerPaddle');
+
+        if (ball && f.ballActive) {
+            ball.classList.add('active');
+            ball.style.left = f.ballPos.x + '%';
+            ball.style.top = (f.ballPos.y - f.ballH / 10) + '%';
+        }
+        if (shadow && f.ballActive) {
+            shadow.classList.add('active');
+            shadow.style.left = f.ballPos.x + '%';
+            shadow.style.top = f.ballPos.y + '%';
+        }
+        if (opp) opp.style.left = f.oppPos + '%';
+        if (paddle) paddle.style.left = f.playerPos + '%';
+
+        idx++;
+        setTimeout(replayFrame, (1000 / 60) * SLOW_FACTOR);
+    }
+
+    replayFrame();
+}
+
+// ========== INTEGRATION: Hook into existing systems ==========
+
+// Override renderTrophyCase to use new trophy room
+const _origRenderTrophyCase = renderTrophyCase;
+renderTrophyCase = renderTrophyRoom;
+
+// Patch actuallyStartMatch to add VS intro + court surface
+const _origActuallyStartMatch = actuallyStartMatch;
+actuallyStartMatch = async function() {
+    const s = DIFF[G.difficulty];
+
+    // Select random opponent
+    selectRandomOpponent();
+    updateSprites();
+
+    // Select random court surface
+    const surface = selectRandomCourt();
+    applyCourtSurface(surface);
+
+    // Show VS intro
+    await showVsIntro(selectedChar, opponentChar, surface);
+
+    // Reset replay buffer
+    replayBuffer = [];
+    _matchPointActive = false;
+    _slowMotionActive = false;
+
+    // Now run original match start (inline the core logic since we already selected opponent)
+    let matchTime = s.time;
+    if (G.matchType === 'quick') matchTime = 180;
+    else if (G.matchType === 'timed') matchTime = 300;
+
+    const playerServesFirst = Math.random() < 0.5;
+
+    M = {
+        active: true, startTime: Date.now(),
+        pPoints: 0, oPoints: 0, pGames: 0, oGames: 0, pSets: 0, oSets: 0,
+        time: matchTime, matchLimit: G.matchType === 'timed' ? matchTime : null,
+        timeExpired: false, isTiebreak: false, tiebreakServer: 'player',
+        servingPlayer: playerServesFirst ? 'player' : 'opp',
+        serveNum: 1, serveSide: 'deuce', isPlayerServe: false, servePhase: 'none',
+        servePower: 0, serveAimX: 50, serveAimY: 25, serveStartY: null, serveStartX: null,
+        lastServeSpeed: 0, rally: 0, ballActive: false,
+        ballPos: {x: 50, y: 10}, ballVel: {x: 0, y: 0, z: 0}, ballH: 100,
+        ballBounces: 0, ballSpin: 0, lastHitBy: 'player', canHit: false,
+        combo: 0, pendingCombo: false, streak: 0, bestStreak: 0,
+        oppPos: 50, playerPos: 70,
+        gemActive: false, gemPos: {x: 50, y: 70}, gemTimer: 0, gemMultiplier: 1,
+        aces: 0, doubleFaults: 0, winners: 0, longestRally: 0, totalRallies: 0,
+        pointsPlayed: 0, pendingAce: false, lostServiceGame: false, wasDown03: false,
+        playerY: 95, atNet: false, netRushTimer: 0, oppAtNet: false, oppY: 8,
+        settings: s
+    };
+
+    initSprites();
+    safeGetElement('gameHUD')?.classList.add('active');
+    const pauseBtn = document.getElementById('pauseBtn');
+    if (pauseBtn) pauseBtn.style.display = 'flex';
+    safeGetElement('gameCourt')?.classList.add('active');
+    { const _el = safeGetElement('playerPaddle'); if (_el) _el.style.left = '70%'; }
+    safeGetElement('streakDisplay')?.classList.remove('active');
+    if ('ontouchstart' in window) safeGetElement('hitZoneIndicators')?.classList.add('visible');
+
+    updateMatchUI();
+    startTimer();
+
+    if (!G.hasPlayedBefore) {
+        G.hasPlayedBefore = true;
+        save();
+        showTutorial();
+        const waitForTutorial = setInterval(() => {
+            const tut = safeGetElement('tutorialOverlay');
+            if (!tut || !tut.classList.contains('active')) {
+                clearInterval(waitForTutorial);
+                showFirstMatchHints();
+                setTimeout(startNextPoint, 1200);
+            }
+        }, 200);
+    } else {
+        setTimeout(startNextPoint, 1200);
+    }
+};
+
+// Patch scorePoint to check match point drama + trigger replay
+const _origScorePoint = scorePoint;
+scorePoint = function(player) {
+    // Play replay of last 2 seconds before scoring (brief)
+    if (replayBuffer.length > 20 && !practiceMode && !replayActive) {
+        // Only replay dramatic points (rallies > 4 or match points)
+        if (M.rally >= 4 || _matchPointActive) {
+            playReplay();
+        }
+    }
+
+    const result = _origScorePoint.call(this, player);
+
+    // Check for match point after scoring
+    checkMatchPointDrama();
+
+    return result;
+};
+
+// Patch endMatch to show victory/defeat pose + save tournament trophy
+const _origEndMatch2 = endMatch;
+endMatch = async function() {
+    M.active = false;
+    const won = M.pSets > M.oSets || (M.pSets === M.oSets && M.pGames > M.oGames);
+
+    // Disable slow motion
+    disableSlowMotion();
+    _matchPointActive = false;
+    const court = safeGetElement('gameCourt');
+    if (court) court.classList.remove('match-point-zoom', 'court-clay', 'court-grass', 'court-hard');
+
+    // Show victory/defeat pose
+    await showVictoryPose(won);
+
+    // Restore active for original endMatch
+    M.active = false;
+    _origEndMatch2.call(this);
+};
+
+// Hook replay recording into animation loops - add to animateBall and animateReturn
+const _origAnimateBall = animateBall;
+animateBall = function() {
+    recordReplayFrame();
+    // Apply court speed multiplier to ball velocity
+    if (M.ballActive && currentSurface !== 'hard') {
+        // Slight speed adjustment per frame (subtle effect)
+        const mult = getCourtSpeedMult();
+        if (mult !== 1.0) {
+            M.ballVel.x *= (1 + (mult - 1) * 0.01);
+            M.ballVel.y *= (1 + (mult - 1) * 0.01);
+        }
+    }
+    // Apply slow motion on match point rallies
+    if (_matchPointActive && M.rally >= 3) {
+        enableSlowMotion();
+    }
+    return _origAnimateBall.call(this);
+};
+
+const _origAnimateReturn = animateReturn;
+animateReturn = function() {
+    recordReplayFrame();
+    return _origAnimateReturn.call(this);
+};
+
+// Patch finishTournamentMatch to save trophy when player wins tournament
+const _origFinishTournamentMatch = finishTournamentMatch;
+finishTournamentMatch = function(winnerId, pGames, oGames) {
+    _origFinishTournamentMatch.call(this, winnerId, pGames, oGames);
+
+    // Check if tournament just completed with player winning
+    if (tournament && tournament.completed && tournament.won) {
+        // Find the final opponent
+        const finalRound = tournament.rounds - 1;
+        const finalMatch = tournament.bracket[finalRound][0];
+        const oppId = finalMatch[0] === selectedChar.id ? finalMatch[1] : finalMatch[0];
+        const oppChar = window.CHARACTERS.find(c => c.id === oppId);
+        const score = `${pGames}-${oGames}`;
+        saveTournamentTrophy(oppChar ? oppChar.name : 'Unknown', score);
+    }
+};
+
 // Enhanced initialization
 document.addEventListener('DOMContentLoaded', () => {
     try {
