@@ -1,7 +1,17 @@
 .vercel
 .env*.local
+
+# Sprite source/working files (only characters/ and thumbs/ are used by the game)
+sprites-v2/*.png
+sprites-v2/sheets/
 sprites-v2/raw/
 sprites-v2/backup-pre-audit/
+
+# Generated/temp files
 regenerate_mismatched.py
-Gemini_Generated_Image_7b9ifz7b9ifz7b9i.png
+Gemini_Generated_Image_*.png
 hero_player_female.png
+
+# Portraits source (if large)
+portraits/*.png
+!portraits/thumbs/
