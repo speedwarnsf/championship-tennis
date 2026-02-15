@@ -1704,29 +1704,33 @@ function opponentReturn(){
     M.oppPos = M.ballPos.x;
     { const _el = safeGetElement('opponent'); if(_el) _el.style.left = M.oppPos + '%'; }
 
-    // Windup anticipation before serve return
+    // Windup anticipation before return — ball launches on hit, not before
     const oppEl = safeGetElement('opponent');
     oppEl?.classList.add('windup');
     setTimeout(() => {
+        if(!M.active) return;
         oppEl?.classList.remove('windup');
         oppEl?.classList.add('hitting');
         setOppSwinging();
         setTimeout(() => oppEl?.classList.remove('hitting'), 250);
         sounds.hit();
-    }, 120);
 
-    M.ballBounces = 0;
-    M.ballH = 45;
+        M.ballBounces = 0;
+        M.ballH = 45;
 
-    const targetX = M.playerPos + (Math.random() - 0.5) * 40;
-    M.ballVel = {
-        x: (targetX - M.ballPos.x) / 85,
-        y: M.settings.speed * 0.7,
-        z: 1.9
-    };
+        // Add slight targeting randomness for variety
+        const spread = 40 + M.rally * 2; // wider spread in longer rallies
+        const targetX = M.playerPos + (Math.random() - 0.5) * Math.min(spread, 60);
+        M.ballVel = {
+            x: (targetX - M.ballPos.x) / 85,
+            y: M.settings.speed * 0.7,
+            z: 1.8 + Math.random() * 0.4
+        };
+        M.ballSpin = (Math.random() - 0.5) * 0.3;
 
-    // Now normal rally begins
-    animateBall();
+        // Now normal rally begins — synced with hit
+        animateBall();
+    }, 130);
 }
 
 // ========== OPPONENT SERVE ==========
@@ -3198,6 +3202,7 @@ function hitBall(power, angle){
     const qual = power * acc * (1 + st.control/100) * volleyBonus;
 
     showHitEffect(power);
+    showTimingQuality(qual);
 
     // Enhanced player swing animation
     setPlayerSwinging();
@@ -3217,6 +3222,48 @@ function hitBall(power, angle){
 }
 
 // ========== VISUAL EFFECTS SYSTEM ==========
+
+// Court dust particles on ball bounce
+function createBounceParticles(x, y) {
+    const court = getCourtElement();
+    if(!court || isPerformanceMode()) return;
+    const count = 4 + Math.floor(Math.random() * 3);
+    for(let i = 0; i < count; i++){
+        const p = document.createElement('div');
+        p.style.cssText = `position:absolute;width:${3+Math.random()*4}px;height:${2+Math.random()*3}px;background:rgba(194,162,120,${0.5+Math.random()*0.3});left:${x}%;top:${y}%;transform:translate(-50%,-50%);z-index:39;pointer-events:none;border-radius:0`;
+        court.appendChild(p);
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 8 + Math.random() * 18;
+        const dx = Math.cos(angle) * dist;
+        const dy = Math.sin(angle) * dist * 0.5; // flatten vertically
+        p.animate([
+            { transform: 'translate(-50%,-50%) scale(1)', opacity: 0.8 },
+            { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.3)`, opacity: 0 }
+        ], { duration: 300 + Math.random() * 200, easing: 'ease-out' });
+        setTimeout(() => p.remove(), 550);
+    }
+}
+
+// Timing quality flash - shows how well-timed the hit was
+function showTimingQuality(quality) {
+    if(quality < 0.3) return; // Don't show for weak hits
+    const court = getCourtElement();
+    if(!court) return;
+    const el = document.createElement('div');
+    let text, color;
+    if(quality > 0.85) { text = 'PERFECT'; color = '#00ff88'; }
+    else if(quality > 0.65) { text = 'GREAT'; color = '#ffd700'; }
+    else if(quality > 0.45) { text = 'GOOD'; color = '#87ceeb'; }
+    else { text = 'EARLY'; color = '#ff8844'; }
+    el.textContent = text;
+    el.style.cssText = `position:absolute;left:${M.playerPos}%;bottom:12%;transform:translateX(-50%);color:${color};font-size:11px;font-weight:700;letter-spacing:2px;z-index:50;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,0.7);font-family:'Courier New',monospace`;
+    court.appendChild(el);
+    el.animate([
+        { transform: 'translateX(-50%) translateY(0)', opacity: 1 },
+        { transform: 'translateX(-50%) translateY(-25px)', opacity: 0 }
+    ], { duration: 600, easing: 'ease-out' });
+    setTimeout(() => el.remove(), 600);
+}
 
 function microShake(duration = 100) {
     const court = safeGetElement('gameCourt');
@@ -3448,12 +3495,12 @@ function showHitEffect(power){
         powerShake(250);
         hitstop(50); // 2-3 frame freeze for impact
         sounds.powerHit();
-    } else if(power > 0.7){
-        const court = safeGetElement('gameCourt');
-        court.classList.remove('shake');
-        void court.offsetWidth;
-        court.classList.add('shake');
-        setTimeout(() => court.classList.remove('shake'), 150);
+    } else if(power > 0.75){
+        powerShake(150);
+        hitstop(33); // Subtle frame freeze for solid hits
+        sounds.powerHit();
+    } else if(power > 0.6){
+        microShake(80);
         sounds.hit();
     } else {
         sounds.hit();
@@ -3483,6 +3530,7 @@ function showCombo(){
 function returnBall(qual, angle){
     M.ballActive = true;
     M.ballBounces = 0;
+    M.returnBounces = 0;
     M.rally++;
 
     // Rally tension - crowd gets louder as rally continues
@@ -3556,11 +3604,48 @@ function animateReturn(){
         return;
     }
 
-    // Ground bounce
+    // Ground bounce (player return traveling toward opponent)
     if(M.ballH <= 0 && M.ballVel.z < 0){
         M.ballH = 0;
-        M.ballVel.z = -M.ballVel.z * 0.72;
-        sounds.bounce();
+        const impactVel = Math.abs(M.ballVel.z);
+        const bounceEff = 0.72 + (impactVel > 2 ? 0.08 : 0);
+        M.ballVel.z = -M.ballVel.z * bounceEff;
+
+        // Spin kick on bounce
+        if(Math.abs(M.ballSpin) > 0.1){
+            M.ballVel.x += M.ballSpin * 0.15;
+        }
+
+        // Varied bounce sounds
+        if(impactVel > 2.5){ sounds.powerBounce(); }
+        else if(impactVel > 1.5){ sounds.bounce(); }
+        else { sounds.softBounce(); }
+
+        // Court dust particles on bounce
+        createBounceParticles(M.ballPos.x, M.ballPos.y);
+
+        // Micro-shake on hard bounces
+        if(impactVel > 2.8) microShake(50);
+
+        M.returnBounces = (M.returnBounces || 0) + 1;
+    }
+
+    // Ball bounced past baseline without being reached - point for player
+    if(M.ballPos.y < 3 && M.returnBounces > 0){
+        M.ballActive = false;
+        resetBallUI();
+        M.winners++;
+        M.rally = 0;
+        sounds.winner();
+        showCallOverlay('WINNER!', true);
+        M.streak++;
+        updateMatchStreakDisplay();
+        let reward = 10 + M.combo * 5;
+        if(G.equipment.special === 'x1') reward *= 2;
+        G.coins += reward;
+        toast('+' + reward + ' coins');
+        if(!scorePoint('p')) setTimeout(startNextPoint, 1500);
+        return;
     }
 
     // Out wide - whoever hit it last loses the point
