@@ -311,7 +311,7 @@ async function loadSpriteWithRetry(src, maxRetries = 2) {
     return false;
 }
 
-const G={coins:500,gems:20,level:1,xp:0,ntrp:2.5,skillPoints:0,stats:{power:10,speed:10,control:10,serve:10},equipment:{racket:null,shoes:null,special:null,serveGear:null},owned:[],difficulty:'rookie',matchType:'quick',trainingCompleted:[],dailyChallenge:null};
+const G={coins:500,gems:20,level:1,xp:0,ntrp:2.5,skillPoints:0,stats:{power:10,speed:10,control:10,serve:10},equipment:{racket:null,shoes:null,special:null,serveGear:null},owned:[],difficulty:'rookie',matchType:'quick',trainingCompleted:[],dailyChallenge:null,voiceIntros:true,voiceUmpire:true,voiceCrowd:true};
 
 // Daily Challenge System
 const DAILY_CHALLENGES = [
@@ -1918,6 +1918,9 @@ function load(){
         // Ensure new stats exist
         if(!G.stats.serve) G.stats.serve = 10;
         if(!G.equipment.serveGear) G.equipment.serveGear = null;
+        if(G.voiceIntros === undefined) G.voiceIntros = true;
+        if(G.voiceUmpire === undefined) G.voiceUmpire = true;
+        if(G.voiceCrowd === undefined) G.voiceCrowd = true;
     }
 
     // Restore unlocked characters from save
@@ -2043,27 +2046,27 @@ function closeShop(){
 const V = '?v=32';
 
 window.CHARACTERS = [
-    {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
-    {id:'player2', name:'Serena Slammin', power:65, speed:50, control:40, unlocked:true},
-    {id:'player3', name:'Novak Joke-ovic', power:55, speed:55, control:50, unlocked:true, cost:500},
-    {id:'player4', name:'Steffi Gaffe', power:45, speed:60, control:45, unlocked:true},
-    {id:'player5', name:'Rafa Noddle', power:65, speed:40, control:45, unlocked:true, cost:500},
-    {id:'player6', name:'Martina N.T.O.', power:40, speed:55, control:55, unlocked:false, cost:500},
-    {id:'player7', name:'Bjorn Bored', power:45, speed:45, control:60, unlocked:false, cost:750},
-    {id:'player8', name:'Venus Will-yams', power:50, speed:55, control:45, unlocked:false, cost:750},
-    {id:'player9', name:'Boris Bonkers', power:60, speed:35, control:55, unlocked:false, cost:1000},
-    {id:'player10', name:'Chris Ev-hurt', power:45, speed:50, control:55, unlocked:false, cost:1000},
-    {id:'player11', name:'Andre A-gassy', power:50, speed:60, control:40, unlocked:false, cost:1250},
-    {id:'player12', name:'Naomi Oh-saka', power:40, speed:55, control:55, unlocked:false, cost:1250},
-    {id:'punk', name:'John Mac-n-Throw', power:70, speed:50, control:30, unlocked:false, cost:2000, special:true},
-    {id:'chubby', name:'Jimmy Con-ers', power:75, speed:30, control:45, unlocked:false, cost:2000, special:true},
-    {id:'beach', name:'Maria Shara-Pova', power:40, speed:65, control:45, unlocked:false, cost:2000, special:true},
-    {id:'goth', name:'Monica Slay-less', power:55, speed:45, control:50, unlocked:false, cost:2500, special:true},
-    {id:'anime', name:'Nick Curious', power:55, speed:65, control:30, unlocked:false, cost:3000, special:true},
-    {id:'latino', name:'Carlos All-Crazz', power:60, speed:55, control:35, unlocked:false, cost:3000, special:true},
-    {id:'redhead', name:'Billie Jean Queen', power:50, speed:55, control:45, unlocked:false, cost:3000, special:true},
-    {id:'grandpa', name:'Rod Staver', power:35, speed:30, control:70, unlocked:false, cost:2500, special:true},
-    {id:'indian', name:'Sania Mirror', power:45, speed:60, control:50, unlocked:false, cost:2500, special:true}
+    {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true, nation:'Switzerland'},
+    {id:'player2', name:'Serena Slammin', power:65, speed:50, control:40, unlocked:true, nation:'United States'},
+    {id:'player3', name:'Novak Joke-ovic', power:55, speed:55, control:50, unlocked:true, cost:500, nation:'Serbia'},
+    {id:'player4', name:'Steffi Gaffe', power:45, speed:60, control:45, unlocked:true, nation:'Germany'},
+    {id:'player5', name:'Rafa Noddle', power:65, speed:40, control:45, unlocked:true, cost:500, nation:'Spain'},
+    {id:'player6', name:'Martina N.T.O.', power:40, speed:55, control:55, unlocked:false, cost:500, nation:'Czech Republic'},
+    {id:'player7', name:'Bjorn Bored', power:45, speed:45, control:60, unlocked:false, cost:750, nation:'Sweden'},
+    {id:'player8', name:'Venus Will-yams', power:50, speed:55, control:45, unlocked:false, cost:750, nation:'United States'},
+    {id:'player9', name:'Boris Bonkers', power:60, speed:35, control:55, unlocked:false, cost:1000, nation:'Germany'},
+    {id:'player10', name:'Chris Ev-hurt', power:45, speed:50, control:55, unlocked:false, cost:1000, nation:'United States'},
+    {id:'player11', name:'Andre A-gassy', power:50, speed:60, control:40, unlocked:false, cost:1250, nation:'United States'},
+    {id:'player12', name:'Naomi Oh-saka', power:40, speed:55, control:55, unlocked:false, cost:1250, nation:'Japan'},
+    {id:'punk', name:'John Mac-n-Throw', power:70, speed:50, control:30, unlocked:false, cost:2000, special:true, nation:'United States'},
+    {id:'chubby', name:'Jimmy Con-ers', power:75, speed:30, control:45, unlocked:false, cost:2000, special:true, nation:'United States'},
+    {id:'beach', name:'Maria Shara-Pova', power:40, speed:65, control:45, unlocked:false, cost:2000, special:true, nation:'Russia'},
+    {id:'goth', name:'Monica Slay-less', power:55, speed:45, control:50, unlocked:false, cost:2500, special:true, nation:'Yugoslavia'},
+    {id:'anime', name:'Nick Curious', power:55, speed:65, control:30, unlocked:false, cost:3000, special:true, nation:'Australia'},
+    {id:'latino', name:'Carlos All-Crazz', power:60, speed:55, control:35, unlocked:false, cost:3000, special:true, nation:'Spain'},
+    {id:'redhead', name:'Billie Jean Queen', power:50, speed:55, control:45, unlocked:false, cost:3000, special:true, nation:'United States'},
+    {id:'grandpa', name:'Rod Staver', power:35, speed:30, control:70, unlocked:false, cost:2500, special:true, nation:'Australia'},
+    {id:'indian', name:'Sania Mirror', power:45, speed:60, control:50, unlocked:false, cost:2500, special:true, nation:'India'}
 ];
 
 // Character play style descriptions
@@ -4635,6 +4638,28 @@ function renderSettings(){
                 <button class="settings-option ${(G.tournamentSize||8)===8?'active':''}" onclick="G.tournamentSize=8;save();renderSettings()">8</button>
             </div>
         </div>
+        <div style="margin-top:16px;margin-bottom:8px;color:rgba(255,215,0,0.8);font-size:11px;text-transform:uppercase;letter-spacing:2px">Voice</div>
+        <div class="settings-item">
+            <span class="settings-label">Character Intros</span>
+            <div class="settings-value">
+                <button class="settings-option ${G.voiceIntros?'active':''}" onclick="G.voiceIntros=true;save();renderSettings()">ON</button>
+                <button class="settings-option ${!G.voiceIntros?'active':''}" onclick="G.voiceIntros=false;save();renderSettings()">OFF</button>
+            </div>
+        </div>
+        <div class="settings-item">
+            <span class="settings-label">Umpire Calls</span>
+            <div class="settings-value">
+                <button class="settings-option ${G.voiceUmpire?'active':''}" onclick="G.voiceUmpire=true;save();renderSettings()">ON</button>
+                <button class="settings-option ${!G.voiceUmpire?'active':''}" onclick="G.voiceUmpire=false;save();renderSettings()">OFF</button>
+            </div>
+        </div>
+        <div class="settings-item">
+            <span class="settings-label">Crowd Chants</span>
+            <div class="settings-value">
+                <button class="settings-option ${G.voiceCrowd?'active':''}" onclick="G.voiceCrowd=true;save();renderSettings()">ON</button>
+                <button class="settings-option ${!G.voiceCrowd?'active':''}" onclick="G.voiceCrowd=false;save();renderSettings()">OFF</button>
+            </div>
+        </div>
         <div style="margin-top:20px">
             <div style="color:rgba(255,215,0,0.8);font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Career Stats</div>
             <div class="settings-item" style="flex-direction:column;align-items:flex-start;gap:8px">
@@ -6352,4 +6377,214 @@ document.addEventListener('DOMContentLoaded', () => {
         ErrorRecovery.handleCriticalError(error, 'initialization');
     }
 });
+
+// ========== VOICE SYSTEM (Web Speech API) ==========
+const VoiceManager = {
+    voices: [],
+    ready: false,
+    _queue: [],
+    _speaking: false,
+
+    init() {
+        if (!window.speechSynthesis) { console.warn('Speech synthesis not supported'); return; }
+        const loadVoices = () => {
+            this.voices = speechSynthesis.getVoices();
+            this.ready = this.voices.length > 0;
+        };
+        loadVoices();
+        speechSynthesis.onvoiceschanged = loadVoices;
+    },
+
+    // Character voice profiles: pitch + rate combos for variety
+    _charVoice: {
+        'player1':  { pitch: 1.0, rate: 0.9 },   // Roger - smooth, measured
+        'player2':  { pitch: 1.3, rate: 1.05 },   // Serena - powerful, confident
+        'player3':  { pitch: 0.8, rate: 0.95 },   // Novak - deep, intense
+        'player4':  { pitch: 1.2, rate: 0.95 },   // Steffi - crisp
+        'player5':  { pitch: 0.85, rate: 1.1 },   // Rafa - energetic, deep
+        'player6':  { pitch: 1.15, rate: 0.9 },   // Martina - composed
+        'player7':  { pitch: 0.75, rate: 0.85 },   // Bjorn - calm, low
+        'player8':  { pitch: 1.25, rate: 1.0 },   // Venus - bright
+        'player9':  { pitch: 0.7, rate: 1.05 },   // Boris - booming
+        'player10': { pitch: 1.2, rate: 0.9 },    // Chris - steady
+        'player11': { pitch: 0.9, rate: 1.1 },    // Andre - lively
+        'player12': { pitch: 1.35, rate: 0.9 },   // Naomi - soft, high
+        'punk':     { pitch: 0.65, rate: 1.15 },   // McEnroe - gruff, fast
+        'chubby':   { pitch: 0.8, rate: 1.0 },    // Connors - gutsy
+        'beach':    { pitch: 1.4, rate: 0.95 },   // Sharapova - high
+        'goth':     { pitch: 1.1, rate: 0.85 },   // Monica - intense
+        'anime':    { pitch: 0.95, rate: 1.2 },   // Nick - wild, fast
+        'latino':   { pitch: 0.85, rate: 1.15 },  // Carlos - fiery
+        'redhead':  { pitch: 1.15, rate: 0.95 },  // Billie Jean - strong
+        'grandpa':  { pitch: 0.6, rate: 0.8 },    // Rod - old, slow
+        'indian':   { pitch: 1.3, rate: 1.0 },    // Sania - bright
+    },
+
+    _pickVoice(lang) {
+        if (!this.voices.length) return null;
+        // Try to find a voice matching the language hint
+        if (lang) {
+            const match = this.voices.find(v => v.lang && v.lang.startsWith(lang));
+            if (match) return match;
+        }
+        // Default to first English voice or first available
+        return this.voices.find(v => v.lang && v.lang.startsWith('en')) || this.voices[0];
+    },
+
+    speak(text, opts = {}) {
+        if (!window.speechSynthesis || AudioManager.muted) return;
+        const utter = new SpeechSynthesisUtterance(text);
+        const voice = this._pickVoice(opts.lang);
+        if (voice) utter.voice = voice;
+        utter.pitch = opts.pitch || 1.0;
+        utter.rate = opts.rate || 1.0;
+        utter.volume = opts.volume || 0.85;
+        // Cancel any current speech to avoid overlap for umpire calls
+        if (opts.interrupt) speechSynthesis.cancel();
+        speechSynthesis.speak(utter);
+        return utter;
+    },
+
+    // Character intro: "I am [Name], from [Country]!"
+    characterIntro(char, delay) {
+        if (!G.voiceIntros) return;
+        const profile = this._charVoice[char.id] || { pitch: 1.0, rate: 1.0 };
+        const nation = char.nation || 'the world';
+        const text = `I am ${char.name}, from ${nation}!`;
+        setTimeout(() => {
+            this.speak(text, { pitch: profile.pitch, rate: profile.rate });
+        }, delay || 0);
+    },
+
+    // Umpire calls the score
+    umpireScore(pScore, oScore, extra) {
+        if (!G.voiceUmpire) return;
+        let text;
+        if (extra === 'game') {
+            text = 'Game!';
+        } else if (extra === 'set') {
+            text = 'Game and Set!';
+        } else if (extra === 'match') {
+            text = 'Game, Set, and Match!';
+        } else if (extra === 'deuce') {
+            text = 'Deuce!';
+        } else if (extra === 'advantage') {
+            text = pScore === 'AD' ? 'Advantage, player!' : 'Advantage, opponent!';
+        } else if (extra === 'ace') {
+            text = 'Ace!';
+        } else if (extra === 'doubleFault') {
+            text = 'Double fault!';
+        } else if (extra === 'fault') {
+            text = 'Fault!';
+        } else {
+            // Normal score call
+            const pName = this._scoreWord(pScore);
+            const oName = this._scoreWord(oScore);
+            if (pName === oName && pName !== 'Love') {
+                text = `${pName} all`;
+            } else {
+                text = `${pName}, ${oName}`;
+            }
+        }
+        this.speak(text, { pitch: 0.55, rate: 0.85, volume: 0.9, interrupt: true });
+    },
+
+    _scoreWord(s) {
+        const map = { 'LOVE': 'Love', '0': 'Love', '15': 'Fifteen', '30': 'Thirty', '40': 'Forty', 'AD': 'Advantage' };
+        return map[s] || s;
+    },
+
+    // Crowd chants winner name
+    crowdChant(name) {
+        if (!G.voiceCrowd) return;
+        const firstName = name.split(' ')[0];
+        // Chant 3 times with increasing excitement
+        [0, 800, 1500].forEach((delay, i) => {
+            setTimeout(() => {
+                this.speak(firstName + '!', {
+                    pitch: 0.7 + (i * 0.15),
+                    rate: 1.0 + (i * 0.1),
+                    volume: 0.6 + (i * 0.15)
+                });
+            }, delay);
+        });
+    }
+};
+
+// Init voice system
+VoiceManager.init();
+
+// ========== VOICE HOOKS ==========
+
+// Hook into transitionToCourt to play character intros during VS screen
+const _origTransitionToCourt = transitionToCourt;
+transitionToCourt = function() {
+    // Play character intros before transitioning
+    if (G.voiceIntros && selectedChar) {
+        VoiceManager.characterIntro(selectedChar, 200);
+        if (opponentChar) {
+            VoiceManager.characterIntro(opponentChar, 2500);
+        }
+    }
+    // Delay the actual transition to let intros play
+    if (G.voiceIntros && selectedChar) {
+        setTimeout(() => _origTransitionToCourt(), 4500);
+    } else {
+        _origTransitionToCourt();
+    }
+};
+
+// Hook into scorePoint for umpire voice
+const _origScorePoint = scorePoint;
+scorePoint = function(player) {
+    const prevPPoints = M.pPoints;
+    const prevOPoints = M.oPoints;
+    const prevPGames = M.pGames;
+    const prevOGames = M.oGames;
+    const prevPSets = M.pSets;
+    const prevOSets = M.oSets;
+
+    const result = _origScorePoint(player);
+
+    // Determine what happened and announce
+    if (G.voiceUmpire && !practiceMode) {
+        const gameChanged = M.pGames !== prevPGames || M.oGames !== prevOGames;
+        const setChanged = M.pSets !== prevPSets || M.oSets !== prevOSets;
+        const matchEnded = !M.active;
+
+        if (matchEnded) {
+            VoiceManager.umpireScore(null, null, 'match');
+        } else if (setChanged) {
+            VoiceManager.umpireScore(null, null, 'set');
+        } else if (gameChanged) {
+            VoiceManager.umpireScore(null, null, 'game');
+        } else {
+            // Announce current point score
+            const score = getTennisScore(M.pPoints, M.oPoints);
+            if (score.deuce) {
+                VoiceManager.umpireScore(null, null, 'deuce');
+            } else if (score.p === 'AD' || score.o === 'AD') {
+                VoiceManager.umpireScore(score.p, score.o, 'advantage');
+            } else if (!M.isTiebreak) {
+                setTimeout(() => VoiceManager.umpireScore(score.p, score.o), 300);
+            }
+        }
+    }
+
+    return result;
+};
+
+// Hook into endMatch for crowd chanting
+const _origEndMatch3 = endMatch;
+endMatch = function() {
+    const won = M.pSets > M.oSets || (M.pSets === M.oSets && M.pGames > M.oGames);
+    _origEndMatch3();
+    // Crowd chants the winner's name
+    if (G.voiceCrowd) {
+        const winnerChar = won ? selectedChar : opponentChar;
+        if (winnerChar) {
+            setTimeout(() => VoiceManager.crowdChant(winnerChar.name), 1500);
+        }
+    }
+};
 
