@@ -1922,6 +1922,9 @@ function load(){
 
     // Initialize achievements
     initAchievements();
+
+    // Load tournament state
+    if(typeof loadTournament === 'function') loadTournament();
 }
 
 function save(){
@@ -2031,9 +2034,9 @@ const V = '?v=32';
 window.CHARACTERS = [
     {id:'player1', name:'Roger Fedora', power:50, speed:50, control:50, unlocked:true},
     {id:'player2', name:'Serena Slammin', power:65, speed:50, control:40, unlocked:true},
-    {id:'player3', name:'Novak Joke-ovic', power:55, speed:55, control:50, unlocked:false, cost:500},
+    {id:'player3', name:'Novak Joke-ovic', power:55, speed:55, control:50, unlocked:true, cost:500},
     {id:'player4', name:'Steffi Gaffe', power:45, speed:60, control:45, unlocked:true},
-    {id:'player5', name:'Rafa Noddle', power:65, speed:40, control:45, unlocked:false, cost:500},
+    {id:'player5', name:'Rafa Noddle', power:65, speed:40, control:45, unlocked:true, cost:500},
     {id:'player6', name:'Martina N.T.O.', power:40, speed:55, control:55, unlocked:false, cost:500},
     {id:'player7', name:'Bjorn Bored', power:45, speed:45, control:60, unlocked:false, cost:750},
     {id:'player8', name:'Venus Will-yams', power:50, speed:55, control:45, unlocked:false, cost:750},
@@ -2794,6 +2797,22 @@ function celebratePoint(isAce){
 }
 
 function scorePoint(player){
+    // Practice mode: no scoring, just feed next ball
+    if(practiceMode){
+        if(player === 'p'){
+            practiceHits++;
+            { const _el = safeGetElement('practiceHits'); if(_el) _el.textContent = practiceHits; }
+            sounds.pointWon?.();
+        }
+        M.rally = 0;
+        M.ballActive = false;
+        const ball = safeGetElement('ball');
+        if(ball) ball.classList.remove('active');
+        // Feed next ball after short delay
+        setTimeout(() => feedPracticeBall(), 1200);
+        return false;
+    }
+
     // Point celebration effects
     if(player === 'p'){
         sounds.pointWon();
@@ -4084,6 +4103,9 @@ function endMatch(){
 
     // Animate reward values counting up
     animateRewardValues(coins, skill, gems);
+
+    // Check for character unlocks based on wins
+    if(typeof checkMatchUnlocks === 'function') checkMatchUnlocks();
 }
 
 function spawnConfetti() {
@@ -4129,13 +4151,542 @@ function animateRewardValues(coins, skill, gems) {
     });
 }
 
+// ========== TOURNAMENT MODE ==========
+let tournament = null;
+
+function showTournamentScreen(){
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('tournamentScreen')?.classList.add('active');
+    if(!tournament || tournament.completed){
+        renderTournamentSetup();
+    } else {
+        renderTournamentBracket();
+    }
+}
+
+function closeTournamentScreen(){
+    safeGetElement('tournamentScreen')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
+    updateUI();
+}
+
+function renderTournamentSetup(){
+    const bracket = safeGetElement('tournamentBracket');
+    const actions = safeGetElement('tournamentActions');
+    bracket.innerHTML = `
+        <div style="text-align:center;padding:20px 0">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:#ffd700;margin-bottom:10px">CHAMPIONSHIP</div>
+            <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:25px">Battle through ${getTournamentSize()} opponents to claim the trophy</div>
+            <div style="margin-bottom:20px">
+                <div style="color:rgba(255,215,0,0.8);font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Tournament Size</div>
+                <div style="display:flex;gap:8px;justify-content:center">
+                    <button class="settings-option ${(G.tournamentSize||8)===4?'active':''}" onclick="G.tournamentSize=4;renderTournamentSetup()">4 PLAYERS</button>
+                    <button class="settings-option ${(G.tournamentSize||8)===8?'active':''}" onclick="G.tournamentSize=8;renderTournamentSetup()">8 PLAYERS</button>
+                </div>
+            </div>
+            <div style="margin-bottom:20px">
+                <div style="color:rgba(255,215,0,0.8);font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Your Player: ${selectedChar.name}</div>
+            </div>
+            <div style="color:rgba(255,255,255,0.4);font-size:11px">Rewards: 500 coins + 10 gems + character unlock</div>
+        </div>
+    `;
+    actions.innerHTML = `<button class="menu-btn primary" onclick="startTournament()" style="width:100%">BEGIN TOURNAMENT</button>`;
+}
+
+function getTournamentSize(){ return G.tournamentSize || 8; }
+
+function startTournament(){
+    const size = getTournamentSize();
+    const rounds = Math.log2(size);
+    // Pick opponents from all characters except player
+    const pool = window.CHARACTERS.filter(c => c.id !== selectedChar.id);
+    const shuffled = pool.sort(() => Math.random() - 0.5).slice(0, size - 1);
+
+    // Build bracket: player is always seed 1
+    const participants = [selectedChar, ...shuffled];
+
+    tournament = {
+        size: size,
+        rounds: rounds,
+        currentRound: 0,
+        currentMatch: 0,
+        participants: participants.map(c => c.id),
+        bracket: [],
+        scores: [],
+        completed: false,
+        won: false
+    };
+
+    // Generate bracket matches
+    // Round 0: quarterfinals (or semis for 4-player)
+    for(let r = 0; r < rounds; r++){
+        tournament.bracket[r] = [];
+        tournament.scores[r] = [];
+        const matchesInRound = size / Math.pow(2, r + 1);
+        for(let m = 0; m < matchesInRound; m++){
+            if(r === 0){
+                tournament.bracket[r][m] = [participants[m*2].id, participants[m*2+1].id];
+            } else {
+                tournament.bracket[r][m] = [null, null]; // TBD
+            }
+            tournament.scores[r][m] = null;
+        }
+    }
+
+    saveTournament();
+    renderTournamentBracket();
+}
+
+function saveTournament(){
+    localStorage.setItem('tennisTournament', JSON.stringify(tournament));
+}
+
+function loadTournament(){
+    const s = localStorage.getItem('tennisTournament');
+    if(s) tournament = JSON.parse(s);
+}
+
+function renderTournamentBracket(){
+    const bracket = safeGetElement('tournamentBracket');
+    const actions = safeGetElement('tournamentActions');
+    if(!tournament){ renderTournamentSetup(); return; }
+
+    const roundNames = {4:['SEMIFINALS','FINAL'], 8:['QUARTERFINALS','SEMIFINALS','FINAL']};
+    const names = roundNames[tournament.size] || ['ROUND 1','ROUND 2','FINAL'];
+
+    let html = '';
+
+    if(tournament.completed && tournament.won){
+        html += `<div class="tournament-trophy">
+            <div class="tournament-trophy-icon">TROPHY</div>
+            <div class="tournament-trophy-text">CHAMPION!</div>
+            <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-top:10px">You conquered the tournament with ${selectedChar.name}!</div>
+        </div>`;
+    }
+
+    for(let r = 0; r < tournament.rounds; r++){
+        html += `<div class="bracket-round"><div class="bracket-round-title">${names[r] || 'ROUND '+(r+1)}</div>`;
+        for(let m = 0; m < tournament.bracket[r].length; m++){
+            const match = tournament.bracket[r][m];
+            const score = tournament.scores[r][m];
+            const isCurrent = r === tournament.currentRound && m === tournament.currentMatch && !tournament.completed;
+            const p1 = match[0] ? window.CHARACTERS.find(c => c.id === match[0]) : null;
+            const p2 = match[1] ? window.CHARACTERS.find(c => c.id === match[1]) : null;
+
+            let cls = 'bracket-match';
+            if(isCurrent) cls += ' current';
+            else if(score) cls += score.won ? ' won' : ' lost';
+
+            const p1Name = p1 ? p1.name : 'TBD';
+            const p2Name = p2 ? p2.name : 'TBD';
+            const p1Cls = p1 && p1.id === selectedChar.id ? 'bracket-player you' : 'bracket-player';
+            const p2Cls = p2 && p2.id === selectedChar.id ? 'bracket-player you' : 'bracket-player';
+            const scoreText = score ? `${score.p}-${score.o}` : '';
+
+            html += `<div class="${cls}">
+                <span class="${p1Cls}${score && score.winnerId === (p1?p1.id:'') ? ' winner' : ''}">${p1Name}</span>
+                <span class="bracket-vs">VS</span>
+                <span class="${p2Cls}${score && score.winnerId === (p2?p2.id:'') ? ' winner' : ''}">${p2Name}</span>
+                ${scoreText ? `<span class="bracket-score">${scoreText}</span>` : ''}
+            </div>`;
+        }
+        html += '</div>';
+    }
+
+    bracket.innerHTML = html;
+
+    if(tournament.completed){
+        actions.innerHTML = `<button class="menu-btn primary" onclick="tournament=null;localStorage.removeItem('tennisTournament');renderTournamentSetup()" style="width:100%">NEW TOURNAMENT</button>`;
+    } else {
+        actions.innerHTML = `<button class="menu-btn primary" onclick="playTournamentMatch()" style="width:100%">PLAY NEXT MATCH</button>`;
+    }
+}
+
+function playTournamentMatch(){
+    if(!tournament || tournament.completed) return;
+    const r = tournament.currentRound;
+    const m = tournament.currentMatch;
+    const match = tournament.bracket[r][m];
+
+    // Determine if player is in this match
+    const playerInMatch = match.includes(selectedChar.id);
+
+    if(playerInMatch){
+        // Player plays this match
+        const oppId = match[0] === selectedChar.id ? match[1] : match[0];
+        opponentChar = window.CHARACTERS.find(c => c.id === oppId);
+        G._tournamentMode = true;
+        safeGetElement('tournamentScreen')?.classList.remove('active');
+        startMatch();
+    } else {
+        // Simulate AI vs AI
+        const winner = Math.random() < 0.5 ? match[0] : match[1];
+        const pGames = 3 + Math.floor(Math.random() * 4);
+        const oGames = Math.floor(Math.random() * (pGames - 1));
+        finishTournamentMatch(winner, winner === match[0] ? pGames : oGames, winner === match[0] ? oGames : pGames);
+    }
+}
+
+function finishTournamentMatch(winnerId, pGames, oGames){
+    const r = tournament.currentRound;
+    const m = tournament.currentMatch;
+    const match = tournament.bracket[r][m];
+    const playerInMatch = match.includes(selectedChar.id);
+
+    tournament.scores[r][m] = {
+        won: playerInMatch && winnerId === selectedChar.id,
+        winnerId: winnerId,
+        p: pGames,
+        o: oGames
+    };
+
+    // Advance winner to next round
+    if(r + 1 < tournament.rounds){
+        const nextMatch = Math.floor(m / 2);
+        const slot = m % 2;
+        tournament.bracket[r + 1][nextMatch][slot] = winnerId;
+    }
+
+    // Move to next match in round, or next round
+    const matchesInRound = tournament.bracket[r].length;
+    if(m + 1 < matchesInRound){
+        tournament.currentMatch = m + 1;
+    } else {
+        tournament.currentRound = r + 1;
+        tournament.currentMatch = 0;
+    }
+
+    // Check if tournament is over
+    if(tournament.currentRound >= tournament.rounds){
+        tournament.completed = true;
+        const finalWinner = winnerId;
+        tournament.won = finalWinner === selectedChar.id;
+
+        if(tournament.won){
+            // Reward player
+            G.coins += 500;
+            G.gems += 10;
+            G.careerStats = G.careerStats || {};
+            G.careerStats.tournamentsWon = (G.careerStats.tournamentsWon || 0) + 1;
+
+            // Unlock a random locked character as reward
+            const locked = window.CHARACTERS.filter(c => !c.unlocked);
+            if(locked.length > 0){
+                const unlockChar = locked[Math.floor(Math.random() * locked.length)];
+                unlockChar.unlocked = true;
+                G.unlockedChars = G.unlockedChars || [];
+                G.unlockedChars.push(unlockChar.id);
+                toast(`TOURNAMENT CHAMPION! ${unlockChar.name} unlocked!`);
+            } else {
+                toast('TOURNAMENT CHAMPION!');
+            }
+            save();
+        }
+    }
+
+    saveTournament();
+
+    // If we're on the tournament screen, re-render
+    if(safeGetElement('tournamentScreen')?.classList.contains('active')){
+        renderTournamentBracket();
+        // Auto-advance through AI matches
+        if(!tournament.completed && tournament.bracket[tournament.currentRound]){
+            const nextMatch = tournament.bracket[tournament.currentRound][tournament.currentMatch];
+            if(!nextMatch.includes(selectedChar.id)){
+                setTimeout(() => playTournamentMatch(), 800);
+            }
+        }
+    }
+}
+
+// Hook into endMatch for tournament integration
+const _originalEndMatch = endMatch;
+// We'll patch endMatch below after it's defined
+
+// ========== PRACTICE MODE ==========
+let practiceMode = false;
+let practiceHits = 0;
+let practiceBallTimer = null;
+
+function startPracticeMode(){
+    practiceMode = true;
+    practiceHits = 0;
+    selectRandomOpponent();
+    updateSprites();
+
+    // Hide all screens
+    safeGetElement('mainMenu')?.classList.remove('active');
+
+    const s = DIFF[G.difficulty];
+
+    M = {
+        active: true,
+        startTime: Date.now(),
+        pPoints: 0, oPoints: 0,
+        pGames: 0, oGames: 0,
+        pSets: 0, oSets: 0,
+        time: 9999,
+        matchLimit: null,
+        timeExpired: false,
+        isTiebreak: false,
+        tiebreakServer: 'player',
+        servingPlayer: 'opp',
+        serveNum: 1,
+        serveSide: 'deuce',
+        isPlayerServe: false,
+        servePhase: 'none',
+        servePower: 0,
+        serveAimX: 50,
+        serveAimY: 25,
+        serveStartY: null,
+        serveStartX: null,
+        lastServeSpeed: 0,
+        rally: 0,
+        ballActive: false,
+        ballPos: {x:50, y:10},
+        ballVel: {x:0, y:0, z:0},
+        ballH: 100,
+        ballBounces: 0,
+        ballSpin: 0,
+        lastHitBy: 'opp',
+        canHit: false,
+        combo: 0,
+        pendingCombo: false,
+        streak: 0,
+        bestStreak: 0,
+        oppPos: 50,
+        playerPos: 70,
+        gemActive: false,
+        gemPos: {x:50, y:70},
+        gemTimer: 0,
+        gemMultiplier: 1,
+        aces: 0,
+        doubleFaults: 0,
+        winners: 0,
+        longestRally: 0,
+        totalRallies: 0,
+        pointsPlayed: 0,
+        pendingAce: false,
+        lostServiceGame: false,
+        wasDown03: false,
+        playerY: 95,
+        atNet: false,
+        netRushTimer: 0,
+        oppAtNet: false,
+        oppY: 8,
+        settings: s
+    };
+
+    initSprites();
+
+    safeGetElement('gameHUD')?.classList.add('active');
+    const pauseBtn = document.getElementById('pauseBtn');
+    if(pauseBtn) pauseBtn.style.display = 'flex';
+    safeGetElement('gameCourt')?.classList.add('active');
+    { const _el = safeGetElement('playerPaddle'); if(_el) _el.style.left = '70%'; }
+
+    // Show practice HUD
+    const phud = safeGetElement('practiceHUD');
+    if(phud) phud.style.display = 'flex';
+    { const _el = safeGetElement('practiceHits'); if(_el) _el.textContent = '0'; }
+
+    // Hide normal timer display, show practice label
+    { const _el = safeGetElement('matchTimer'); if(_el) _el.textContent = 'PRACTICE'; }
+
+    updateMatchUI();
+
+    // Feed first ball after delay
+    setTimeout(() => feedPracticeBall(), 1500);
+}
+
+function feedPracticeBall(){
+    if(!practiceMode || !M.active) return;
+
+    // Reset ball from opponent side
+    M.rally = 0;
+    M.ballActive = true;
+    M.canHit = false;
+    M.lastHitBy = 'opp';
+    M.ballBounces = 0;
+
+    // Random position from opponent
+    const targetX = 30 + Math.random() * 40;
+    M.ballPos = {x: 20 + Math.random() * 60, y: 10};
+    M.ballVel = {
+        x: (targetX - M.ballPos.x) * 0.02 + (Math.random() - 0.5) * 0.3,
+        y: 1.2 + Math.random() * 0.5,
+        z: 0
+    };
+    M.ballH = 80 + Math.random() * 40;
+    M.ballSpin = (Math.random() - 0.5) * 0.3;
+
+    const ball = safeGetElement('ball');
+    if(ball) ball.classList.add('active');
+
+    updateMatchUI();
+}
+
+function exitPracticeMode(){
+    practiceMode = false;
+    M.active = false;
+    if(practiceBallTimer) clearTimeout(practiceBallTimer);
+
+    safeGetElement('gameHUD')?.classList.remove('active');
+    safeGetElement('gameCourt')?.classList.remove('active');
+    const pauseBtn = document.getElementById('pauseBtn');
+    if(pauseBtn) pauseBtn.style.display = 'none';
+    const phud = safeGetElement('practiceHUD');
+    if(phud) phud.style.display = 'none';
+    safeGetElement('streakDisplay')?.classList.remove('active');
+
+    resetBallUI();
+    safeGetElement('mainMenu')?.classList.add('active');
+    updateUI();
+}
+
+// ========== SETTINGS SCREEN ==========
+function showSettingsScreen(){
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('settingsScreen')?.classList.add('active');
+    renderSettings();
+}
+
+function closeSettingsScreen(){
+    safeGetElement('settingsScreen')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
+    save();
+}
+
+function renderSettings(){
+    const content = safeGetElement('settingsContent');
+    if(!content) return;
+
+    const muteState = AudioManager.muted ? 'ON' : 'OFF';
+
+    content.innerHTML = `
+        <div class="settings-item">
+            <span class="settings-label">Difficulty</span>
+            <div class="settings-value">
+                <button class="settings-option ${G.difficulty==='rookie'?'active':''}" onclick="selectDifficulty('rookie');renderSettings()">EASY</button>
+                <button class="settings-option ${G.difficulty==='pro'?'active':''}" onclick="selectDifficulty('pro');renderSettings()">MEDIUM</button>
+                <button class="settings-option ${G.difficulty==='legend'?'active':''}" onclick="selectDifficulty('legend');renderSettings()">HARD</button>
+            </div>
+        </div>
+        <div class="settings-item">
+            <span class="settings-label">Match Length</span>
+            <div class="settings-value">
+                <button class="settings-option ${G.matchType==='quick'?'active':''}" onclick="selectMatchType('quick');renderSettings()">QUICK</button>
+                <button class="settings-option ${G.matchType==='standard'?'active':''}" onclick="selectMatchType('standard');renderSettings()">STANDARD</button>
+                <button class="settings-option ${G.matchType==='timed'?'active':''}" onclick="selectMatchType('timed');renderSettings()">TIMED</button>
+            </div>
+        </div>
+        <div class="settings-item">
+            <span class="settings-label">Sound</span>
+            <div class="settings-value">
+                <button class="settings-option ${!AudioManager.muted?'active':''}" onclick="if(AudioManager.muted)AudioManager.toggleMute();renderSettings()">ON</button>
+                <button class="settings-option ${AudioManager.muted?'active':''}" onclick="if(!AudioManager.muted)AudioManager.toggleMute();renderSettings()">OFF</button>
+            </div>
+        </div>
+        <div class="settings-item">
+            <span class="settings-label">Tournament Size</span>
+            <div class="settings-value">
+                <button class="settings-option ${(G.tournamentSize||8)===4?'active':''}" onclick="G.tournamentSize=4;save();renderSettings()">4</button>
+                <button class="settings-option ${(G.tournamentSize||8)===8?'active':''}" onclick="G.tournamentSize=8;save();renderSettings()">8</button>
+            </div>
+        </div>
+        <div style="margin-top:20px">
+            <div style="color:rgba(255,215,0,0.8);font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Career Stats</div>
+            <div class="settings-item" style="flex-direction:column;align-items:flex-start;gap:8px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%">
+                    <div style="color:rgba(255,255,255,0.6);font-size:12px">Matches Played: <span style="color:#fff;font-weight:700">${G.careerStats?.matchesPlayed||0}</span></div>
+                    <div style="color:rgba(255,255,255,0.6);font-size:12px">Matches Won: <span style="color:#4caf50;font-weight:700">${G.careerStats?.matchesWon||0}</span></div>
+                    <div style="color:rgba(255,255,255,0.6);font-size:12px">Win Rate: <span style="color:#ffd700;font-weight:700">${G.careerStats?.matchesPlayed ? Math.round((G.careerStats.matchesWon/G.careerStats.matchesPlayed)*100) : 0}%</span></div>
+                    <div style="color:rgba(255,255,255,0.6);font-size:12px">Tournaments Won: <span style="color:#ffd700;font-weight:700">${G.careerStats?.tournamentsWon||0}</span></div>
+                    <div style="color:rgba(255,255,255,0.6);font-size:12px">Total Aces: <span style="color:#fff;font-weight:700">${G.careerStats?.totalAces||0}</span></div>
+                    <div style="color:rgba(255,255,255,0.6);font-size:12px">Longest Rally: <span style="color:#fff;font-weight:700">${G.careerStats?.longestRally||0}</span></div>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top:20px">
+            <button class="menu-btn" onclick="if(confirm('Reset all progress? This cannot be undone.')){localStorage.clear();location.reload()}" style="width:100%;background:linear-gradient(180deg,#f44336,#c62828);border-color:#ef5350 #b71c1c #b71c1c #ef5350">RESET ALL PROGRESS</button>
+        </div>
+    `;
+}
+
+// ========== UNLOCK BY WINNING ==========
+// Characters unlockable by winning matches (in addition to coin purchase)
+function checkMatchUnlocks(){
+    const wins = G.careerStats?.matchesWon || 0;
+    const unlockThresholds = [
+        {wins: 3, chars: ['player3']},
+        {wins: 5, chars: ['player5']},
+        {wins: 8, chars: ['player6']},
+        {wins: 12, chars: ['player7','player8']},
+        {wins: 16, chars: ['player9','player10']},
+        {wins: 20, chars: ['player11','player12']},
+        {wins: 25, chars: ['punk','chubby']},
+        {wins: 30, chars: ['beach','goth']},
+        {wins: 40, chars: ['anime','latino','redhead']},
+        {wins: 50, chars: ['grandpa','indian']}
+    ];
+
+    G.unlockedChars = G.unlockedChars || [];
+    let newUnlocks = [];
+
+    for(const threshold of unlockThresholds){
+        if(wins >= threshold.wins){
+            for(const charId of threshold.chars){
+                const char = window.CHARACTERS.find(c => c.id === charId);
+                if(char && !char.unlocked){
+                    char.unlocked = true;
+                    if(!G.unlockedChars.includes(charId)){
+                        G.unlockedChars.push(charId);
+                        newUnlocks.push(char.name);
+                    }
+                }
+            }
+        }
+    }
+
+    if(newUnlocks.length > 0){
+        save();
+        setTimeout(() => toast(`UNLOCKED: ${newUnlocks.join(', ')}!`), 1500);
+    }
+}
+
 function returnToMenu(){
     safeGetElement('matchResults')?.classList.remove('active');
-    safeGetElement('mainMenu')?.classList.add('active');
+
+    // If in tournament mode, return to tournament bracket
+    if(G._tournamentMode && tournament && !tournament.completed){
+        const won = M.pSets > M.oSets || (M.pSets === M.oSets && M.pGames > M.oGames);
+        const winnerId = won ? selectedChar.id : opponentChar.id;
+        const pGames = M.pGames;
+        const oGames = M.oGames;
+        G._tournamentMode = false;
+        finishTournamentMatch(winnerId, pGames, oGames);
+        safeGetElement('tournamentScreen')?.classList.add('active');
+        // Auto-simulate remaining AI matches in the round
+        setTimeout(() => {
+            if(!tournament.completed && tournament.bracket[tournament.currentRound]){
+                const nextMatch = tournament.bracket[tournament.currentRound][tournament.currentMatch];
+                if(!nextMatch.includes(selectedChar.id)){
+                    playTournamentMatch();
+                }
+            }
+        }, 500);
+    } else {
+        G._tournamentMode = false;
+        safeGetElement('mainMenu')?.classList.add('active');
+    }
+
     // Clean up any remaining confetti
     document.querySelectorAll('.confetti-piece').forEach(el => el.remove());
     resetBallUI();
     updateUI();
+
+    // Check for match-based character unlocks
+    checkMatchUnlocks();
 }
 
 // ========== NET RUSH SYSTEM ==========

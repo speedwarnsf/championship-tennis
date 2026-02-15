@@ -196,6 +196,27 @@
         @keyframes resultsTitlePop{0%{opacity:0;transform:scale(0.3) rotate(-5deg)}60%{transform:scale(1.1) rotate(2deg)}100%{opacity:1;transform:scale(1) rotate(0deg)}}
         @keyframes resultsFadeUp{0%{opacity:0;transform:translateY(30px)}100%{opacity:1;transform:translateY(0)}}
         @keyframes rewardCountUp{0%{opacity:0;transform:scale(0.5)}50%{transform:scale(1.2)}100%{opacity:1;transform:scale(1)}}
+        /* Tournament bracket */
+        .bracket-round{margin-bottom:20px}
+        .bracket-round-title{font-family:'Bebas Neue',sans-serif;font-size:18px;color:#ffd700;letter-spacing:3px;margin-bottom:10px;text-align:center}
+        .bracket-match{background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.1);padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+        .bracket-match.current{border-color:#ffd700;background:rgba(255,215,0,0.1)}
+        .bracket-match.won{border-color:#4caf50;background:rgba(76,175,80,0.1)}
+        .bracket-match.lost{border-color:#f44336;background:rgba(244,67,54,0.1);opacity:0.6}
+        .bracket-player{font-size:13px;color:#fff;font-weight:600}
+        .bracket-player.you{color:#ffd700}
+        .bracket-player.winner{color:#4caf50}
+        .bracket-vs{font-family:'Bebas Neue',sans-serif;font-size:14px;color:rgba(255,255,255,0.4);margin:0 10px}
+        .bracket-score{font-family:'Bebas Neue',sans-serif;font-size:16px;color:rgba(255,255,255,0.6)}
+        .tournament-trophy{text-align:center;padding:30px 0}
+        .tournament-trophy-icon{font-family:'Bebas Neue',sans-serif;font-size:72px;color:#ffd700;text-shadow:0 0 30px rgba(255,215,0,0.5)}
+        .tournament-trophy-text{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#ffd700;letter-spacing:4px;margin-top:10px}
+        /* Settings items */
+        .settings-item{background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.1);padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+        .settings-label{color:#fff;font-size:13px;font-weight:600}
+        .settings-value{display:flex;gap:8px}
+        .settings-option{padding:8px 16px;background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.2);color:#fff;font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase}
+        .settings-option.active{border-color:#ffd700;background:rgba(255,215,0,0.15);color:#ffd700}
         /* Victory confetti */
         .confetti-piece{position:fixed;width:10px;height:10px;z-index:2001;pointer-events:none;animation:confettiFall linear forwards}
         @keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0deg)}100%{opacity:0;transform:translateY(100vh) rotate(720deg)}}
@@ -579,10 +600,13 @@
         </div>
 
         <div class="menu-buttons">
-            <button class="menu-btn primary" onclick="startMatch()" aria-label="Play a match">PLAY MATCH</button>
+            <button class="menu-btn primary" onclick="startMatch()" aria-label="Play a quick match">QUICK MATCH</button>
+            <button class="menu-btn tournament-btn" onclick="showTournamentScreen()" aria-label="Enter tournament mode" style="background:linear-gradient(180deg,#ffd700 0%,#b8860b 50%,#8b6914 100%);border-color:#ffed4e #6b4e00 #6b4e00 #ffed4e;color:#000;text-shadow:none">TOURNAMENT</button>
+            <button class="menu-btn" onclick="startPracticeMode()" aria-label="Practice mode">PRACTICE</button>
             <button class="menu-btn" onclick="showCharSelect()" aria-label="Select your player character">SELECT PLAYER</button>
             <button class="menu-btn" onclick="showShop()" aria-label="Open the pro shop">PRO SHOP</button>
             <button class="menu-btn" onclick="showTrophyCase()" aria-label="View your trophy case">TROPHY CASE</button>
+            <button class="menu-btn" onclick="showSettingsScreen()" aria-label="Settings">SETTINGS</button>
             <button class="menu-btn" onclick="showTutorial()" aria-label="Learn how to play">HOW TO PLAY</button>
         </div>
     </div>
@@ -793,6 +817,33 @@
         </div>
     </div>
     <div class="progress-toast" id="progressToast"></div>
+
+    <!-- Tournament Screen -->
+    <div class="screen tournament-screen" id="tournamentScreen" style="background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:calc(15px + env(safe-area-inset-top,0px)) 15px calc(15px + env(safe-area-inset-bottom,0px));overflow-y:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+            <h2 style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:#ffd700;letter-spacing:4px">TOURNAMENT</h2>
+            <button class="back-btn" onclick="closeTournamentScreen()">BACK</button>
+        </div>
+        <div id="tournamentBracket" style="flex:1"></div>
+        <div id="tournamentActions" style="margin-top:15px"></div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div class="screen settings-screen" id="settingsScreen" style="background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:calc(15px + env(safe-area-inset-top,0px)) 15px calc(15px + env(safe-area-inset-bottom,0px));overflow-y:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+            <h2 style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:#ffd700;letter-spacing:4px">SETTINGS</h2>
+            <button class="back-btn" onclick="closeSettingsScreen()">BACK</button>
+        </div>
+        <div id="settingsContent"></div>
+    </div>
+
+    <!-- Practice Mode HUD overlay -->
+    <div id="practiceHUD" style="position:fixed;top:calc(60px + env(safe-area-inset-top,0px));left:10px;z-index:200;display:none;flex-direction:column;gap:6px">
+        <div style="background:rgba(0,0,0,0.7);padding:8px 14px;border:1px solid rgba(255,215,0,0.3);color:#ffd700;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px">PRACTICE MODE</div>
+        <div style="background:rgba(0,0,0,0.7);padding:6px 14px;border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:11px">Balls Hit: <span id="practiceHits" style="color:#4caf50;font-weight:700">0</span></div>
+        <button onclick="exitPracticeMode()" style="padding:8px 14px;background:rgba(244,67,54,0.8);border:2px solid #f44336;color:#fff;font-size:11px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:1px">EXIT PRACTICE</button>
+    </div>
+
 <script defer src="game.js"></script>
 
 </body>
