@@ -1,4 +1,6 @@
+node_modules/
 .vercel
+.env
 .env*.local
 
 # Sprite source/working files (only characters/ and thumbs/ are used by the game)
