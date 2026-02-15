@@ -4675,6 +4675,53 @@ function closeSettingsScreen(){
     save();
 }
 
+function getStorageBreakdown(){
+    let total = 0;
+    const items = [];
+    const labels = {
+        'tennisGame': 'Save Data',
+        'tennisTournament': 'Tournament',
+        'ct_lastReplay': 'Match Replay',
+        'ct_lastReplayMeta': 'Replay Meta',
+        'ct_minigame_scores': 'Mini-game Scores',
+        'ct_mobile_hint_seen': 'Preferences'
+    };
+    for(let i = 0; i < localStorage.length; i++){
+        const key = localStorage.key(i);
+        const val = localStorage.getItem(key);
+        const bytes = new Blob([key + val]).size;
+        total += bytes;
+        if(labels[key]) items.push({label: labels[key], bytes});
+    }
+    function fmt(b){
+        if(b < 1024) return b + ' B';
+        if(b < 1048576) return (b/1024).toFixed(1) + ' KB';
+        return (b/1048576).toFixed(1) + ' MB';
+    }
+    let html = `<div style="color:rgba(255,255,255,0.6);font-size:12px">Total Used: <span style="color:#fff;font-weight:700">${fmt(total)}</span></div>`;
+    html += `<div style="color:rgba(255,255,255,0.6);font-size:12px">&nbsp;</div>`;
+    for(const item of items){
+        html += `<div style="color:rgba(255,255,255,0.6);font-size:12px">${item.label}: <span style="color:#fff;font-weight:700">${fmt(item.bytes)}</span></div>`;
+    }
+    return html;
+}
+
+function confirmResetAllData(){
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999;padding:20px';
+    overlay.innerHTML = `
+        <div style="background:linear-gradient(135deg,#1a1a2e,#0f0f1e);border:2px solid #f44336;padding:30px;max-width:320px;text-align:center">
+            <h3 style="color:#f44336;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;margin:0 0 15px">RESET ALL DATA</h3>
+            <p style="color:rgba(255,255,255,0.8);font-size:13px;line-height:1.5;margin:0 0 20px">This will erase ALL progress including career stats, unlocked characters, coins, gems, and replay data. This cannot be undone.</p>
+            <div style="display:flex;gap:10px;justify-content:center">
+                <button onclick="this.closest('div[style]').parentElement.remove()" style="padding:12px 24px;background:linear-gradient(180deg,#4a5a7a,#2a3a5a);border:2px solid;border-color:#6a8aba #2a3a5a #2a3a5a #6a8aba;color:#fff;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px">CANCEL</button>
+                <button onclick="localStorage.clear();location.reload()" style="padding:12px 24px;background:linear-gradient(180deg,#f44336,#c62828);border:2px solid;border-color:#ef5350 #b71c1c #b71c1c #ef5350;color:#fff;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px">RESET</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
 function renderSettings(){
     const content = safeGetElement('settingsContent');
     if(!content) return;
@@ -4748,7 +4795,15 @@ function renderSettings(){
             </div>
         </div>
         <div style="margin-top:20px">
-            <button class="menu-btn" onclick="if(confirm('Reset all progress? This cannot be undone.')){localStorage.clear();location.reload()}" style="width:100%;background:linear-gradient(180deg,#f44336,#c62828);border-color:#ef5350 #b71c1c #b71c1c #ef5350">RESET ALL PROGRESS</button>
+            <div style="color:rgba(255,215,0,0.8);font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Storage</div>
+            <div class="settings-item" style="flex-direction:column;align-items:flex-start;gap:8px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%">
+                    ${getStorageBreakdown()}
+                </div>
+            </div>
+        </div>
+        <div style="margin-top:20px">
+            <button class="menu-btn" onclick="confirmResetAllData()" style="width:100%;background:linear-gradient(180deg,#f44336,#c62828);border-color:#ef5350 #b71c1c #b71c1c #ef5350">RESET ALL DATA</button>
         </div>
     `;
 }
