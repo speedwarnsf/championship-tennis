@@ -7969,6 +7969,202 @@ actuallyStartMatch = async function() {
     return _origActuallyStartMatch2.call(this);
 };
 
+// ========== MOBILE OPTIMIZATION ==========
+
+const isMobileDevice = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth < 1024);
+
+// --- Responsive Canvas Scaling ---
+function handleResize() {
+    const court = document.getElementById('gameCourt');
+    if (!court) return;
+    // Ensure court covers viewport
+    court.style.width = '100vw';
+    court.style.height = '100vh';
+}
+window.addEventListener('resize', handleResize);
+window.addEventListener('orientationchange', () => setTimeout(handleResize, 200));
+handleResize();
+
+// --- Mobile Detection & Controls ---
+function initMobileControls() {
+    if (!isMobileDevice) return;
+
+    const dpad = document.getElementById('mobileDpad');
+    const hitBtn = document.getElementById('mobileHitBtn');
+    const fsBtn = document.getElementById('fullscreenBtn');
+
+    if (dpad) dpad.style.display = 'block';
+    if (hitBtn) hitBtn.style.display = 'block';
+    if (fsBtn) fsBtn.style.display = 'flex';
+
+    // Show mobile hint on first visit
+    if (!localStorage.getItem('ct_mobile_hint_seen')) {
+        const hint = document.getElementById('mobileControlsHint');
+        if (hint) hint.style.display = 'flex';
+    }
+
+    // D-pad touch controls
+    let dpadInterval = null;
+    const moveSpeed = 2.8;
+
+    function startDpadMove(dir) {
+        if (dpadInterval) clearInterval(dpadInterval);
+        dpadInterval = setInterval(() => {
+            if (!M || !M.active) return;
+            if (dir === 'left') {
+                playerTargetPos = Math.max(12, playerTargetPos - moveSpeed);
+            } else if (dir === 'right') {
+                playerTargetPos = Math.min(88, playerTargetPos + moveSpeed);
+            }
+            if (!playerLerpActive) {
+                playerLerpActive = true;
+                requestAnimationFrame(lerpPlayerMovement);
+            }
+        }, 16);
+        setPlayerRunning(true);
+    }
+
+    function stopDpadMove() {
+        if (dpadInterval) { clearInterval(dpadInterval); dpadInterval = null; }
+        setPlayerRunning(false);
+    }
+
+    const dpadLeft = document.getElementById('dpadLeft');
+    const dpadRight = document.getElementById('dpadRight');
+    const dpadUp = document.getElementById('dpadUp');
+
+    if (dpadLeft) {
+        dpadLeft.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); startDpadMove('left'); }, {passive: false});
+        dpadLeft.addEventListener('touchend', e => { e.preventDefault(); e.stopPropagation(); stopDpadMove(); }, {passive: false});
+        dpadLeft.addEventListener('touchcancel', e => { stopDpadMove(); }, {passive: false});
+    }
+    if (dpadRight) {
+        dpadRight.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); startDpadMove('right'); }, {passive: false});
+        dpadRight.addEventListener('touchend', e => { e.preventDefault(); e.stopPropagation(); stopDpadMove(); }, {passive: false});
+        dpadRight.addEventListener('touchcancel', e => { stopDpadMove(); }, {passive: false});
+    }
+    if (dpadUp) {
+        dpadUp.addEventListener('touchstart', e => {
+            e.preventDefault(); e.stopPropagation();
+            // Net rush on up-press
+            if (M && M.active && M.ballActive && !M.atNet) {
+                if (typeof triggerNetRush === 'function') triggerNetRush();
+            }
+        }, {passive: false});
+    }
+
+    // Hit button
+    if (hitBtn) {
+        hitBtn.addEventListener('touchstart', e => {
+            e.preventDefault(); e.stopPropagation();
+            if (!M || !M.active) return;
+
+            // Serve
+            if (M.isPlayerServe && M.servePhase === 'ready') {
+                serveToss();
+                setTimeout(() => {
+                    if (M.servePhase === 'toss') {
+                        M.servePhase = 'charging';
+                        M.servePower = 0;
+                        M.serveStartY = window.innerHeight * 0.8;
+                        M.serveStartX = window.innerWidth * 0.5;
+                        setTimeout(() => {
+                            if (M.servePhase === 'charging') releaseServe();
+                        }, 350);
+                    }
+                }, 100);
+                return;
+            }
+
+            // Hit
+            if (M.canHit) {
+                const ang = (Math.random() - 0.5) * 0.6;
+                hitBall(0.7, ang);
+            }
+        }, {passive: false});
+    }
+
+    // Show/hide mobile controls based on game state
+    const _origShowGameUI = () => {
+        if (dpad) dpad.style.display = 'block';
+        if (hitBtn) hitBtn.style.display = 'block';
+    };
+    const _origHideGameUI = () => {
+        if (dpad) dpad.style.display = 'none';
+        if (hitBtn) hitBtn.style.display = 'none';
+    };
+
+    // Observe game court active state
+    const courtEl = document.getElementById('gameCourt');
+    if (courtEl) {
+        const observer = new MutationObserver(() => {
+            if (courtEl.classList.contains('active')) {
+                _origShowGameUI();
+            } else {
+                _origHideGameUI();
+            }
+        });
+        observer.observe(courtEl, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    // Update hit button visual state
+    setInterval(() => {
+        if (!hitBtn || !M) return;
+        if (M.active && M.canHit) {
+            hitBtn.style.borderColor = 'rgba(76,255,80,0.8)';
+            hitBtn.style.background = 'rgba(76,255,80,0.3)';
+            hitBtn.style.color = '#4cff50';
+        } else if (M.active && M.isPlayerServe && M.servePhase === 'ready') {
+            hitBtn.style.borderColor = 'rgba(255,215,0,0.8)';
+            hitBtn.style.background = 'rgba(255,215,0,0.2)';
+            hitBtn.style.color = '#ffd700';
+            hitBtn.textContent = 'SERVE';
+        } else {
+            hitBtn.style.borderColor = 'rgba(76,175,80,0.3)';
+            hitBtn.style.background = 'rgba(76,175,80,0.1)';
+            hitBtn.style.color = 'rgba(76,175,80,0.5)';
+            hitBtn.textContent = 'HIT';
+        }
+    }, 100);
+}
+
+// --- Fullscreen ---
+function toggleFullscreen() {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        const el = document.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }
+}
+
+document.getElementById('fullscreenBtn')?.addEventListener('click', toggleFullscreen);
+
+// --- Dismiss mobile hint ---
+function dismissMobileHint() {
+    const hint = document.getElementById('mobileControlsHint');
+    if (hint) hint.style.display = 'none';
+    localStorage.setItem('ct_mobile_hint_seen', '1');
+}
+
+// Desktop: hide mobile controls, show fullscreen on small screens
+if (!isMobileDevice) {
+    const dpad = document.getElementById('mobileDpad');
+    const hitBtn = document.getElementById('mobileHitBtn');
+    if (dpad) dpad.style.display = 'none';
+    if (hitBtn) hitBtn.style.display = 'none';
+    // Still show fullscreen on smaller desktop screens
+    if (window.innerWidth < 1024) {
+        const fsBtn = document.getElementById('fullscreenBtn');
+        if (fsBtn) fsBtn.style.display = 'flex';
+    }
+}
+
+// Initialize
+initMobileControls();
+
 // Update credits to mention new features
 const _origRenderCredits = renderCredits;
 renderCredits = function() {
@@ -7983,6 +8179,9 @@ renderCredits = function() {
             <div>AI vs AI spectator mode</div>
             <div>Full match replay from menu</div>
             <div>Loading screen gameplay tips</div>
+            <div>Mobile touch controls with virtual d-pad</div>
+            <div>Responsive scaling for all screen sizes</div>
+            <div>Fullscreen mode for mobile play</div>
         `;
     }
 };
