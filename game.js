@@ -1500,7 +1500,7 @@ function executePlayerServe(power, aimX){
         const timingBonus = M.serveTimingQuality === 'perfect' ? 20 : (M.serveTimingQuality === 'good' ? 8 : -10);
         const baseServeSpeed = 90 + power * 50 + st.serve * 0.3 + timingBonus;
         M.lastServeSpeed = Math.round(baseServeSpeed + (Math.random() - 0.5) * 10);
-        { const _el = safeGetElement('serveSpeed'); if(_el) _el.textContent = M.lastServeSpeed + ' MPH'; }
+        { const _el = safeGetElement('serveSpeed'); if(_el) { _el.textContent = M.lastServeSpeed + ' MPH'; _el.classList.remove('speed-pop'); void _el.offsetWidth; _el.classList.add('speed-pop'); } }
 
         const isLet = !isNetFault && Math.random() < 0.05;
         if(isLet){
@@ -1636,6 +1636,10 @@ function animateServeBall(result){
     ball.style.top = (M.ballPos.y - M.ballH/10) + '%';
     shadow.style.left = M.ballPos.x + '%';
     shadow.style.top = M.ballPos.y + '%';
+    const shScale = 1 + Math.max(0, M.ballH) / 80;
+    const shOpacity = Math.max(0.15, 1 - Math.max(0, M.ballH) / 120);
+    shadow.style.transform = `translate(-50%,0) scale(${shScale})`;
+    shadow.style.opacity = shOpacity;
 
     // After ball bounces in service box (servePhase becomes 'none'), opponent returns
     if(M.servePhase === 'none' && M.ballBounces >= 1 && M.ballPos.y < 20){
@@ -1825,7 +1829,7 @@ function opponentServe(){
         // Display opponent serve speed
         const oppServeSpeed = Math.round(90 + M.settings.oppServeSpeed * 30 + Math.floor(Math.random() * 15));
         M.lastServeSpeed = oppServeSpeed;
-        { const _el = safeGetElement('serveSpeed'); if(_el) _el.textContent = oppServeSpeed + ' MPH'; }
+        { const _el = safeGetElement('serveSpeed'); if(_el) { _el.textContent = oppServeSpeed + ' MPH'; _el.classList.remove('speed-pop'); void _el.offsetWidth; _el.classList.add('speed-pop'); } }
 
         // SERVE PHYSICS: Ball starts high, descends sharply over net, bounces in player's service box
         // Must NOT bounce before crossing the net — z must be negative (downward) from the start
@@ -2780,8 +2784,16 @@ function updateMatchUI(){
     if (!validateCriticalState()) { console.error("Invalid state for updateMatchUI"); return; }
     const score = getTennisScore(M.pPoints, M.oPoints);
 
-    { const _el = safeGetElement('playerPoints'); if(_el) _el.textContent = score.p; }
-    { const _el = safeGetElement('opponentPoints'); if(_el) _el.textContent = score.o; }
+    { const _el = safeGetElement('playerPoints'); if(_el) {
+        const changed = _el.textContent !== String(score.p);
+        _el.textContent = score.p;
+        if(changed) { _el.classList.remove('score-pulse'); void _el.offsetWidth; _el.classList.add('score-pulse'); }
+    }}
+    { const _el = safeGetElement('opponentPoints'); if(_el) {
+        const changed = _el.textContent !== String(score.o);
+        _el.textContent = score.o;
+        if(changed) { _el.classList.remove('score-pulse'); void _el.offsetWidth; _el.classList.add('score-pulse'); }
+    }}
     { const _el = safeGetElement('playerGames'); if(_el) _el.textContent = M.pGames; }
     { const _el = safeGetElement('opponentGames'); if(_el) _el.textContent = M.oGames; }
     { const _el = safeGetElement('rallyCount'); if(_el) _el.textContent = M.rally; }
@@ -3163,6 +3175,11 @@ function animateBall(){
     if(shadow) {
         shadow.style.left = M.ballPos.x + '%';
         shadow.style.top = M.ballPos.y + '%';
+        // Shadow scales with ball height - larger and fainter when ball is higher
+        const hScale = 1 + Math.max(0, M.ballH) / 80;
+        const hOpacity = Math.max(0.15, 1 - Math.max(0, M.ballH) / 120);
+        shadow.style.transform = `translate(-50%,0) scale(${hScale})`;
+        shadow.style.opacity = hOpacity;
     }
 
     // Check if ball is in player's hit zone (adjusted for net position)
@@ -3830,6 +3847,10 @@ function animateReturn(){
     if(rShadow) {
         rShadow.style.left = M.ballPos.x + '%';
         rShadow.style.top = M.ballPos.y + '%';
+        const rhScale = 1 + Math.max(0, M.ballH) / 80;
+        const rhOpacity = Math.max(0.15, 1 - Math.max(0, M.ballH) / 120);
+        rShadow.style.transform = `translate(-50%,0) scale(${rhScale})`;
+        rShadow.style.opacity = rhOpacity;
     }
 
     // Ball reached opponent's side (adjusted for net position)
