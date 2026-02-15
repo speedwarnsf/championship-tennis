@@ -53,8 +53,8 @@
         /* Sharp edges on all UI elements */
         .screen,.player-card,.level-badge,.skill-bar,.skill-fill,.currency-item,.currency-icon,.stat-item,.difficulty-btn,.menu-btn,.play-button,.skip-btn,.player-info,.match-timer,.serve-indicator,.rewards-container,.continue-btn,.trophy-header,.trophy-card,.achievement-popup,.challenge-banner,.challenge-streak-badge,.challenge-bar,.challenge-fill,.progress-toast,.char-grid,.char-header,.char-card,.char-detail,.shop-header,.shop-tab,.shop-item,.buy-btn,.equip-btn,.equipped-badge,.tutorial-content,.tutorial-btn,.back-btn,.hit-zone,.streak-display,.streak-day,.swipe-hint,.net-rush-indicator,.gem-multiplier,.power-bar,.service-box,.serve-timing-track,.serve-timing-cursor,.serve-power-track,.combo-text,.call-overlay,.court-change,.match-results,.reward-item,.price-tag,.item-stat,.stat-bar,.stat-fill{border-radius:0!important}
         body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#1a1a2e,#0f0f1e);min-height:100vh;overflow:hidden;overscroll-behavior:none;width:100%}
-        .screen{position:fixed;inset:0;display:none;flex-direction:column;z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch}
-        .screen.active{display:flex}
+        .screen{position:fixed;inset:0;display:none;flex-direction:column;z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;transition:opacity 0.15s ease}
+        .screen.active{display:flex;opacity:1}
         .loading-screen{background:#000;justify-content:center;align-items:center;z-index:10000;overflow:hidden}
         .hero-image{position:relative;width:64vw;height:57vh;margin-bottom:15px;display:flex;justify-content:center;align-items:center}
         .hero-player{position:absolute;width:100%;height:100%;opacity:0;animation:slideInPlayer 0.6s ease-out 0.8s forwards;image-rendering:pixelated;clip-path:inset(0 20% 0 0);object-fit:contain}
@@ -659,6 +659,7 @@
             <button class="menu-btn" onclick="showTrophyCase()" aria-label="View your trophy case">TROPHY CASE</button>
             <button class="menu-btn" onclick="showSettingsScreen()" aria-label="Settings">SETTINGS</button>
             <button class="menu-btn" onclick="showTutorial()" aria-label="Learn how to play">HOW TO PLAY</button>
+            <button class="menu-btn" onclick="showCredits()" aria-label="About this game">ABOUT</button>
         </div>
     </div>
     <div class="screen shop-screen" id="shopScreen">
@@ -922,6 +923,15 @@
         <div style="background:rgba(0,0,0,0.7);padding:8px 14px;border:1px solid rgba(255,215,0,0.3);color:#ffd700;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px">PRACTICE MODE</div>
         <div style="background:rgba(0,0,0,0.7);padding:6px 14px;border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:11px">Balls Hit: <span id="practiceHits" style="color:#4caf50;font-weight:700">0</span></div>
         <button onclick="exitPracticeMode()" style="padding:8px 14px;background:rgba(244,67,54,0.8);border:2px solid #f44336;color:#fff;font-size:11px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:1px">EXIT PRACTICE</button>
+    </div>
+
+    <!-- Credits / About Screen -->
+    <div class="screen credits-screen" id="creditsScreen" style="background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:calc(15px + env(safe-area-inset-top,0px)) 15px calc(15px + env(safe-area-inset-bottom,0px));overflow-y:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+            <h2 style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:#ffd700;letter-spacing:4px">ABOUT</h2>
+            <button class="back-btn" onclick="closeCredits()">BACK</button>
+        </div>
+        <div id="creditsContent"></div>
     </div>
 
 <script defer src="game.js"></script>

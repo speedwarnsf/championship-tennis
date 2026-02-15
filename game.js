@@ -113,6 +113,7 @@ const PerformanceOptimizer = {
     consecutiveLowFPS: 0,
 
     _monitoring: false,
+    _monitorRAF: null,
 
     init() {
         this.optimizeForDevice();
@@ -124,11 +125,21 @@ const PerformanceOptimizer = {
         this.monitorPerformance();
     },
 
+    stopMonitoring() {
+        this._monitoring = false;
+        if (this._monitorRAF) {
+            cancelAnimationFrame(this._monitorRAF);
+            this._monitorRAF = null;
+        }
+    },
+
     monitorPerformance() {
         let frameCount = 0;
         let lastCheck = performance.now();
+        const self = this;
 
         const checkPerformance = () => {
+            if (!self._monitoring) return;
             frameCount++;
             const now = performance.now();
 
@@ -136,14 +147,14 @@ const PerformanceOptimizer = {
                 const fps = frameCount * 1000 / (now - lastCheck);
 
                 if (fps < 30) {
-                    this.consecutiveLowFPS++;
-                    if (this.consecutiveLowFPS >= 2) {
-                        this.enableFrameSkipping();
+                    self.consecutiveLowFPS++;
+                    if (self.consecutiveLowFPS >= 2) {
+                        self.enableFrameSkipping();
                     }
                 } else if (fps > 50) {
-                    this.consecutiveLowFPS = 0;
-                    if (fps > 55 && this.frameSkipping) {
-                        this.disableFrameSkipping();
+                    self.consecutiveLowFPS = 0;
+                    if (fps > 55 && self.frameSkipping) {
+                        self.disableFrameSkipping();
                     }
                 }
 
@@ -151,10 +162,10 @@ const PerformanceOptimizer = {
                 lastCheck = now;
             }
 
-            requestAnimationFrame(checkPerformance);
+            self._monitorRAF = requestAnimationFrame(checkPerformance);
         };
 
-        requestAnimationFrame(checkPerformance);
+        self._monitorRAF = requestAnimationFrame(checkPerformance);
     },
 
     optimizeForDevice() {
@@ -2675,7 +2686,10 @@ function startMatch(){
     }
 }
 
+let _matchTimerInterval = null;
 function startTimer(){
+    // Clean up any previous timer
+    if (_matchTimerInterval) { clearInterval(_matchTimerInterval); _matchTimerInterval = null; }
     // Timer counts up, but timed matches use a limit
     M.time = 0;
     const timerEl = safeGetElement('matchTimer');
@@ -2687,16 +2701,18 @@ function startTimer(){
     };
     renderTime(isTimed ? M.matchLimit : 0);
 
-    const int = setInterval(() => {
+    _matchTimerInterval = setInterval(() => {
         if(!M.active){
-            clearInterval(int);
+            clearInterval(_matchTimerInterval);
+            _matchTimerInterval = null;
             return;
         }
         M.time++;
         renderTime(isTimed ? (M.matchLimit - M.time) : M.time);
 
         if(isTimed && M.time >= M.matchLimit){
-            clearInterval(int);
+            clearInterval(_matchTimerInterval);
+            _matchTimerInterval = null;
             handleTimeExpired();
         }
     }, 1000);
@@ -3949,6 +3965,12 @@ function checkEnd(){
 function endMatch(){
     M.active = false;
 
+    // Clean up resources
+    if (_matchTimerInterval) { clearInterval(_matchTimerInterval); _matchTimerInterval = null; }
+    if (M._hintInterval) { clearInterval(M._hintInterval); M._hintInterval = null; }
+    domCache.clear();
+    ballTrailPositions = [];
+
     const won = M.pSets > M.oSets || (M.pSets === M.oSets && M.pGames > M.oGames);
 
     // Enhanced reward calculation
@@ -4296,6 +4318,16 @@ function renderTournamentBracket(){
     bracket.innerHTML = html;
 
     if(tournament.completed){
+        if(!tournament.won){
+            // Show elimination message if no trophy shown
+            const hasTrophy = bracket.querySelector('.tournament-trophy');
+            if(!hasTrophy){
+                bracket.innerHTML = `<div style="text-align:center;padding:30px 0">
+                    <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:#f44336;margin-bottom:10px">ELIMINATED</div>
+                    <div style="color:rgba(255,255,255,0.6);font-size:13px">Better luck next time!</div>
+                </div>` + bracket.innerHTML;
+            }
+        }
         actions.innerHTML = `<button class="menu-btn primary" onclick="tournament=null;localStorage.removeItem('tennisTournament');renderTournamentSetup()" style="width:100%">NEW TOURNAMENT</button>`;
     } else {
         actions.innerHTML = `<button class="menu-btn primary" onclick="playTournamentMatch()" style="width:100%">PLAY NEXT MATCH</button>`;
@@ -4356,7 +4388,18 @@ function finishTournamentMatch(winnerId, pGames, oGames){
         tournament.currentMatch = 0;
     }
 
-    // Check if tournament is over
+    // Check if player was eliminated
+    if(playerInMatch && winnerId !== selectedChar.id){
+        tournament.completed = true;
+        tournament.won = false;
+        saveTournament();
+        if(safeGetElement('tournamentScreen')?.classList.contains('active')){
+            renderTournamentBracket();
+        }
+        return;
+    }
+
+    // Check if tournament is over (final match played)
     if(tournament.currentRound >= tournament.rounds){
         tournament.completed = true;
         const finalWinner = winnerId;
@@ -4399,9 +4442,7 @@ function finishTournamentMatch(winnerId, pGames, oGames){
     }
 }
 
-// Hook into endMatch for tournament integration
-const _originalEndMatch = endMatch;
-// We'll patch endMatch below after it's defined
+// Tournament endMatch hook (unused, patched via _origEndMatch2 in integration section)
 
 // ========== PRACTICE MODE ==========
 let practiceMode = false;
@@ -6204,6 +6245,88 @@ finishTournamentMatch = function(winnerId, pGames, oGames) {
         saveTournamentTrophy(oppChar ? oppChar.name : 'Unknown', score);
     }
 };
+
+// ========== CREDITS / ABOUT SCREEN ==========
+function showCredits(){
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('creditsScreen')?.classList.add('active');
+    renderCredits();
+}
+
+function closeCredits(){
+    safeGetElement('creditsScreen')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
+}
+
+function renderCredits(){
+    const el = safeGetElement('creditsContent');
+    if(!el) return;
+    const stats = G.careerStats || {};
+    el.innerHTML = `
+        <div style="text-align:center;margin-bottom:25px">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:56px;background:linear-gradient(135deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:4px">CENTRE COURT</div>
+            <div style="color:rgba(255,255,255,0.5);font-size:12px;letter-spacing:3px;text-transform:uppercase;margin-top:5px">Championship Edition</div>
+            <div style="color:rgba(255,215,0,0.6);font-size:11px;margin-top:8px;letter-spacing:2px">VERSION 4.0</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.1);padding:16px;margin-bottom:12px">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#ffd700;letter-spacing:2px;margin-bottom:12px">FEATURES</div>
+            <div style="color:rgba(255,255,255,0.8);font-size:11px;line-height:1.8">
+                <div>Realistic tennis scoring with deuce and tiebreak</div>
+                <div>Serve mechanics with timing and power control</div>
+                <div>15+ unlockable characters with unique stats</div>
+                <div>Tournament mode with bracket progression</div>
+                <div>Practice mode for skill building</div>
+                <div>Net rush system with double-tap controls</div>
+                <div>Particle effects and ball trails</div>
+                <div>Dynamic sound engine with crowd ambience</div>
+                <div>VS intro screen with character matchups</div>
+                <div>Match point drama with slow motion</div>
+                <div>Trophy room for tournament victories</div>
+                <div>Court variety: hard, clay, and grass</div>
+                <div>Instant replay system</div>
+                <div>Daily challenges and streak rewards</div>
+                <div>Achievement system with trophy case</div>
+                <div>Pro shop with equipment upgrades</div>
+                <div>NTRP skill rating progression</div>
+                <div>Character victory and defeat poses</div>
+                <div>Performance optimization for all devices</div>
+            </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.1);padding:16px;margin-bottom:12px">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#ffd700;letter-spacing:2px;margin-bottom:12px">YOUR CAREER</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div style="text-align:center;padding:8px;background:rgba(0,0,0,0.3)">
+                    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#4caf50">${stats.matchesWon||0}</div>
+                    <div style="font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase">Matches Won</div>
+                </div>
+                <div style="text-align:center;padding:8px;background:rgba(0,0,0,0.3)">
+                    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#ffd700">${stats.matchesPlayed||0}</div>
+                    <div style="font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase">Matches Played</div>
+                </div>
+                <div style="text-align:center;padding:8px;background:rgba(0,0,0,0.3)">
+                    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#e74c3c">${stats.totalAces||0}</div>
+                    <div style="font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase">Total Aces</div>
+                </div>
+                <div style="text-align:center;padding:8px;background:rgba(0,0,0,0.3)">
+                    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#bb86fc">${stats.tournamentsWon||0}</div>
+                    <div style="font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase">Tournaments Won</div>
+                </div>
+                <div style="text-align:center;padding:8px;background:rgba(0,0,0,0.3)">
+                    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#ffc107">${stats.bestStreak||0}</div>
+                    <div style="font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase">Best Streak</div>
+                </div>
+                <div style="text-align:center;padding:8px;background:rgba(0,0,0,0.3)">
+                    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#03a9f4">${stats.longestRally||0}</div>
+                    <div style="font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase">Longest Rally</div>
+                </div>
+            </div>
+        </div>
+        <div style="text-align:center;padding:20px 0;color:rgba(255,255,255,0.3);font-size:10px;letter-spacing:2px">
+            <div>BUILT WITH HTML5 CANVAS + WEB AUDIO API</div>
+            <div style="margin-top:6px">2026 CENTRE COURT</div>
+        </div>
+    `;
+}
 
 // Enhanced initialization
 document.addEventListener('DOMContentLoaded', () => {
