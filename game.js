@@ -1937,6 +1937,9 @@ function load(){
     // Initialize achievements
     initAchievements();
 
+    // Initialize seasonal challenges
+    if(typeof initSeasonalChallenges === 'function') initSeasonalChallenges();
+
     // Load tournament state
     if(typeof loadTournament === 'function') loadTournament();
 }
@@ -4044,6 +4047,36 @@ function endMatch(){
     G.gems += gems;
     const newNTRP = getNTRP();
 
+    // === XP / Career Progression ===
+    let xpEarned = won ? 50 : 15;
+    xpEarned += M.aces * 5;
+    xpEarned += Math.floor(M.longestRally / 3) * 3;
+    xpEarned += M.winners * 2;
+    if (G.difficulty === 'legend') xpEarned = Math.floor(xpEarned * 1.5);
+    else if (G.difficulty === 'pro') xpEarned = Math.floor(xpEarned * 1.2);
+    if (typeof awardXP === 'function') awardXP(xpEarned);
+
+    // Track character usage
+    if (!G.charUsage) G.charUsage = {};
+    if (selectedChar) G.charUsage[selectedChar.id] = (G.charUsage[selectedChar.id] || 0) + 1;
+
+    // === Seasonal Challenge Tracking ===
+    if (typeof updateSeasonalProgress === 'function') {
+        if (won) {
+            updateSeasonalProgress('seasonWins', 1);
+            if (G.difficulty === 'legend') updateSeasonalProgress('legendWins', 1);
+            if (M.oGames === 0) updateSeasonalProgress('flawlessWins', 1);
+            if (!M.doubleFaults || M.doubleFaults === 0) updateSeasonalProgress('cleanServeWins', 1);
+        }
+        if (M.aces > 0) updateSeasonalProgress('seasonAces', M.aces);
+        if (M.longestRally >= 15) updateSeasonalProgress('longRallies', 1);
+        if (M.bestStreak >= 8 || M.streak >= 8) updateSeasonalProgress('bigStreaks', 1);
+        if (G._tournamentMode && M.aces > 0) updateSeasonalProgress('tournamentAces', M.aces);
+        // Clay court tracking
+        const courtEl = safeGetElement('gameCourt');
+        if (won && courtEl && courtEl.classList.contains('court-clay')) updateSeasonalProgress('clayWins', 1);
+    }
+
     save();
 
     // Enhanced victory/defeat presentation
@@ -4069,6 +4102,7 @@ function endMatch(){
     { const _el = safeGetElement('coinsEarned'); if(_el) _el.textContent = '+' + coins; }
     { const _el = safeGetElement('skillGained'); if(_el) _el.textContent = '+' + skill; }
     { const _el = safeGetElement('gemsEarned'); if(_el) _el.textContent = '+' + gems; }
+    { const _el = safeGetElement('xpEarned'); if(_el) _el.textContent = '+' + xpEarned; }
     // Enhanced match statistics
     { const _el = safeGetElement('acesCount'); if(_el) _el.textContent = M.aces; }
     { const _el = safeGetElement('winnersCount'); if(_el) _el.textContent = M.winners; }
@@ -4158,7 +4192,8 @@ function animateRewardValues(coins, skill, gems) {
     const targets = [
         { id: 'coinsEarned', value: coins, prefix: '+' },
         { id: 'skillGained', value: skill, prefix: '+' },
-        { id: 'gemsEarned', value: gems, prefix: '+' }
+        { id: 'gemsEarned', value: gems, prefix: '+' },
+        { id: 'xpEarned', value: xpEarned, prefix: '+' }
     ];
     targets.forEach((t, idx) => {
         const el = safeGetElement(t.id);
@@ -4414,6 +4449,34 @@ function finishTournamentMatch(winnerId, pGames, oGames){
             G.gems += 10;
             G.careerStats = G.careerStats || {};
             G.careerStats.tournamentsWon = (G.careerStats.tournamentsWon || 0) + 1;
+
+            // XP bonus for tournament win
+            if (typeof awardXP === 'function') awardXP(200);
+
+            // Seasonal challenge tracking
+            if (typeof updateSeasonalProgress === 'function') updateSeasonalProgress('tourneyWins', 1);
+
+            // Hall of Fame entry
+            if (typeof addHallOfFameEntry === 'function') {
+                const opponents = [];
+                for (let r = 0; r < tournament.rounds; r++) {
+                    for (let m = 0; m < tournament.bracket[r].length; m++) {
+                        const match = tournament.bracket[r][m];
+                        const score = tournament.scores[r][m];
+                        if (score && score.winnerId === selectedChar.id) {
+                            const oppId = match[0] === selectedChar.id ? match[1] : match[0];
+                            if (oppId) opponents.push(oppId);
+                        }
+                    }
+                }
+                const lastScore = tournament.scores[tournament.rounds - 1]?.[0];
+                addHallOfFameEntry({
+                    character: selectedChar.id,
+                    size: tournament.size,
+                    opponents: opponents,
+                    finalScore: lastScore ? `${lastScore.p}-${lastScore.o}` : ''
+                });
+            }
 
             // Unlock a random locked character as reward
             const locked = window.CHARACTERS.filter(c => !c.unlocked);
@@ -6588,3 +6651,343 @@ endMatch = function() {
     }
 };
 
+
+// ========== XP / LEVELING SYSTEM ==========
+const XP_PER_LEVEL = 200;
+const MAX_LEVEL = 30;
+
+const XP_UNLOCKS = [
+    { level: 2, type: 'court', id: 'court_night', name: 'Night Court', desc: 'Dark blue night theme' },
+    { level: 4, type: 'court', id: 'court_sunset', name: 'Sunset Court', desc: 'Orange sunset vibes' },
+    { level: 6, type: 'skin', id: 'skin_gold', name: 'Gold Outfit', desc: 'Golden player tint' },
+    { level: 8, type: 'court', id: 'court_neon', name: 'Neon Court', desc: 'Cyberpunk neon glow' },
+    { level: 10, type: 'skin', id: 'skin_ice', name: 'Ice Outfit', desc: 'Frost blue player tint' },
+    { level: 12, type: 'court', id: 'court_retro', name: 'Retro Court', desc: '80s arcade colors' },
+    { level: 14, type: 'skin', id: 'skin_fire', name: 'Fire Outfit', desc: 'Blazing red player tint' },
+    { level: 16, type: 'court', id: 'court_snow', name: 'Snow Court', desc: 'Winter wonderland' },
+    { level: 18, type: 'skin', id: 'skin_shadow', name: 'Shadow Outfit', desc: 'Dark silhouette look' },
+    { level: 20, type: 'court', id: 'court_galaxy', name: 'Galaxy Court', desc: 'Cosmic starfield' },
+    { level: 22, type: 'skin', id: 'skin_chrome', name: 'Chrome Outfit', desc: 'Metallic shine' },
+    { level: 25, type: 'court', id: 'court_lava', name: 'Lava Court', desc: 'Volcanic fire theme' },
+    { level: 28, type: 'skin', id: 'skin_legend', name: 'Legend Outfit', desc: 'Purple legendary aura' },
+    { level: 30, type: 'court', id: 'court_champion', name: 'Champion Court', desc: 'Golden champion arena' },
+];
+
+function getPlayerLevel() {
+    return Math.min(MAX_LEVEL, Math.floor((G.xp || 0) / XP_PER_LEVEL) + 1);
+}
+
+function getXPForCurrentLevel() {
+    return (G.xp || 0) % XP_PER_LEVEL;
+}
+
+function getUnlockedRewards() {
+    const level = getPlayerLevel();
+    return XP_UNLOCKS.filter(u => u.level <= level);
+}
+
+function awardXP(amount) {
+    const oldLevel = getPlayerLevel();
+    G.xp = (G.xp || 0) + amount;
+    const newLevel = getPlayerLevel();
+    save();
+    if (newLevel > oldLevel) {
+        for (let l = oldLevel + 1; l <= newLevel; l++) {
+            const unlock = XP_UNLOCKS.find(u => u.level === l);
+            if (unlock) {
+                toast(`LEVEL ${l}! Unlocked: ${unlock.name}`);
+            } else {
+                toast(`LEVEL UP! You are now level ${l}`);
+            }
+        }
+    }
+    return newLevel - oldLevel;
+}
+
+// ========== SEASONAL CHALLENGES ==========
+const SEASONAL_CHALLENGES = [
+    { id: 'sc_clay5', name: 'Clay Court Master', desc: 'Win 5 matches on clay court', target: 5, trackKey: 'clayWins', reward: { xp: 150, coins: 200 } },
+    { id: 'sc_aces10', name: 'Ace Barrage', desc: 'Get 10 aces in tournament matches', target: 10, trackKey: 'tournamentAces', reward: { xp: 200, coins: 300 } },
+    { id: 'sc_noset', name: 'Dominant Force', desc: 'Win a match without losing a set', target: 1, trackKey: 'flawlessWins', reward: { xp: 100, coins: 150 } },
+    { id: 'sc_rally15', name: 'Rally Legend', desc: 'Win a rally of 15+ shots', target: 1, trackKey: 'longRallies', reward: { xp: 120, coins: 180 } },
+    { id: 'sc_streak8', name: 'Point Machine', desc: 'Get an 8-point win streak', target: 1, trackKey: 'bigStreaks', reward: { xp: 100, coins: 150 } },
+    { id: 'sc_win10', name: 'Road Warrior', desc: 'Win 10 matches total', target: 10, trackKey: 'seasonWins', reward: { xp: 250, coins: 400 } },
+    { id: 'sc_legend3', name: 'Legend Slayer', desc: 'Win 3 matches on Legend difficulty', target: 3, trackKey: 'legendWins', reward: { xp: 300, coins: 500 } },
+    { id: 'sc_tourney2', name: 'Tournament Regular', desc: 'Win 2 tournaments', target: 2, trackKey: 'tourneyWins', reward: { xp: 400, coins: 600 } },
+    { id: 'sc_aces25', name: 'Serve God', desc: 'Score 25 total aces this season', target: 25, trackKey: 'seasonAces', reward: { xp: 200, coins: 350 } },
+    { id: 'sc_nodf', name: 'Clean Server', desc: 'Win 3 matches with zero double faults', target: 3, trackKey: 'cleanServeWins', reward: { xp: 150, coins: 250 } },
+];
+
+function initSeasonalChallenges() {
+    if (!G.seasonalProgress) {
+        G.seasonalProgress = {};
+        G.seasonalCompleted = {};
+    }
+}
+
+function updateSeasonalProgress(key, value) {
+    initSeasonalChallenges();
+    if (!G.seasonalProgress[key]) G.seasonalProgress[key] = 0;
+    G.seasonalProgress[key] += value;
+
+    // Check completions
+    SEASONAL_CHALLENGES.forEach(ch => {
+        if (ch.trackKey === key && !G.seasonalCompleted[ch.id]) {
+            if (G.seasonalProgress[ch.trackKey] >= ch.target) {
+                G.seasonalCompleted[ch.id] = new Date().toISOString();
+                G.coins += ch.reward.coins;
+                awardXP(ch.reward.xp);
+                toast(`Challenge Complete: ${ch.name}!`);
+            }
+        }
+    });
+    save();
+}
+
+// ========== HALL OF FAME ==========
+function addHallOfFameEntry(tournamentData) {
+    if (!G.hallOfFame) G.hallOfFame = [];
+    G.hallOfFame.unshift({
+        date: new Date().toISOString(),
+        character: tournamentData.character,
+        size: tournamentData.size,
+        opponents: tournamentData.opponents,
+        finalScore: tournamentData.finalScore
+    });
+    // Keep max 20 entries
+    if (G.hallOfFame.length > 20) G.hallOfFame.length = 20;
+    save();
+}
+
+// ========== CAREER DASHBOARD UI ==========
+function showCareerDashboard() {
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('careerScreen')?.classList.add('active');
+    renderCareerDashboard();
+}
+
+function closeCareerDashboard() {
+    safeGetElement('careerScreen')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
+    updateUI();
+}
+
+function renderCareerDashboard() {
+    const stats = G.careerStats || {};
+    const level = getPlayerLevel();
+    const xpInLevel = getXPForCurrentLevel();
+    const pct = Math.floor((xpInLevel / XP_PER_LEVEL) * 100);
+    const totalMatches = stats.matchesPlayed || 0;
+    const totalWins = stats.matchesWon || 0;
+    const winRate = totalMatches > 0 ? Math.floor((totalWins / totalMatches) * 100) : 0;
+    const totalAces = stats.totalAces || 0;
+    const bestStreak = stats.bestStreak || 0;
+    const tourneyWins = stats.tournamentsWon || 0;
+    const longestRally = stats.longestRally || 0;
+
+    // Determine favorite character
+    const charCounts = G.charUsage || {};
+    let favChar = 'None';
+    let maxCount = 0;
+    Object.entries(charCounts).forEach(([id, count]) => {
+        if (count > maxCount) {
+            maxCount = count;
+            const c = window.CHARACTERS.find(ch => ch.id === id);
+            if (c) favChar = c.name;
+        }
+    });
+
+    // XP Section
+    const xpEl = safeGetElement('careerXPSection');
+    if (xpEl) {
+        const nextUnlock = XP_UNLOCKS.find(u => u.level > level) || null;
+        xpEl.innerHTML = `
+            <div class="xp-level-card">
+                <div class="xp-level-header">
+                    <div class="xp-level-badge">LEVEL ${level}</div>
+                    <div class="xp-level-title">Total XP: ${G.xp || 0}</div>
+                </div>
+                <div class="xp-bar"><div class="xp-fill" style="width:${level >= MAX_LEVEL ? 100 : pct}%"></div></div>
+                <div class="xp-text">${level >= MAX_LEVEL ? 'MAX LEVEL' : `${xpInLevel} / ${XP_PER_LEVEL} XP to Level ${level + 1}`}</div>
+                ${nextUnlock ? `<div style="margin-top:8px;font-size:10px;color:rgba(255,215,0,0.7);text-align:center">Next unlock at Level ${nextUnlock.level}: ${nextUnlock.name}</div>` : ''}
+                <div class="unlock-list" style="margin-top:12px">
+                    <div style="font-size:10px;color:rgba(255,215,0,0.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Unlocked Rewards</div>
+                    ${XP_UNLOCKS.map(u => {
+                        const earned = u.level <= level;
+                        return `<div class="unlock-item ${earned ? 'earned' : 'locked'}">
+                            <span class="unlock-name">${u.name} - ${u.desc}</span>
+                            <span class="unlock-level">Lv ${u.level}</span>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    const el = safeGetElement('careerStatsContent');
+    if (!el) return;
+
+    el.innerHTML = `
+        <div class="career-section-title">MATCH STATISTICS</div>
+        <div class="career-stat-grid">
+            <div class="career-stat-box">
+                <div class="career-stat-label">Total Matches</div>
+                <div class="career-stat-value">${totalMatches}</div>
+            </div>
+            <div class="career-stat-box">
+                <div class="career-stat-label">Win Rate</div>
+                <div class="career-stat-value">${winRate}%</div>
+            </div>
+            <div class="career-stat-box">
+                <div class="career-stat-label">Matches Won</div>
+                <div class="career-stat-value">${totalWins}</div>
+            </div>
+            <div class="career-stat-box">
+                <div class="career-stat-label">Tournament Wins</div>
+                <div class="career-stat-value">${tourneyWins}</div>
+            </div>
+        </div>
+        <div class="career-section-title">PERFORMANCE</div>
+        <div class="career-stat-grid">
+            <div class="career-stat-box">
+                <div class="career-stat-label">Total Aces</div>
+                <div class="career-stat-value">${totalAces}</div>
+            </div>
+            <div class="career-stat-box">
+                <div class="career-stat-label">Longest Streak</div>
+                <div class="career-stat-value">${bestStreak}</div>
+            </div>
+            <div class="career-stat-box">
+                <div class="career-stat-label">Longest Rally</div>
+                <div class="career-stat-value">${longestRally}</div>
+            </div>
+            <div class="career-stat-box">
+                <div class="career-stat-label">Total Winners</div>
+                <div class="career-stat-value">${stats.totalWinners || 0}</div>
+            </div>
+        </div>
+        <div class="career-section-title">FAVORITES</div>
+        <div class="career-stat-card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <div style="font-size:10px;color:rgba(255,215,0,0.6);text-transform:uppercase">Favorite Character</div>
+                    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#ffd700">${favChar}</div>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-size:10px;color:rgba(255,215,0,0.6);text-transform:uppercase">Total Coins Earned</div>
+                    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#ffd700">${stats.totalCoins || 0}</div>
+                </div>
+            </div>
+        </div>
+        <div class="career-section-title">MILESTONES</div>
+        <div class="career-stat-card">
+            <div class="career-stat-grid" style="margin-bottom:0">
+                <div class="career-stat-box">
+                    <div class="career-stat-label">Legend Wins</div>
+                    <div class="career-stat-value">${stats.legendWins || 0}</div>
+                </div>
+                <div class="career-stat-box">
+                    <div class="career-stat-label">Perfect Sets</div>
+                    <div class="career-stat-value">${stats.perfectSets || 0}</div>
+                </div>
+                <div class="career-stat-box">
+                    <div class="career-stat-label">Flawless Wins</div>
+                    <div class="career-stat-value">${stats.flawlessWins || 0}</div>
+                </div>
+                <div class="career-stat-box">
+                    <div class="career-stat-label">Clean Serves</div>
+                    <div class="career-stat-value">${stats.cleanServeWins || 0}</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ========== HALL OF FAME UI ==========
+function showHallOfFame() {
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('hallOfFameScreen')?.classList.add('active');
+    renderHallOfFame();
+}
+
+function closeHallOfFame() {
+    safeGetElement('hallOfFameScreen')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
+}
+
+function renderHallOfFame() {
+    const el = safeGetElement('hallOfFameContent');
+    if (!el) return;
+    const entries = G.hallOfFame || [];
+
+    if (entries.length === 0) {
+        el.innerHTML = '<div class="hof-empty">No tournament victories yet.<br>Win a tournament to be immortalized here!</div>';
+        return;
+    }
+
+    el.innerHTML = entries.map((e, i) => {
+        const d = new Date(e.date);
+        const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const charName = (() => {
+            const c = window.CHARACTERS.find(ch => ch.id === e.character);
+            return c ? c.name : e.character;
+        })();
+        const opponentsDefeated = (e.opponents || []).map(oId => {
+            const c = window.CHARACTERS.find(ch => ch.id === oId);
+            return c ? c.name : oId;
+        }).join(', ');
+
+        return `<div class="hof-entry">
+            <div style="display:flex;align-items:center;gap:14px">
+                <div class="hof-rank">#${i + 1}</div>
+                <div style="flex:1">
+                    <div class="hof-title">Tournament Champion${e.size ? ` (${e.size}-Player)` : ''}</div>
+                    <div class="hof-detail">Character: ${charName}${e.finalScore ? ' | Final: ' + e.finalScore : ''}</div>
+                    <div class="hof-detail">Defeated: ${opponentsDefeated || 'Unknown'}</div>
+                    <div class="hof-date">${dateStr}</div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ========== SEASONAL CHALLENGES UI ==========
+function showSeasonalChallenges() {
+    initSeasonalChallenges();
+    safeGetElement('mainMenu')?.classList.remove('active');
+    safeGetElement('seasonalScreen')?.classList.add('active');
+    renderSeasonalChallenges();
+}
+
+function closeSeasonalChallenges() {
+    safeGetElement('seasonalScreen')?.classList.remove('active');
+    safeGetElement('mainMenu')?.classList.add('active');
+}
+
+function renderSeasonalChallenges() {
+    initSeasonalChallenges();
+    const el = safeGetElement('seasonalContent');
+    if (!el) return;
+
+    const completedCount = SEASONAL_CHALLENGES.filter(ch => G.seasonalCompleted[ch.id]).length;
+
+    let html = `<div class="season-header">SEASON 1 - ${completedCount}/${SEASONAL_CHALLENGES.length} COMPLETED</div>`;
+
+    html += SEASONAL_CHALLENGES.map(ch => {
+        const progress = G.seasonalProgress[ch.trackKey] || 0;
+        const isComplete = !!G.seasonalCompleted[ch.id];
+        const pct = Math.min(100, Math.floor((progress / ch.target) * 100));
+
+        return `<div class="season-challenge ${isComplete ? 'completed' : ''}">
+            <div class="season-challenge-name">${ch.name}${isComplete ? ' -- COMPLETE' : ''}</div>
+            <div class="season-challenge-desc">${ch.desc}</div>
+            <div class="season-challenge-progress">
+                <div class="season-challenge-bar"><div class="season-challenge-fill" style="width:${pct}%"></div></div>
+                <div class="season-challenge-pct">${Math.min(progress, ch.target)}/${ch.target}</div>
+            </div>
+            <div class="season-challenge-reward">Reward: +${ch.reward.coins} coins <span class="season-xp-reward">+${ch.reward.xp} XP</span></div>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = html;
+}
